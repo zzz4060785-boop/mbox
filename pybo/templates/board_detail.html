@@ -37,6 +37,7 @@
           src="{{ attachment.file_url }}"
           alt="{{ attachment.original_name }}"
           loading="lazy"
+          data-photo-lightbox
         />
       </a>
       {% elif attachment.media_type == 'video' %}
@@ -110,4 +111,8 @@
     {% endif %}
   </section>
 </main>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/photo_lightbox.js') }}"></script>
 {% endblock %}

@@ -51,6 +51,7 @@
           src="{{ notice.image_url }}"
           alt="공지사항 첨부 이미지"
           loading="lazy"
+          data-photo-lightbox
         />
         {% endif %}
         <figcaption>{{ notice.original_name or '첨부 미디어' }}</figcaption>
@@ -79,4 +80,8 @@
     {% endfor %}
   </section>
 </main>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/photo_lightbox.js') }}"></script>
 {% endblock %}

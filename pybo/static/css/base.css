@@ -48,3 +48,48 @@ body {
   background: #fff;
   color: #111;
 }
+body.photo-lightbox-open {
+  overflow: hidden !important;
+}
+
+img[data-photo-lightbox] {
+  cursor: zoom-in;
+}
+
+#sharedPhotoLightbox.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: grid;
+  place-items: center;
+  padding: 48px 16px 20px;
+  background: rgba(0, 0, 0, 0.9);
+  cursor: zoom-out;
+}
+
+#sharedPhotoLightbox.photo-lightbox[hidden] {
+  display: none;
+}
+
+#sharedPhotoLightbox.photo-lightbox img {
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100vh - 68px);
+  max-height: calc(100dvh - 68px);
+  object-fit: contain;
+  cursor: default;
+}
+
+#sharedPhotoLightbox .photo-lightbox-close {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
