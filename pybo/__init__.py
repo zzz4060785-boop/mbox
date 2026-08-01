@@ -2066,13 +2066,15 @@ def create_app():
         )
 
     def _same_registered_school(user, school_name):
-        """학교가 실제로 등록돼 있고 현재 둘러보는 학교와 같을 때만 작성 가능합니다."""
-        return bool(
-            user
-            and user.school_name
-            and school_name
-            and user.school_name.strip().casefold()
-            == school_name.strip().casefold()
+        """실제 학교 등록 내역이 있는 사용자만 해당 학교에 참여할 수 있습니다."""
+        if not user or not school_name:
+            return False
+        target_school = school_name.strip().casefold()
+        registered_schools = UserSchool.query.filter_by(user_id=user.id).all()
+        return any(
+            membership.school_name
+            and membership.school_name.strip().casefold() == target_school
+            for membership in registered_schools
         )
 
     def _can_participate_here():
@@ -2776,8 +2778,7 @@ def create_app():
     def recommendation_detail(post_id):
         post = db.get_or_404(RecommendationPost, post_id)
         current_user = db.session.get(User, session["user_id"])
-        post_school = post.user.school_name if post.user else ""
-        can_participate = _same_registered_school(current_user, post_school)
+        can_participate = _same_registered_school(current_user, post.school_name)
         post.views += 1
         db.session.commit()
         current_reaction = RecommendationReaction.query.filter_by(
@@ -2815,9 +2816,7 @@ def create_app():
     def recommendation_react(post_id, reaction):
         post = db.get_or_404(RecommendationPost, post_id)
         current_user = db.session.get(User, session["user_id"])
-        if not _same_registered_school(
-            current_user, post.user.school_name if post.user else ""
-        ):
+        if not _same_registered_school(current_user, post.school_name):
             return _reject_school_write(
                 "recommendation_detail", post_id=post.id
             )
@@ -2847,9 +2846,7 @@ def create_app():
     def recommendation_comment_create(post_id):
         post = db.get_or_404(RecommendationPost, post_id)
         current_user = db.session.get(User, session["user_id"])
-        if not _same_registered_school(
-            current_user, post.user.school_name if post.user else ""
-        ):
+        if not _same_registered_school(current_user, post.school_name):
             return _reject_school_write(
                 "recommendation_detail", post_id=post.id
             )
@@ -2926,8 +2923,7 @@ def create_app():
                 or (post.user_id is None and post.author == user.username)
             )
         )
-        post_school = post.user.school_name if post.user else ""
-        can_participate = _same_registered_school(user, post_school)
+        can_participate = _same_registered_school(user, post.school_name)
         if meta and meta.is_secret and not can_manage:
             flash("비밀글은 작성자만 볼 수 있습니다.")
             return redirect(url_for("board"))
@@ -3110,9 +3106,7 @@ def create_app():
     def board_vote(post_id):
         post = db.get_or_404(BoardPost, post_id)
         user = db.session.get(User, session["user_id"])
-        if not _same_registered_school(
-            user, post.user.school_name if post.user else ""
-        ):
+        if not _same_registered_school(user, post.school_name):
             return _reject_school_write("board_view", post_id=post.id)
         if user in post.voters:
             post.voters.remove(user)
@@ -3134,9 +3128,7 @@ def create_app():
     def comment_create(post_id):
         post = db.get_or_404(BoardPost, post_id)
         user = db.session.get(User, session["user_id"])
-        if not _same_registered_school(
-            user, post.user.school_name if post.user else ""
-        ):
+        if not _same_registered_school(user, post.school_name):
             return _reject_school_write("board_view", post_id=post.id)
         content = request.form.get("content", "").strip()
         if not content:
@@ -3203,9 +3195,7 @@ def create_app():
         comment = db.get_or_404(BoardComment, comment_id)
         user = db.session.get(User, session["user_id"])
         post = db.session.get(BoardPost, comment.post_id)
-        if not post or not _same_registered_school(
-            user, post.user.school_name if post.user else ""
-        ):
+        if not post or not _same_registered_school(user, post.school_name):
             return _reject_school_write(
                 "board_view", post_id=comment.post_id
             )
