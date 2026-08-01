@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Friendary 개인정보처리방침{% endblock %}
+{% block stylesheet %}<link rel="stylesheet" href="{{ url_for('static', filename='css/legal.css') }}" />{% endblock %}
+{% block content %}
+<main class="legal-page">
+  <a class="legal-back" href="{{ url_for('main') }}">← Friendary로 돌아가기</a>
+  <h1>개인정보처리방침</h1>
+  <p>Friendary는 학교 친구와 동창의 연결을 돕기 위해 필요한 범위에서 개인정보를 처리합니다.</p>
+  <h2>수집하는 정보</h2>
+  <ul>
+    <li>계정 정보: 이름 또는 사용자명, 이메일, 로그인 제공자 식별정보</li>
+    <li>학교 및 프로필 정보: 학교명, 입학·졸업연도, 전공, 공개 설정</li>
+    <li>이용자가 작성한 게시글, 댓글, 쪽지, 사진과 첨부파일</li>
+    <li>서비스 보안과 장애 대응을 위한 접속 기록</li>
+  </ul>
+  <h2>이용 목적</h2>
+  <p>회원 인증, 동창 찾기, 커뮤니티·쪽지·앨범 기능 제공, 부정 이용 방지와 서비스 안정성 확보에 사용합니다.</p>
+  <h2>외부 로그인</h2>
+  <p>Google, 네이버, 카카오 로그인을 선택한 경우 해당 제공자로부터 인증 식별정보와 이용자가 동의한 이메일·프로필 정보를 받을 수 있습니다.</p>
+  <h2>보관 및 삭제</h2>
+  <p>계정이 유지되는 동안 정보를 보관하며, 계정 삭제 요청이 처리되면 법령상 보관 의무가 있는 경우를 제외하고 계정과 연결된 데이터를 삭제합니다. 쪽지는 별도 삭제가 없더라도 최대 30일간 보관됩니다.</p>
+  <h2>안전성 확보</h2>
+  <p>HTTPS 통신, 비밀번호 해시 처리, 접근 권한 제한과 서버 보안 설정을 사용합니다.</p>
+  <h2>문의</h2>
+  <p class="legal-contact">개인정보 및 삭제 문의: <a href="mailto:junyoungkim355@gmail.com">junyoungkim355@gmail.com</a></p>
+  <p>시행일: 2026년 8월 2일</p>
+</main>
+{% endblock %}

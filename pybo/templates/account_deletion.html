@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Friendary 계정 삭제 요청{% endblock %}
+{% block stylesheet %}<link rel="stylesheet" href="{{ url_for('static', filename='css/legal.css') }}" />{% endblock %}
+{% block content %}
+<main class="legal-page">
+  <a class="legal-back" href="{{ url_for('main') }}">← Friendary로 돌아가기</a>
+  <h1>Friendary 계정 삭제 요청</h1>
+  <p>계정과 연결된 개인정보 및 이용 데이터를 삭제하려면 아래 이메일로 요청해주세요.</p>
+  <div class="legal-contact">
+    <p><strong>요청 이메일:</strong> <a href="mailto:junyoungkim355@gmail.com?subject=Friendary%20계정%20삭제%20요청">junyoungkim355@gmail.com</a></p>
+    <p><strong>메일 제목:</strong> Friendary 계정 삭제 요청</p>
+    <p><strong>확인 정보:</strong> 가입 이메일 또는 사용자명</p>
+  </div>
+  <h2>처리 범위</h2>
+  <p>본인 확인 후 계정, 프로필, 학교 연결, 게시글·댓글·쪽지·앨범 등 계정과 연결된 데이터를 삭제합니다. 법령상 보관 의무 또는 보안·분쟁 대응에 필요한 최소 기록은 고지된 기간 동안 별도로 보관될 수 있습니다.</p>
+  <h2>처리 기간</h2>
+  <p>요청 접수 후 본인 확인을 거쳐 가능한 한 신속하게 처리하며, 완료 결과를 회신합니다.</p>
+</main>
+{% endblock %}

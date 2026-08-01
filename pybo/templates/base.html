@@ -7,6 +7,12 @@
 
     <title>{% block title %}Friendary{% endblock %}</title>
 
+    <meta name="theme-color" content="#6d28d9" />
+    <meta name="application-name" content="Friendary" />
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/friendary-app-icon-192.png') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/friendary-app-icon-192.png') }}" />
+
     <!-- 모든 페이지에 적용되는 모바일 공통 CSS -->
     <link
       rel="stylesheet"
@@ -62,5 +68,12 @@
       window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
     </script>
     <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("{{ url_for('static', filename='js/service-worker.js') }}");
+        });
+      }
+    </script>
   </body>
 </html>

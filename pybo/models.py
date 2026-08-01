@@ -270,11 +270,6 @@ class AiImageUsage(db.Model):
     completed_at = db.Column(db.DateTime, nullable=True)
     user = db.relationship("User")
 
-    __table_args__ = (
-        db.UniqueConstraint("user_id", "month_key", name="uq_ai_image_user_month"),
-    )
-
-
 class UserAlbumLike(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     photo_id = db.Column(

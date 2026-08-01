@@ -1,0 +1,44 @@
+.legal-page {
+  min-height: 100vh;
+  padding: 28px 24px 48px;
+  background: #fffdf9;
+  color: #27221f;
+  line-height: 1.65;
+}
+
+.legal-page h1 {
+  margin: 0 0 20px;
+  color: #5420a5;
+  font-size: 26px;
+  text-align: left;
+}
+
+.legal-page h2 {
+  margin: 24px 0 8px;
+  font-size: 18px;
+}
+
+.legal-page p,
+.legal-page li {
+  font-size: 14px;
+}
+
+.legal-page ul {
+  padding-left: 20px;
+}
+
+.legal-page a {
+  color: #6d28d9;
+}
+
+.legal-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  text-decoration: none;
+}
+
+.legal-contact {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f3ecff;
+}

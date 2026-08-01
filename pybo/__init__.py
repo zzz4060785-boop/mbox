@@ -532,6 +532,18 @@ def create_app():
             saved_login_id=request.cookies.get("friendary_login_id", ""),
         )
 
+    @app.get("/privacy")
+    def privacy_policy():
+        return render_template("privacy_policy.html")
+
+    @app.get("/terms")
+    def terms_of_service():
+        return render_template("terms_of_service.html")
+
+    @app.get("/account-deletion")
+    def account_deletion():
+        return render_template("account_deletion.html")
+
     @app.route("/login2", methods=["GET", "POST"])
     def login2():
         if request.method == "GET" and session.get("user_id"):
@@ -1329,9 +1341,9 @@ def create_app():
 
     def _ai_image_limits():
         try:
-            user_limit = max(1, int(os.getenv("AI_IMAGE_MONTHLY_LIMIT", "1")))
+            user_limit = max(1, int(os.getenv("AI_IMAGE_MONTHLY_LIMIT", "2")))
         except ValueError:
-            user_limit = 1
+            user_limit = 2
         try:
             global_limit = max(
                 1, int(os.getenv("AI_IMAGE_GLOBAL_MONTHLY_LIMIT", "100"))
