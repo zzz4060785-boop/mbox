@@ -1,0 +1,85 @@
+{% extends "base.html" %} {% block title %}외국인 친구사귀기{% endblock %} {%
+block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/foreign_friends.css') }}"
+/>
+{% endblock %} {% block content %}
+<main class="foreign-friends-page">
+  <header class="foreign-friends-header">
+    <a href="{{ url_for('main_album') }}">← 메인으로</a>
+    <div>
+      <span aria-hidden="true">🌍</span>
+      <h1>외국인 친구사귀기</h1>
+    </div>
+    <p>추후 업뎃예정!!! 스케일크게 가보자 고~ 스톱</p>
+  </header>
+
+  <form class="foreign-friends-search" method="get">
+    <label>
+      <span>국적</span>
+      <input
+        type="text"
+        name="nationality"
+        maxlength="80"
+        value="{{ filters.nationality }}"
+        placeholder="예: 미국, 일본"
+      />
+    </label>
+    <label>
+      <span>나이</span>
+      <input
+        type="number"
+        name="age"
+        min="1"
+        max="120"
+        value="{{ filters.age }}"
+        placeholder="나이"
+      />
+    </label>
+    <label>
+      <span>성별</span>
+      <select name="gender">
+        <option value="">전체</option>
+        <option value="male"{% if filters.gender == "male" %} selected{% endif %}>남성</option>
+        <option value="female"{% if filters.gender == "female" %} selected{% endif %}>여성</option>
+        <option value="other"{% if filters.gender == "other" %} selected{% endif %}>기타</option>
+      </select>
+    </label>
+    <label>
+      <span>취미</span>
+      <input
+        type="text"
+        name="hobby"
+        maxlength="100"
+        value="{{ filters.hobby }}"
+        placeholder="예: 여행, 음악"
+      />
+    </label>
+    <button type="submit">친구 검색</button>
+  </form>
+
+  <section class="foreign-friends-results" aria-live="polite">
+    {% if users %} {% for user in users %}
+    <article class="foreign-friend-card">
+      <span class="foreign-friend-avatar"> {{ user.username[:1] }} </span>
+      <div>
+        <strong>{{ user.username }}</strong>
+        <p>
+          {{ user.nationality }} {% if user.age %} · {{ user.age }}세{% endif %}
+        </p>
+        {% if user.hobby %}<small>취미: {{ user.hobby }}</small>{% endif %}
+      </div>
+    </article>
+    {% endfor %} {% elif searched %}
+    <p class="foreign-friends-empty">조건에 맞는 친구가 없습니다.</p>
+    {% else %}
+    <p class="foreign-friends-empty">
+      국적·나이·성별·취미 중 원하는 조건을 입력하세요.
+    </p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %} {% block script %}
+<script src="{{ url_for('static', filename='js/foreign_friends.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %} {% block title %}{{ tr('Friendary 로그인') }}{% endblock %} {%
+block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/main.css') }}"
+/>
+{% endblock %} {% block content %}
+<section class="top-banner">
+  <img
+    src="{{ url_for('static', filename='images/간판.jpg') }}"
+    alt="{{ tr('Friendary 간판') }}"
+  />
+</section>
+
+<section class="login-section">
+  <h1 class="logo-title">Friendary</h1>
+  <p class="logo-sub">Reconnect your memories</p>
+
+  <form method="post">
+    <input
+      type="text"
+      name="login"
+      value="{{ saved_login_id }}"
+      placeholder="{{ tr('이메일 또는 휴대폰 번호') }}"
+      class="login-input"
+      autocomplete="username"
+      required
+    />
+
+    <input
+      type="password"
+      name="password"
+      placeholder="{{ tr('비밀번호') }}"
+      class="login-input"
+      autocomplete="current-password"
+      required
+    />
+
+    <label class="check-wrap">
+      <input
+        type="checkbox"
+        name="remember"
+        checked
+      />
+      {{ tr('로그인 상태 유지') }}
+    </label>
+
+    <!-- 로그인 실패 문구는 로그인 상태 유지 아래에 표시합니다. -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="login-form-messages" role="alert">
+        {% for message in messages %}
+        <p class="login-form-message">{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <button type="submit" class="login-btn">{{ tr('로그인') }}</button>
+  </form>
+
+  <div class="bottom-links">
+    <a href="{{ url_for('forgot_password') }}" class="text-btn">
+      {{ tr('비밀번호를 잊으셨나요?') }}
+    </a>
+
+    <a href="login2" class="text-btn">{{ tr('새 계정 만들기') }}</a>
+  </div>
+
+  <div class="divider">{{ tr('또는') }}</div>
+
+  <div class="social-login-box">
+    <button
+      type="button"
+      id="google-login"
+      class="google-login-btn"
+      data-url="{{ url_for('google_login') }}"
+    >
+      <img
+        src="{{ url_for('static', filename='images/google.jpg') }}"
+        class="google-icon"
+        alt=""
+      />
+      {{ tr('Google 계정으로 로그인') }}
+    </button>
+
+    <button
+      type="button"
+      id="kakao-login"
+      class="kakao-login-btn"
+      data-url="{{ url_for('kakao_login') }}"
+    >
+      <img
+        src="{{ url_for('static', filename='images/kakao.jpg') }}"
+        class="kakao-icon"
+        alt=""
+      />
+      {{ tr('카카오로 로그인') }}
+    </button>
+
+    <button
+      type="button"
+      id="naver-login"
+      class="naver-login-btn"
+      data-url="{{ url_for('naver_login') }}"
+    >
+      <img
+        src="{{ url_for('static', filename='images/naver.jpg') }}"
+        class="naver-icon"
+        alt=""
+      />
+      {{ tr('네이버로 로그인') }}
+    </button>
+  </div>
+</section>
+{% endblock %} {% block script %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

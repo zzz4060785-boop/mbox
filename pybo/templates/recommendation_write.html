@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ '사랑별 수정' if post else '새 장소 사랑별' }}{% endblock %}
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendation.css') }}" />
+{% endblock %}
+{% block content %}
+<main class="recommend-page">
+  <div class="recommend-top-row">
+    <a class="recommend-back" href="{{ url_for('recommendation_detail', post_id=post.id) if post else url_for('recommendation_list') }}">← 돌아가기</a>
+    <div class="recommend-notification-slot" id="boardNotificationSlot"></div>
+  </div>
+  <form
+    class="recommend-form"
+    method="post"
+    enctype="multipart/form-data"
+  >
+    <h1>{{ '사랑별 글 수정' if post else '💗 새로운 장소 사랑별' }}</h1>
+    <p class="form-guide">내 가게를 소개한다면 반드시 ‘직접 홍보’를 선택해 주세요.</p>
+
+    <label>사랑별 종류
+      <select name="category" required>
+        <option value="">선택하세요</option>
+        {% for value, label in categories.items() %}
+        <option value="{{ value }}" {{ 'selected' if post and post.category == value else '' }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>장소명
+      <!-- 카카오 장소 검색 결과를 선택하면 아래 장소 정보가 자동 입력됩니다. -->
+      <div class="place-search-row">
+        <input id="kakaoPlaceQuery" maxlength="100" placeholder="상호명이나 장소를 검색하세요" />
+        <button id="kakaoPlaceSearchButton" type="button">장소 검색</button>
+      </div>
+      <p id="kakaoPlaceMessage" class="place-search-message" aria-live="polite"></p>
+      <div id="kakaoPlaceResults" class="place-search-results" hidden></div>
+      <input id="placeName" name="place_name" maxlength="120" value="{{ post.place_name if post else '' }}" required />
+    </label>
+    <div class="form-two">
+      <label>지역
+        <input id="placeRegion" name="region" maxlength="120" value="{{ post.region if post else '' }}" placeholder="예: 광주 북구" />
+      </label>
+      <label>가격대
+        <input name="price_range" maxlength="50" value="{{ post.price_range if post else '' }}" placeholder="예: 1~2만원" />
+      </label>
+    </div>
+    <label>주소
+      <input id="placeAddress" name="address" maxlength="255" value="{{ post.address if post else '' }}" />
+    </label>
+    <label>제목
+      <input name="title" maxlength="200" value="{{ post.title if post else '' }}" required />
+    </label>
+    <label>사랑별 내용
+      <textarea name="content" maxlength="10000" rows="8" placeholder="사랑별 이유, 메뉴, 주차 정보와 #가족모임 #광주맛집 같은 태그를 적어주세요." required>{{ post.content if post else '' }}</textarea>
+    </label>
+    <div class="form-two">
+      <label>외부 링크
+        <input type="url" name="external_url" value="{{ post.external_url if post else '' }}" placeholder="https://..." />
+      </label>
+      <label>지도 링크
+        <input id="placeMapUrl" type="url" name="map_url" value="{{ post.map_url if post else '' }}" placeholder="https://..." />
+      </label>
+    </div>
+    <label>검색 태그
+      <input name="tags" maxlength="500" value="{{ post.tags if post else '' }}" placeholder="가족모임, 주차가능, 광주맛집" />
+    </label>
+    <fieldset>
+      <legend>사랑별 성격</legend>
+      <label><input type="radio" name="promotion_type" value="review" {{ 'checked' if not post or post.promotion_type == 'review' else '' }} /> 내돈내산 사랑별</label>
+      <label><input type="radio" name="promotion_type" value="self_promo" {{ 'checked' if post and post.promotion_type == 'self_promo' else '' }} /> 직접 홍보</label>
+    </fieldset>
+
+    {% if post and post.media %}
+    <div class="existing-media">
+      <strong>현재 첨부</strong>
+      {% for media in post.media %}
+      <label>
+        {{ media.original_name }}
+        <span><input type="checkbox" name="remove_media" value="{{ media.id }}" /> 삭제</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <label>사진·영상 (최대 3개)
+      <input type="file" name="media" accept="image/*,video/mp4,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg" multiple />
+      <small>사진·MP4·WEBM·MP3·M4A·WAV·OGG · 전체 요청 최대 10MB</small>
+    </label>
+    <button type="submit" class="recommend-submit">{{ '수정 저장' if post else '사랑별 등록' }}</button>
+  </form>
+</main>
+<script src="{{ url_for('static', filename='js/recommendation_place.js') }}"></script>
+{% endblock %}

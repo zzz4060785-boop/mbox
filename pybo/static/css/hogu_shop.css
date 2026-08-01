@@ -1,0 +1,93 @@
+.hogu-shop-page {
+  min-height: 100vh;
+  padding: 58px 16px 24px;
+  background: linear-gradient(#fffaf7, #f4ece6);
+}
+
+.hogu-shop-header > a {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: #357abd;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hogu-shop-header > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.hogu-shop-header h1 {
+  margin: 0;
+  color: #222222;
+  font-size: 24px;
+}
+
+.hogu-shop-header > div > span {
+  font-size: 26px;
+}
+
+.hogu-shop-header > p {
+  margin-top: 8px;
+  color: #777777;
+  font-size: 13px;
+}
+
+.hogu-shop-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.hogu-shop-item {
+  min-width: 0;
+  padding: 12px 8px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.07);
+}
+
+.hogu-shop-item img {
+  width: 100%;
+  height: 150px;
+  display: block;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.hogu-shop-item strong,
+.hogu-shop-item span {
+  display: block;
+  text-align: center;
+}
+
+.hogu-shop-item strong {
+  margin-top: 7px;
+  color: #333333;
+  font-size: 13px;
+}
+
+.hogu-shop-item span {
+  margin-top: 4px;
+  color: #2f80ed;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.hogu-shop-item.selected {
+  border-color: #2f80ed;
+  background: #eef5ff;
+}
+
+.hogu-shop-status {
+  min-height: 36px;
+  margin-top: 14px;
+  color: #6f6258;
+  font-size: 12px;
+  text-align: center;
+}

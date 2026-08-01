@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}우리들의 사랑별장소{% endblock %}
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendation.css') }}" />
+{% endblock %}
+{% block content %}
+<main class="recommend-page">
+  <div class="recommend-top-row">
+    <a class="recommend-back" href="{{ url_for('board') }}">← 게시판 메인</a>
+    <div class="recommend-notification-slot" id="boardNotificationSlot"></div>
+  </div>
+  <header class="recommend-hero">
+    <div>
+      <p>ALUMNI PICKS</p>
+      <h1>💗 나만의 추천장소</h1>
+      <span>내돈내산 후기와 동창 가게를 함께 소개해요.</span>
+    </div>
+    {% if can_participate %}
+    <a href="{{ url_for('recommendation_write') }}">＋ 사랑별 장소 검색하기</a>
+    {% else %}
+    <span class="read-only-badge">🔒 열람 전용</span>
+    {% endif %}
+  </header>
+
+  <form class="recommend-search" method="get">
+    <input name="q" value="{{ search }}" placeholder="장소명, 제목, 내용 검색" />
+    <select name="category">
+      <option value="">종류 전체</option>
+      {% for value, label in categories.items() %}
+      <option value="{{ value }}" {{ 'selected' if selected_category == value else '' }}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <input name="region" value="{{ region }}" placeholder="지역" />
+    <input name="tag" value="{{ tag }}" placeholder="태그 (예: 가족모임)" />
+    <select name="order">
+      <option value="latest" {{ 'selected' if order == 'latest' else '' }}>최신순</option>
+      <option value="popular" {{ 'selected' if order == 'popular' else '' }}>사랑별순</option>
+    </select>
+    <button type="submit">검색</button>
+  </form>
+
+  <div class="recommend-count">전체 {{ total_count }}건</div>
+  <section class="recommend-grid">
+    {% for card in cards %}
+    <a href="{{ url_for('recommendation_detail', post_id=card.post.id) }}" class="recommend-card">
+      {% if card.cover %}
+      <img src="{{ card.cover.file_url }}" alt="{{ card.post.place_name }}" loading="lazy" />
+      {% else %}
+      <div class="recommend-placeholder">📍</div>
+      {% endif %}
+      <div class="recommend-card-body">
+        <div class="recommend-badges">
+          <span>{{ categories.get(card.post.category, '기타') }}</span>
+          <em class="{{ card.post.promotion_type }}">
+            {{ '직접 홍보' if card.post.promotion_type == 'self_promo' else '내돈내산 사랑별' }}
+          </em>
+        </div>
+        <strong>{{ card.post.title }}</strong>
+        <p>{{ card.post.place_name }} · {{ card.post.region or '지역 미등록' }}</p>
+        <small>💗 {{ card.likes }} · 💬 {{ card.comments }} · 조회 {{ card.post.views }}</small>
+      </div>
+    </a>
+    {% else %}
+    <div class="recommend-empty">조건에 맞는 사랑별 장소가 없습니다.</div>
+    {% endfor %}
+  </section>
+
+  {% if pagination.pages > 1 %}
+  <nav class="recommend-pagination">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('recommendation_list', page=pagination.prev_num, q=search, category=selected_category, region=region, tag=tag, order=order) }}">이전</a>
+    {% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('recommendation_list', page=pagination.next_num, q=search, category=selected_category, region=region, tag=tag, order=order) }}">다음</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</main>
+{% endblock %}

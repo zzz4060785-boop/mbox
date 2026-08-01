@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}아이디 찾기{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/find_id.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="find-id-page">
+  <div class="logo">Friendary</div>
+
+  <section class="find-box">
+    <h1 class="find-title">아이디 찾기</h1>
+    <p class="find-sub">전화번호나 이메일을 입력해 주세요.</p>
+
+    <label class="sr-only" for="findInput">전화번호 또는 이메일</label>
+    <input
+      type="text"
+      placeholder="전화번호 또는 본인확인 이메일"
+      class="find-input"
+      id="findInput"
+      autocomplete="email"
+    />
+
+    <div class="code-box" id="codeBox">
+      <label class="sr-only" for="codeInput">인증번호</label>
+      <input
+        type="text"
+        class="find-input"
+        id="codeInput"
+        placeholder="인증번호 6자리 입력"
+        inputmode="numeric"
+        maxlength="6"
+      />
+
+      <div id="timerText" class="timer-text">03:00</div>
+      <div class="success-check" id="successCheck">✓ 인증 완료</div>
+      <button type="button" class="resend-btn" id="resendBtn">재전송</button>
+    </div>
+
+    <p class="form-message" id="findIdMessage" aria-live="polite"></p>
+
+    <div class="action-row">
+      <a
+        class="phone-link"
+        href="{{ url_for('phone_auth') }}"
+        id="phoneAuthBtn"
+      >
+        휴대폰 본인인증으로 찾기
+      </a>
+      <button type="button" class="next-btn" id="nextBtn" disabled>
+        다음
+      </button>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block script %}
+<script
+  src="{{ url_for('static', filename='js/find_id.js') }}"
+  data-login-url="{{ url_for('main') }}"
+></script>
+{% endblock %}

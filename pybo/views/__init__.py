@@ -1,0 +1,1 @@
+"""Friendary Flask blueprints."""

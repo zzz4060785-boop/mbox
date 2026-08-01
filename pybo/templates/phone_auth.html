@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}휴대폰 본인인증{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/phone_auth.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="phone-auth-page">
+  <header class="top-bar">
+    <div class="logo">Friendary</div>
+    <a
+      class="close-btn"
+      href="{{ url_for('find_id') }}"
+      aria-label="아이디 찾기로 돌아가기"
+    >
+      ×
+    </a>
+  </header>
+
+  <h1 class="auth-title">
+    본인확인을 위한<br />
+    휴대전화 인증이 필요합니다
+  </h1>
+
+  <section class="agree-box" aria-label="필수 약관">
+    <button type="button" class="all-agree" id="allAgreeBtn">
+      <span class="agree-left">
+        <span class="check-circle">✓</span>
+        <span>(필수) 약관 전체동의</span>
+      </span>
+      <span>⌃</span>
+    </button>
+
+    <div class="agree-list">
+      <button type="button" class="agree-item">
+        <span class="agree-left">
+          <span class="check-circle">✓</span>
+          <span>인증시 개인정보 이용</span>
+        </span>
+        <span>보기 &gt;</span>
+      </button>
+      <button type="button" class="agree-item">
+        <span class="agree-left">
+          <span class="check-circle">✓</span>
+          <span>인증시 고유식별정보 처리</span>
+        </span>
+        <span>보기 &gt;</span>
+      </button>
+      <button type="button" class="agree-item">
+        <span class="agree-left">
+          <span class="check-circle">✓</span>
+          <span>통신사 이용약관</span>
+        </span>
+        <span>보기 &gt;</span>
+      </button>
+      <button type="button" class="agree-item">
+        <span class="agree-left">
+          <span class="check-circle">✓</span>
+          <span>인증시 이용약관</span>
+        </span>
+        <span>보기 &gt;</span>
+      </button>
+    </div>
+  </section>
+
+  <form id="phoneAuthForm" novalidate>
+    <div class="input-box">
+      <label class="input-row">
+        <span class="input-label">이름</span>
+        <input type="text" id="authName" class="auth-input" required />
+      </label>
+
+      <div class="input-row">
+        <div class="input-top">
+          <label class="input-label" for="birthDate">생년월일 8자리</label>
+          <div class="gender-wrap" data-choice-group="gender">
+            <button type="button" class="small-btn" data-value="male">
+              남자
+            </button>
+            <button type="button" class="small-btn" data-value="female">
+              여자
+            </button>
+          </div>
+        </div>
+        <input
+          type="text"
+          id="birthDate"
+          class="auth-input"
+          inputmode="numeric"
+          maxlength="8"
+          required
+        />
+      </div>
+
+      <div class="input-row">
+        <label class="input-label" for="carrierSelect">통신사 선택</label>
+        <div class="carrier-row">
+          <select class="auth-select" id="carrierSelect" required>
+            <option value="" selected disabled>----- 선택 -----</option>
+            <option value="SKT">SKT</option>
+            <option value="KT">KT</option>
+            <option value="LGU+">LG U+</option>
+            <option value="SKT알뜰폰">SKT 알뜰폰</option>
+            <option value="KT알뜰폰">KT 알뜰폰</option>
+            <option value="LGU+알뜰폰">LG U+ 알뜰폰</option>
+          </select>
+
+          <div class="country-wrap" data-choice-group="country">
+            <button type="button" class="small-btn" data-value="domestic">
+              내국인
+            </button>
+            <button type="button" class="small-btn" data-value="foreign">
+              외국인
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-top">
+          <label class="input-label" for="phoneInput">전화번호</label>
+          <button class="confirm-btn" id="sendPhoneBtn" type="button">
+            확인
+          </button>
+        </div>
+        <input
+          type="tel"
+          id="phoneInput"
+          class="auth-input"
+          placeholder="휴대폰 번호 입력"
+          inputmode="tel"
+          maxlength="13"
+          required
+        />
+      </div>
+    </div>
+
+    <p class="form-message" id="phoneAuthMessage" aria-live="polite"></p>
+    <button class="next-btn" type="submit">다음</button>
+  </form>
+</main>
+
+<!--
+  ================= 테스트 운영 안내 모달 시작 =================
+  아래 제목과 문장을 수정하면 모달 안내 문구가 변경됩니다.
+  모달이 필요 없어지면 이 구간과 phone_auth.css, phone_auth.js의
+  같은 이름 주석 구간을 함께 삭제하세요.
+-->
+<div
+  class="test-notice-modal"
+  id="testNoticeModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="testNoticeTitle"
+  hidden
+>
+  <div class="test-notice-modal__backdrop"></div>
+  <div class="test-notice-modal__content">
+    <div class="test-notice-modal__icon" aria-hidden="true">!</div>
+    <h2 id="testNoticeTitle">테스트 운영 안내</h2>
+    <p>
+      현재 테스트 운영 중이며 휴대폰 본인인증은
+      정식 서비스에서 제공됩니다.
+    </p>
+    <button class="test-notice-modal__button" id="closeTestNoticeBtn"
+      type="button">
+      확인
+    </button>
+  </div>
+</div>
+<!-- ================== 테스트 운영 안내 모달 끝 ================== -->
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/phone_auth.js') }}"></script>
+{% endblock %}

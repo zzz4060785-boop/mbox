@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}GAME ZONE{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/game_zone.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="game-zone-page">
+  <header class="game-zone-header">
+    <a href="{{ url_for('main_album') }}">← 메인으로</a>
+    <div>
+      <span aria-hidden="true">🎮</span>
+      <h1>GAME ZONE</h1>
+    </div>
+    <p>{{ current_user.username }}님, 친구들과 가볍게 즐겨보세요.</p>
+  </header>
+
+  <section class="game-zone-grid" aria-label="게임 목록">
+    <button class="game-card" type="button" data-game-name="추억 퀴즈">
+      <span aria-hidden="true">🧠</span>
+      <strong>추억 퀴즈</strong>
+      <small>준비 중</small>
+    </button>
+    <button class="game-card" type="button" data-game-name="친구 맞히기">
+      <span aria-hidden="true">👥</span>
+      <strong>친구 맞히기</strong>
+      <small>준비 중</small>
+    </button>
+    <button class="game-card" type="button" data-game-name="행운 뽑기">
+      <span aria-hidden="true">🎁</span>
+      <strong>행운 뽑기</strong>
+      <small>준비 중</small>
+    </button>
+    <button class="game-card" type="button" data-game-name="사진 퍼즐">
+      <span aria-hidden="true">🧩</span>
+      <strong>사진 퍼즐</strong>
+      <small>준비 중</small>
+    </button>
+  </section>
+
+  <p class="game-zone-status" id="gameZoneStatus" aria-live="polite">
+    게임을 선택해 보세요.
+  </p>
+</main>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/game_zone.js') }}"></script>
+{% endblock %}

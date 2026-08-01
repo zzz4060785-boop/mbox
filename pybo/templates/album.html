@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="{{ current_language }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>졸업앨범 메인</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #f5f5f5;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+      }
+
+      /* 모바일 전용 중앙 정렬 및 가로 폭 제어 틀 */
+      .mobile-wrap {
+        width: 100%;
+        max-width: 430px;
+        min-height: 100vh;
+        background: #fcfbfa;
+        overflow-x: hidden;
+        position: relative;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.12);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* 책자 이미지를 감싸는 링크 버튼 스타일 */
+      .album-cover-link {
+        display: block;
+        width: 100%;
+        cursor: pointer;
+        text-decoration: none;
+        /* 추가: 애니메이션이 부드럽게 움직이도록 제어 */
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+
+      /* 추가: 마우스를 올리거나 터치 시 책자가 붕 떠오르는 연출 */
+      .album-cover-link:hover {
+        transform: translateY(-10px) scale(1.01);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      }
+
+      /* 책자 이미지 스타일 (가로폭 95% + 가운데 정렬 + 위쪽 여백 추가) */
+      .cover-image {
+        width: 95%;
+        height: auto;
+        display: block;
+        margin: 10px auto 0 auto; /* 맨 앞의 40px가 위쪽을 아래로 내려주는 여백입니다 */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-wrap">
+      <a href="face.html" class="album-cover-link">
+        <img
+          src="static/images/diary.jpg"
+          class="cover-image"
+          alt="졸업앨범 디자인 메인 북 커버 이미지"
+        />
+      </a>
+    </div>
+    <script>
+      window.FRIENDARY_LANGUAGE = {{ current_language|tojson }};
+      window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
+  </body>
+</html>

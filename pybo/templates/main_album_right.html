@@ -1,0 +1,134 @@
+{# main_album.html에서 Jinja include로 불러오는 오른쪽 메뉴 박스입니다. 앞으로
+추가할 메뉴는 nav-right 안에 nav-item 형식으로 작성하세요. #}
+<div class="nav-right" id="navRight">
+  <a class="nav-item" href="{{ url_for('my_home') }}"> 🏫 {{ tr('나만의 교실') }} </a>
+  <a class="nav-item" href="{{ url_for('foreign_friends') }}">
+    🌍 {{ tr('외국인 친구사귀기') }}
+  </a>
+  <button
+    class="nav-item nav-right-button"
+    type="button"
+    onclick="openGameZoneLock()"
+  >
+    📅 GAME_ZONE
+  </button>
+  <a
+    class="nav-item"
+    href="{{ url_for('hogu_shop') }}"
+    onclick="return openHoguShopLock();"
+  >
+    🛍️ {{ tr('호구 샵') }}
+  </a>
+  <a
+    class="nav-item"
+    href="#right-alumni-news"
+    onclick="return openAlumniNews();"
+  >
+    📰 {{ tr('동창 소식') }}
+  </a>
+  <a
+    class="nav-item"
+    href="#right-event-photos"
+    onclick="return openEventPhotos();"
+  >
+    📷 {{ tr('행사 사진') }}
+  </a>
+  <a
+    class="nav-item"
+    href="{{ url_for('contact_admin') }}"
+    onclick="return openContactAdminConfirm();"
+  >
+    ✉️ {{ tr('관리자에게 email 보내기') }}
+  </a>
+
+  <nav class="sidebar-language-box" aria-label="Language">
+    <a
+      class="{{ 'active' if current_language == 'ko' else '' }}"
+      href="{{ url_for('set_language', language='ko', next=request.full_path) }}"
+      onclick="return openLanguageConfirm(event, this.href, '한국어')"
+    >한국어</a>
+    <a
+      class="{{ 'active' if current_language == 'en' else '' }}"
+      href="{{ url_for('set_language', language='en', next=request.full_path) }}"
+      onclick="return openLanguageConfirm(event, this.href, 'English')"
+    >English</a>
+    <a
+      class="{{ 'active' if current_language == 'ja' else '' }}"
+      href="{{ url_for('set_language', language='ja', next=request.full_path) }}"
+      onclick="return openLanguageConfirm(event, this.href, '日本語')"
+    >日本語</a>
+  </nav>
+</div>
+
+<div class="game-zone-lock-modal" id="languageConfirmModal" hidden>
+  <div class="game-zone-lock-backdrop" onclick="closeLanguageConfirm()"></div>
+  <section class="game-zone-lock-box language-confirm-box" role="dialog" aria-modal="true" aria-labelledby="languageConfirmTitle">
+    <span aria-hidden="true">🌐</span>
+    <h2 id="languageConfirmTitle">{{ tr('언어 변경') }}</h2>
+    <p><strong id="languageConfirmName"></strong>{{ tr('(으)로 언어를 변경할까요?') }}</p>
+    <div class="contact-admin-confirm-actions">
+      <button type="button" id="languageConfirmCancel" onclick="closeLanguageConfirm()">{{ tr('취소') }}</button>
+      <a id="languageConfirmGo" href="#">{{ tr('변경') }}</a>
+    </div>
+  </section>
+</div>
+
+<div class="game-zone-lock-modal" id="gameZoneLockModal" hidden>
+  <div class="game-zone-lock-backdrop" onclick="closeGameZoneLock()"></div>
+  <section
+    class="game-zone-lock-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gameZoneLockTitle"
+  >
+    <span aria-hidden="true">🔒</span>
+    <h2 id="gameZoneLockTitle">친구와 1:1 500원 빵야빵야!!!</h2>
+    <p>GAME ZONE은 아직 이용할 수 없습니다.</p>
+    <button id="gameZoneLockClose" type="button" onclick="closeGameZoneLock()">
+      확인
+    </button>
+  </section>
+</div>
+
+<div class="game-zone-lock-modal" id="hoguShopLockModal" hidden>
+  <div class="game-zone-lock-backdrop" onclick="closeHoguShopLock()"></div>
+  <section
+    class="game-zone-lock-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="hoguShopLockTitle"
+  >
+    <span aria-hidden="true">🔒</span>
+    <h2 id="hoguShopLockTitle">
+      추후에 업뎃하겠습니다 열심히 사주시면 제 사리사욕 채우는데 열과 성의를
+      다하겠습니다 호갱님!!!
+    </h2>
+    <p>호구 샵은 아직 이용할 수 없습니다.</p>
+    <button id="hoguShopLockClose" type="button" onclick="closeHoguShopLock()">
+      확인
+    </button>
+  </section>
+</div>
+
+<div class="game-zone-lock-modal" id="contactAdminConfirmModal" hidden>
+  <div
+    class="game-zone-lock-backdrop"
+    onclick="closeContactAdminConfirm()"
+  ></div>
+  <section
+    class="game-zone-lock-box contact-admin-confirm-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="contactAdminConfirmTitle"
+  >
+    <span aria-hidden="true">✉️</span>
+    <h2 id="contactAdminConfirmTitle">
+      좋은 아이디어나 문의 사항있으시면 메일보내주세요 읽는대로 바로
+      쓰레기통으로 보내겠싸사라와용~~
+    </h2>
+    <div class="contact-admin-confirm-actions">
+      <button type="button" onclick="closeContactAdminConfirm()">취소</button>
+      <a href="{{ url_for('contact_admin') }}">이동</a>
+    </div>
+  </section>
+</div>

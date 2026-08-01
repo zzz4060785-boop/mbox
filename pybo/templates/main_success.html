@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Friendary Memories{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/main_success.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+    <div class="success-page">
+      <h1>friendary memories</h1>
+      <hr />
+
+      <div class="video-box">
+        <video class="main-video" autoplay muted loop playsinline>
+          <source
+            src="{{ url_for('static', filename='images/school.mp4') }}"
+            type="video/mp4"
+          />
+        </video>
+      </div>
+
+      <button
+        class="enter-btn"
+        id="goSchoolBtn"
+        type="button"
+        data-url="{{ url_for('school_find') }}"
+      >
+        학교찾아가기
+      </button>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/main_success.js') }}"></script>
+{% endblock %}

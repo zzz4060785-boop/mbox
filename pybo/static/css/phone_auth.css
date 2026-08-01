@@ -1,0 +1,325 @@
+.phone-auth-page {
+  min-height: 100vh;
+  padding: 25px 18px;
+  background: #f3f4f6;
+  font-family: Arial, sans-serif;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 25px;
+  margin-bottom: 25px;
+}
+
+.logo {
+  color: #8908f1;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: -1px;
+}
+
+.close-btn {
+  color: #333;
+  font-size: 30px;
+  line-height: 1;
+  text-decoration: none;
+  transition: 0.15s;
+}
+
+.close-btn:active {
+  opacity: 0.6;
+  transform: scale(0.9);
+}
+
+.auth-title {
+  margin-bottom: 28px;
+  color: #111;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.agree-box,
+.input-box {
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  border-radius: 22px;
+  background: white;
+}
+
+.all-agree,
+.agree-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.all-agree {
+  padding: 16px 18px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.agree-list {
+  padding: 8px 18px 14px;
+}
+
+.agree-item {
+  padding: 10px 0;
+  color: #444;
+  font-size: 13px;
+}
+
+.agree-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.check-circle {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #cdd1ce;
+  border-radius: 50%;
+  background: white;
+  color: #111;
+  font-size: 10px;
+  transition: 0.18s;
+}
+
+.check-circle.active {
+  border-color: #e205f7;
+  background: #e205f7;
+  color: white;
+  transform: scale(1.1);
+}
+
+.agree-item:active,
+.all-agree:active {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+.input-box {
+  margin-bottom: 10px;
+}
+
+.input-row {
+  min-height: 53px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.input-row:last-child {
+  border-bottom: none;
+}
+
+.input-top,
+.carrier-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.input-top {
+  margin-bottom: 5px;
+}
+
+.input-label {
+  color: #0c0c0c;
+  font-size: 12px;
+}
+
+.auth-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 15px;
+}
+
+.auth-select {
+  width: 120px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  outline: none;
+  background: white;
+  color: #292828;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.auth-select.selected {
+  border-color: #c761e6;
+  background: #ead5f8;
+}
+
+.gender-wrap,
+.country-wrap {
+  display: flex;
+  gap: 10px;
+}
+
+.country-wrap {
+  margin-left: auto;
+}
+
+.small-btn {
+  width: 70px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: white;
+  color: #444;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.small-btn.active {
+  border-color: #e205f7;
+  background: #e205f7;
+  color: white;
+  transform: scale(1.05);
+}
+
+.confirm-btn {
+  width: 60px;
+  height: 30px;
+  border: none;
+  border-radius: 10px;
+  background: #ba05f1;
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.next-btn {
+  width: 100%;
+  height: 52px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 18px;
+  background: #c105fa;
+  color: white;
+  font-size: 19px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.confirm-btn:active,
+.next-btn:active,
+.small-btn:active {
+  opacity: 0.8;
+  transform: scale(0.95);
+}
+
+.form-message {
+  min-height: 20px;
+  color: #9b1bb6;
+  font-size: 13px;
+}
+/*
+ * ================= 테스트 운영 안내 모달 디자인 시작 =================
+ * 모달 색상, 크기와 간격은 이 구간에서 수정합니다.
+ */
+.test-notice-modal[hidden] {
+  display: none;
+}
+
+.test-notice-modal {
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+.test-notice-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 15, 25, 0.58);
+}
+
+.test-notice-modal__content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 360px);
+  padding: 30px 24px 24px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 22px 70px rgba(51, 18, 61, 0.28);
+  text-align: center;
+}
+
+.test-notice-modal__icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 15px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f5dcff;
+  color: #bd00ed;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.test-notice-modal__content h2 {
+  margin: 0 0 12px;
+  color: #19131c;
+  font-size: 21px;
+}
+
+.test-notice-modal__content p {
+  margin: 0;
+  color: #5f5862;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.test-notice-modal__button {
+  width: 100%;
+  height: 48px;
+  margin-top: 24px;
+  border: none;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #d700f3, #a800ef);
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.test-notice-modal__button:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+body.test-notice-open {
+  overflow: hidden;
+}
+/* ================== 테스트 운영 안내 모달 디자인 끝 ================== */

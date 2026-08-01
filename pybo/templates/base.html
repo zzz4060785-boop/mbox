@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="{{ current_language }}">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{% block title %}Friendary{% endblock %}</title>
+
+    <!-- 모든 페이지에 적용되는 모바일 공통 CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/notifications.css') }}"
+    />
+
+    <!-- 페이지별 CSS가 들어갈 자리 -->
+    {% block stylesheet %}{% endblock %}
+  </head>
+  <!--
+    페이지별 body 클래스는 자식 템플릿의 body_class 블록에서 지정합니다.
+  -->
+  <body class="{% block body_class %}{% endblock %}">
+    <!--
+      공통 mobile-wrap의 페이지 전용 클래스는 자식 템플릿의
+      container_class 블록에서 지정합니다.
+    -->
+    <div class="mobile-wrap {% block container_class %}{% endblock %}">
+      {% if session.get("user_id") %}
+      {% include "notifications.html" %}
+      <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+        <button class="logout-btn" type="submit">{{ tr('로그아웃') }}</button>
+      </form>
+      {% endif %}
+
+      {#
+        게시글 작성 오류는 board_write.html의 폼 안에서 표시하므로
+        공통 화면 맨 위 알림에서는 제외합니다.
+      #}
+      {% if request.endpoint not in ("main", "board_write") %}
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="flash-messages">
+        {% for message in messages %}
+        <div class="flash-message">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+      {% endif %}
+      {% block content %} {% endblock %}
+
+    </div>
+
+    {% if session.get("user_id") %}
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% endif %}
+    {% block script %} {% endblock %}
+    <script>
+      window.FRIENDARY_LANGUAGE = {{ current_language|tojson }};
+      window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
+  </body>
+</html>

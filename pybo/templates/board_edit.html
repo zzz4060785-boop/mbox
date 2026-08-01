@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}게시글 수정{% endblock %}
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}" />
+{% endblock %}
+{% block content %}
+<main class="board-page">
+  <a class="detail-back" href="{{ url_for('board_view', post_id=post.id) }}">← 취소</a>
+  <form class="edit-form" method="post">
+    <h1>게시글 수정</h1>
+    <input name="title" maxlength="200" value="{{ post.title }}" required />
+    <textarea
+      name="content"
+      maxlength="20000"
+      placeholder="본문에 #여행 #동창회처럼 태그할 수 있어요."
+      required
+    >{{ post.content }}</textarea>
+    <input name="tags" maxlength="500"
+           value="{{ meta.tags if meta else '' }}" placeholder="태그는 쉼표로 구분" />
+    <label>
+      <input type="checkbox" name="is_secret" value="y"
+             {% if meta and meta.is_secret %}checked{% endif %} />
+      비밀글
+    </label>
+    <button type="submit">저장</button>
+  </form>
+</main>
+{% endblock %}

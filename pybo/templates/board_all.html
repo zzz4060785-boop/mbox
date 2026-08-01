@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}일반게시판 전체 목록{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/board.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="board-page">
+  <!-- 통합 게시판 메인(공지사항이 함께 있는 화면)으로 돌아갑니다. -->
+  <a class="detail-back" href="{{ url_for('board') }}">← 게시판 메인</a>
+
+  <div class="all-board-heading">
+    <div>
+      <p>GENERAL BOARD</p>
+      <h1>전체게시판</h1>
+    </div>
+    <span>전체 {{ total_count }}건</span>
+  </div>
+
+  <form class="board-search" method="get" action="{{ url_for('board_all') }}">
+    <input
+      type="search"
+      name="kw"
+      value="{{ search }}"
+      placeholder="제목, 내용, 작성자 검색"
+    />
+    <button type="submit">검색</button>
+  </form>
+
+  <section class="board-list">
+    <header class="board-list-header static-header">
+      <span>목록 (최신순)</span>
+      <span>전체 {{ total_count }}건</span>
+    </header>
+
+    {% for post in posts %}
+    <!-- 기존과 동일하게 게시글 영역을 누르면 해당 글의 상세 화면으로 갑니다. -->
+    <a href="{{ url_for('board_view', post_id=post.id) }}" class="board-item">
+      <span class="item-top">
+        <span class="item-title">
+          {{ post.title }}
+          {% if post.comments %}
+          <span class="comment-count">[{{ post.comments|length }}]</span>
+          {% endif %}
+          {% if loop.index <= 3 %}
+          <span class="badge-new">new</span>
+          {% endif %}
+        </span>
+      </span>
+      <span class="item-meta">
+        <span>No. {{ post.id }}</span>
+        <span>작성자: {{ post.author }}</span>
+        <span>{{ post.create_date.strftime('%Y-%m-%d') }}</span>
+        <span>조회 {{ post.views }}</span>
+        <span>사랑별 {{ post.voters|length }}</span>
+      </span>
+    </a>
+    {% else %}
+    <div class="empty-board">등록된 게시글이 없습니다.</div>
+    {% endfor %}
+  </section>
+
+  {% if pagination.pages > 1 %}
+  <nav class="pagination" aria-label="전체게시판 페이지">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('board_all', page=pagination.prev_num, kw=search) }}">
+      이전
+    </a>
+    {% endif %}
+
+    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+      {% if page_num %}
+      <a
+        href="{{ url_for('board_all', page=page_num, kw=search) }}"
+        class="{{ 'active' if page_num == pagination.page else '' }}"
+      >{{ page_num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <a href="{{ url_for('board_all', page=pagination.next_num, kw=search) }}">
+      다음
+    </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  <div class="board-actions">
+    {% if can_participate %}
+    <a href="{{ url_for('board_write') }}" class="write-btn">✏️ 글쓰기</a>
+    {% else %}
+    <span class="read-only-notice">🔒 다른 학교 게시판은 열람만 가능합니다.</span>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

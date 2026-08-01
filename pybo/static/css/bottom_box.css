@@ -1,0 +1,69 @@
+/* 모든 페이지에서 공통으로 사용하는 하단 4칸 바로가기 박스 */
+.bottom-box {
+  width: calc(100% - 24px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 18px 12px 12px;
+  overflow: visible;
+  border: 1px solid #eeeeee;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+.bottom-box-item {
+  min-width: 0;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 4px;
+  color: #333333;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.bottom-box-item + .bottom-box-item {
+  border-left: 1px solid #f0f0f0;
+}
+
+.bottom-box-item:hover,
+.bottom-box-item:focus-visible {
+  position: relative;
+  z-index: 2;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #2f80ed;
+  transform: translateY(-7px);
+  box-shadow: 0 10px 22px rgba(47, 128, 237, 0.2);
+  outline: none;
+}
+
+.bottom-box-item:active {
+  transform: translateY(-3px) scale(0.98);
+}
+
+.bottom-box-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/*
+ * 앨범 메인의 좌우 사이드바 바로 아래에 배치합니다.
+ */
+.album-page > .bottom-box {
+  position: absolute;
+  top: 640px;
+  left: 12px;
+  z-index: 20;
+  margin: 12px 0;
+}

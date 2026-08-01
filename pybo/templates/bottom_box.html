@@ -1,0 +1,35 @@
+{# 모든 페이지 하단에 공통으로 표시되는 기능 바로가기입니다. #}
+<nav class="bottom-box" aria-label="{{ tr('하단 바로가기') }}">
+  <a
+    class="bottom-box-item"
+    href="#bottom-meeting"
+    onclick="return openBottomMeeting()"
+  >
+    <span class="bottom-box-icon" aria-hidden="true">🤝</span>
+    <span>{{ tr('모임 안내') }}</span>
+  </a>
+  <a
+    class="bottom-box-item"
+    href="#bottom-news"
+    onclick="return openBottomNews()"
+  >
+    <span class="bottom-box-icon" aria-hidden="true">📰</span>
+    <span>{{ tr('우리 소식') }}</span>
+  </a>
+  <a
+    class="bottom-box-item"
+    href="#bottom-gallery"
+    onclick="return openBottomGallery()"
+  >
+    <span class="bottom-box-icon" aria-hidden="true">🖼️</span>
+    <span>{{ tr('추억 사진') }}</span>
+  </a>
+  <a
+    class="bottom-box-item"
+    href="#bottom-support"
+    onclick="return openBottomSupport()"
+  >
+    <span class="bottom-box-icon" aria-hidden="true">🎁</span>
+    <span>{{ tr('동문 지원') }}</span>
+  </a>
+</nav>

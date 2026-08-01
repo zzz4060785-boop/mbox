@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}#{{ tag }} 태그{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/tag_results.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="tag-page">
+  <a class="tag-back" href="{{ url_for('board') }}">← 게시판 메인</a>
+  <header class="tag-header">
+    <p>HASHTAG</p>
+    <h1>#{{ tag }}</h1>
+    <span>관련 글과 댓글 {{ total_count|default(0) }}건</span>
+  </header>
+
+  {% if posts %}
+  <section class="tag-section">
+    <h2>일반게시판 글 <span>{{ posts|length }}</span></h2>
+    {% for post in posts %}
+    <a class="tag-result" href="{{ url_for('board_view', post_id=post.id) }}">
+      <strong>{{ post.title }}</strong>
+      <p>{{ post.content|truncate(120) }}</p>
+      <small>{{ post.author }} · {{ post.create_date.strftime('%Y-%m-%d') }}</small>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if board_comments %}
+  <section class="tag-section">
+    <h2>게시판 댓글 <span>{{ board_comments|length }}</span></h2>
+    {% for comment in board_comments %}
+    <a
+      class="tag-result"
+      href="{{ url_for('board_view', post_id=comment.post_id) }}#comment-{{ comment.id }}"
+    >
+      <strong>{{ comment.user.username }}님의 댓글</strong>
+      <p>{{ comment.content|truncate(140) }}</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if notices %}
+  <section class="tag-section">
+    <h2>공지사항 <span>{{ notices|length }}</span></h2>
+    {% for notice in notices %}
+    <a class="tag-result" href="{{ url_for('notice_board') }}">
+      <strong>📢 공지사항</strong>
+      <p>{{ notice.content|truncate(140) }}</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if recommendation_posts %}
+  <section class="tag-section">
+    <h2>사랑별장소 <span>{{ recommendation_posts|length }}</span></h2>
+    {% for recommendation in recommendation_posts %}
+    <a
+      class="tag-result"
+      href="{{ url_for('recommendation_detail', post_id=recommendation.id) }}"
+    >
+      <strong>💗 {{ recommendation.title }}</strong>
+      <p>{{ recommendation.place_name }} · {{ recommendation.content|truncate(110) }}</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if album_photos or album_comments %}
+  <section class="tag-section">
+    <h2>나의 앨범 <span>{{ album_photos|length + album_comments|length }}</span></h2>
+    {% for photo in album_photos %}
+    <a
+      class="tag-result with-thumb"
+      href="{{ url_for('main_album', photo=photo.id) }}"
+    >
+      <img src="{{ photo.image_url }}" alt="태그 사진" />
+      <span>
+        <strong>{{ photo.user.username }}님의 사진</strong>
+        <p>{{ photo.caption|truncate(100) }}</p>
+      </span>
+    </a>
+    {% endfor %}
+    {% for comment in album_comments %}
+    <a
+      class="tag-result"
+      href="{{ url_for('main_album', photo=comment.photo_id) }}"
+    >
+      <strong>{{ comment.user.username }}님의 앨범 댓글</strong>
+      <p>{{ comment.content|truncate(140) }}</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if graduation_comments %}
+  <section class="tag-section">
+    <h2>졸업앨범 댓글 <span>{{ graduation_comments|length }}</span></h2>
+    {% for comment in graduation_comments %}
+    <a class="tag-result" href="{{ url_for('album.graduation_album') }}">
+      <strong>졸업앨범 댓글</strong>
+      <p>{{ comment.text|truncate(140) }}</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if not total_count|default(0) %}
+  <div class="tag-empty">
+    아직 <strong>#{{ tag }}</strong> 태그가 붙은 글이나 댓글이 없습니다.
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

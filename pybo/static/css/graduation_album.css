@@ -1,0 +1,340 @@
+* {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      .graduation-page {
+        width: 100%;
+        max-width: 430px;
+        min-height: 100vh;
+        background: #fcfbfa;
+        overflow-x: hidden;
+        position: relative;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.12);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* 앨범 구역 섹션 (구역별 세로 간격 띄우기) */
+      .album-section {
+        width: 100%;
+        margin-bottom: 25px;
+        background: #ffffff;
+        border-bottom: none; /* [수정] 앨범 하단 회색 짝대기 제거 */
+      }
+
+      .photo-wrap {
+        position: relative;
+        width: 100%;
+        background: #eee;
+
+        /* ─── [추가] 우측 스크롤바 이미지를 숨기기 위한 코드 ─── */
+        overflow: hidden; /* 영역 밖으로 나가는 이미지 숨김 */
+      }
+
+      .bg-photo {
+        width: 106%; /* 가로를 살짝 키워서 스크롤바가 오른쪽 화면 밖으로 나가게 만듦 */
+        max-width: none; /* width가 100%로 고정되는 것을 방지 */
+        height: auto;
+        display: block;
+      }
+
+      /* 얼굴 공통 */
+      .face-slot {
+        position: absolute;
+        width: 63px;
+        height: 63px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+      .face-slot2 {
+        position: absolute;
+        width: 61px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        height: 61px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+
+      .face-slot3 {
+        position: absolute;
+        width: 70px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        height: 70px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .face-slot4 {
+        position: absolute;
+        width: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        height: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .face-slot5 {
+        position: absolute;
+        width: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        height: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      }
+      .user-face {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* ─── 1번째 졸업사진 좌표 ─── */
+      /* prettier-ignore */
+      .grad-face1 { top: 245px; left: 75px; }
+      /* prettier-ignore */
+      .grad-face2 { top: 223px; left: 177px; }
+      /* prettier-ignore */
+      .grad-face3 { top: 227px; left: 274px; }
+      /* prettier-ignore */
+      .grad-face4 { top: 226px; left: 368px; }
+      /* prettier-ignore */
+      .grad-face5 { top: 362px; left: 68px; }
+      /* prettier-ignore */
+      .grad-face6 { top: 356px; left: 173px; }
+      /* prettier-ignore */
+      .grad-face7 { top: 361px; left: 271px; }
+      /* prettier-ignore */
+      .grad-face8 { top: 358px; left: 372px; }
+
+      /* ─── 2번째 졸업사진 좌표 ─── */
+      /* prettier-ignore */
+      .grad-face_male1 { top: 247px; left: 102px; }
+      /* prettier-ignore */
+      .grad-face_male2 { top: 264px; left: 175px; }
+      /* prettier-ignore */
+      .grad-face_male3 { top: 302px; left: 240px; }
+      /* prettier-ignore */
+      .grad-face_male4 { top: 291px; left: 311px; }
+      /* prettier-ignore */
+      .grad-face_male5 { top: 451px; left: 145px; }
+      /* prettier-ignore */
+      .grad-face_male6 { top: 449px; left: 227px; }
+      /* prettier-ignore */
+      .grad-face_male7 { top: 482px; left: 351px; }
+
+      /* 3번째 졸업사진 좌표 */
+      /* prettier-ignore */
+      .grad-face_female1 { top: 190px; left: 75px; }
+      /* prettier-ignore */
+      .grad-face_female2 { top: 186px; left: 176px; }
+      /* prettier-ignore */
+      .grad-face_female3 { top: 191px; left: 281px; }
+      /* prettier-ignore */
+      .grad-face_female4 { top: 193px; left: 384px; }
+      /* prettier-ignore */
+      .grad-face_female5 { top: 334px; left: 65px; }
+      /* prettier-ignore */
+      .grad-face_female6 { top: 341px; left: 174px; }
+      /* prettier-ignore */
+      .grad-face_female7 { top: 339px; left: 281px; }
+      /* prettier-ignore */
+      .grad-face_female8 { top: 342px; left: 384px; }
+
+      /* 4번째 졸업사진 좌표 */
+      /* prettier-ignore */
+      .grad_face_male_outing1 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing2 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing3 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing4 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing5 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing6 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing7 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .grad_face_male_outing8 { top: 250px; left: 80px; }
+
+      /* 5번째 졸업사진 좌표 */
+      /* prettier-ignore */
+      .female_outing1 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing2 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing3 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing4 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing5 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing6 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing7 { top: 250px; left: 80px; }
+      /* prettier-ignore */
+      .female_outing8 { top: 250px; left: 80px; }
+
+      /* 댓글 영역 */
+      .comment-wrap {
+        width: 100%;
+        padding: 20px 15px 30px;
+        background: #ffffff;
+      }
+
+      .comment-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #222;
+      }
+
+      .comment-input-wrap {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .comment-input {
+        flex: 1;
+        height: 45px;
+        border: none;
+        border-radius: 12px;
+        padding: 0 14px;
+        background: #f3f3f3;
+        outline: none;
+        font-size: 14px;
+      }
+
+      .comment-btn {
+        width: 75px;
+        height: 45px;
+        border: none;
+        border-radius: 12px;
+        background: #4a7dff;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .comment-btn:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
+      .comment-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .comment-item {
+        font-size: 14px;
+        color: #444;
+        line-height: 1.4;
+        padding-bottom: 10px;
+        border-bottom: none; /* [수정] 댓글 목록 밑의 회색 짝대기 제거 */
+      }
+
+      /* ─── 중복 없는 순수 애니메이션 효과 코드 (딱 8줄) ─── */
+      .album-section {
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        cursor: pointer;
+      }
+      .album-section:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 24px rgba(74, 125, 255, 0.12);
+      }
+      .face-slot {
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+      /* ─── 임원 전용 사진 변경 컨트롤 패널 ─── */
+      .executive-control-panel {
+        position: fixed;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background-color: rgba(
+          33,
+          37,
+          41,
+          0.95
+        ); /* 어두운 차콜톤 트렌디한 배경 */
+        color: #ffffff;
+        padding: 16px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(8px); /* 배경 살짝 블러처리 (세련된 느낌) */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-width: 280px;
+      }
+
+      .executive-control-panel p {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .executive-control-panel p strong {
+        color: #4dabf7;
+      }
+
+      /* 현재 찍은 자리를 보여주는 영역 */
+      #selectedSlotDisplay {
+        margin-bottom: 12px;
+        font-weight: bold;
+        color: #ffd43b;
+        font-size: 13px;
+        background-color: rgba(255, 212, 59, 0.1);
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+      }
+
+      /* 사진 넣기 버튼 */
+      .executive-upload-btn {
+        background-color: #228be6;
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition:
+          background-color 0.2s ease,
+          transform 0.1s ease;
+      }
+
+      .executive-upload-btn:hover {
+        background-color: #1c7ed6;
+      }
+
+      .executive-upload-btn:active {
+        transform: scale(0.98); /* 클릭했을 때 살짝 눌리는 효과 */
+      }
+
+      /* (보너스) 임원이 슬롯을 클릭해 선택했을 때 생기는 클래스 효과 */
+      .face-selected-highlight {
+        outline: 3px solid #ffd43b !important;
+        outline-offset: 2px;
+        box-shadow: 0 0 12px #ffd43b;
+        transition: outline 0.1s ease;
+      }

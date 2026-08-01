@@ -1,0 +1,82 @@
+{% extends "base.html" %} {% block title %}나만의 교실{% endblock %} {% block
+stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/my_home.css') }}"
+/>
+{% endblock %} {% block content %}
+<main class="my-home-page">
+  <header class="my-home-header">
+    <a href="{{ url_for('main_album') }}">← 메인으로</a>
+    <div>
+      <span aria-hidden="true">🏫</span>
+      <h1>나만의 교실</h1>
+    </div>
+    <p>{{ current_user.username }}님의 아늑한 교실</p>
+  </header>
+
+  <section class="classroom-card">
+    <div class="classroom-card-title">
+      <strong>MY CLASSROOM</strong>
+      <span>나만의 공간</span>
+    </div>
+
+    <div class="classroom-scene">
+      <img
+        src="{{ url_for('static', filename='images/my_home_empty_classroom.png') }}"
+        alt="창문과 문, 마루만 있는 빈 픽셀 교실"
+      />
+      <button
+        class="classroom-avatar avatar-male"
+        type="button"
+        data-avatar-name="남성 아바타"
+        aria-label="남성 아바타 선택"
+      >
+        <img
+          src="{{ url_for('static', filename='images/avatar_male.png') }}"
+          alt=""
+        />
+      </button>
+      <button
+        class="classroom-avatar avatar-female"
+        type="button"
+        data-avatar-name="여성 아바타"
+        aria-label="여성 아바타 선택"
+      >
+        <img
+          src="{{ url_for('static', filename='images/avatar_female.png') }}"
+          alt=""
+        />
+      </button>
+    </div>
+
+    <p class="my-home-status" id="myHomeStatus" aria-live="polite">
+      아바타를 눌러 선택해 보세요.
+    </p>
+  </section>
+
+  <button class="avatar-shop-link" id="avatarShopOpen" type="button">
+    🛍️ 아바타샵으로 이동
+  </button>
+
+  <div class="avatar-shop-modal" id="avatarShopModal" hidden>
+    <div class="avatar-shop-modal-backdrop" data-avatar-shop-close></div>
+    <section
+      class="avatar-shop-modal-box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="avatarShopModalTitle"
+    >
+      <span class="avatar-shop-lock" aria-hidden="true">🔒</span>
+      <h2 id="avatarShopModalTitle">
+        추후에 업뎃하겠습니다 열심히 사주시면 제 사리사욕 채우는데 열과 성의를
+        다하겠습니다 호갱님!!!
+      </h2>
+      <p>아바타샵은 아직 이용할 수 없습니다.</p>
+      <button id="avatarShopClose" type="button">확인</button>
+    </section>
+  </div>
+</main>
+{% endblock %} {% block script %}
+<script src="{{ url_for('static', filename='js/my_home.js') }}"></script>
+{% endblock %}

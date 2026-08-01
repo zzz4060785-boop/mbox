@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}아바타샵{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/hogu_shop.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="hogu-shop-page">
+  <header class="hogu-shop-header">
+    <a href="{{ url_for('my_home') }}">← 나만의 교실</a>
+    <div>
+      <span aria-hidden="true">🛍️</span>
+      <h1>아바타샵</h1>
+    </div>
+    <p>{{ current_user.username }}님의 아바타를 꾸며보세요.</p>
+  </header>
+
+  <section class="hogu-shop-list" aria-label="아바타 상품">
+    <button class="hogu-shop-item" type="button" data-item-name="남성 기본 아바타">
+      <img
+        src="{{ url_for('static', filename='images/avatar_male.png') }}"
+        alt="남성 기본 아바타"
+      />
+      <strong>남성 기본</strong>
+      <span>보유 중</span>
+    </button>
+    <button class="hogu-shop-item" type="button" data-item-name="여성 기본 아바타">
+      <img
+        src="{{ url_for('static', filename='images/avatar_female.png') }}"
+        alt="여성 기본 아바타"
+      />
+      <strong>여성 기본</strong>
+      <span>보유 중</span>
+    </button>
+  </section>
+
+  <p class="hogu-shop-status" id="hoguShopStatus" aria-live="polite">
+    아바타를 선택해 보세요.
+  </p>
+</main>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/hogu_shop.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %} {% block title %}우리학교 동창회 게시판{% endblock %}
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/board.css') }}"
+/>
+{% endblock %} {% block content %}
+<main class="board-page">
+  <!--
+    게시판 메인 왼쪽 상단의 "목록" 링크입니다.
+    문구를 바꾸려면 아래의 "← 목록"을 수정하고,
+    이동할 화면을 바꾸려면 url_for('main_album')의 main_album을 원하는 주소로 수정하세요.
+  -->
+  <a class="detail-back" href="{{ url_for('main_album') }}">← 뒤로가기</a>
+
+  <div class="board-heading-row">
+    <h1 class="board-title">우리학교 게시판</h1>
+    <div
+      class="board-notification-slot"
+      id="boardNotificationSlot"
+      aria-label="게시판 알림"
+    ></div>
+  </div>
+
+  <!-- 임원 신청: 매년 1월 전년도 활동 점수 상위 3명을 자동 선출합니다. -->
+  <section class="executive-election">
+    <div class="executive-election-head">
+      <strong>🏅 임원 신청합니다</strong>
+      <span>매년 1월 · 최대 3명</span>
+    </div>
+    <!-- 안내 문구를 각각 span으로 분리하면 모바일에서도 확실히 두 줄로 표시됩니다. -->
+    <p class="executive-election-guide">
+      <span>후보 신청자 중 받은 사랑달·사랑별과 작성 댓글 활동이 높은 순으로 선출됩니다.</span>
+      <span>1년 단위로 갱신되며 최대 임원은 3명입니다.</span>
+    </p>
+    {% if executives %}
+    <div class="current-executives">
+      {% for executive in executives %}<span>{{ executive.username }}</span>{%
+      endfor %}
+    </div>
+    {% endif %} {% if can_participate %} {% if executive_application %}
+    <button type="button" disabled>
+      {{ executive_application.election_year }}년 신청 완료
+    </button>
+    {% else %}
+    <form
+      method="post"
+      action="{{ url_for('executive_apply') }}"
+      onsubmit="return confirm('다음 임원 선출에 신청할까요?');"
+    >
+      <button type="submit">임원 신청하기</button>
+    </form>
+    {% endif %} {% else %}
+    <small>이 학교에 등록된 사용자만 신청할 수 있습니다.</small>
+    {% endif %}
+  </section>
+
+  <form class="board-search" method="get">
+    <input
+      type="search"
+      name="kw"
+      value="{{ search }}"
+      placeholder="제목, 내용, 작성자 검색"
+    />
+    <button type="submit">검색</button>
+  </form>
+  {% if search %}
+  <div class="board-search-result">
+    ‘{{ search }}’ 검색 결과 <strong>총 {{ search_result_count }}건</strong>
+    <a href="{{ url_for('board', school=active_school) }}">검색 초기화</a>
+  </div>
+  <section class="board-search-items" aria-label="검색 결과 목록">
+    {% for item in search_items %}
+    <a
+      href="{{ item.url }}"
+      onclick="return window.confirm('선택한 검색 결과로 이동할까요?');"
+    >
+      <span>{{ item.kind }}</span>
+      <strong>{{ item.title }}</strong>
+      <small>{{ item.description }}</small>
+    </a>
+    {% else %}
+    <p>일치하는 검색 결과가 없습니다.</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <a href="{{ url_for('album.album_cover') }}" class="our-album" id="albumBtn">
+    📸 우리들의 앨범-임원급 이상만 편집가능
+  </a>
+
+  <section class="notice-box">
+    <div class="notice-heading">
+      <!--
+        이 제목을 누르면 첨부 이미지가 보이는 별도 공지사항 게시판으로 이동합니다.
+        링크 문구는 아래 "📢 공지사항" 부분에서 수정할 수 있습니다.
+      -->
+      <a href="{{ url_for('notice_board') }}" class="notice-title">
+        📢 공지사항
+      </a>
+      <a href="{{ url_for('notice_board') }}" class="notice-more">
+        전체보기 ›
+      </a>
+    </div>
+
+    <ul class="notice-list">
+      {% for notice in notices %}
+      <li class="notice-item">
+        <!-- 메인 화면에서는 공지 요약만 보이고 첨부 이미지는 표시하지 않습니다. -->
+        <a
+          href="{{ url_for('notice_board') }}"
+          class="notice-summary{% if search %} search-result-link{% endif %}"
+          {% if search %}onclick="return window.confirm('선택한 공지사항으로 이동할까요?');"{% endif %}
+        >
+          <span class="notice-content">{{ notice.content }}</span>
+          {% if notice.image_url %}<span class="attachment-mark">📎</span>{%
+          endif %}
+          <time datetime="{{ notice.create_date.isoformat() }}">
+            {{ notice.create_date.strftime('%Y-%m-%d') }}
+          </time>
+        </a>
+      </li>
+      {% else %}
+      <li class="notice-empty">등록된 공지사항이 없습니다.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <!-- 맛집·장소·동창 가게를 소개하는 별도 사랑별 게시판 요약입니다. -->
+  <section class="recommend-summary">
+    <a
+      href="{{ url_for('recommendation_list') }}"
+      class="recommend-summary-head"
+    >
+      <span>💗 우리들의 사랑별장소</span>
+      <span>전체보기 ›</span>
+    </a>
+    {% for recommendation in recent_recommendations %}
+    <a
+      href="{{ url_for('recommendation_detail', post_id=recommendation.id) }}"
+      class="recommend-summary-item{% if search %} search-result-link{% endif %}"
+      {% if search %}onclick="return window.confirm('선택한 사랑별 글로 이동할까요?');"{% endif %}
+    >
+      <span>{{ recommendation.place_name }}</span>
+      <strong>{{ recommendation.title }}</strong>
+      <small>{{ recommendation.region or '지역 미등록' }}</small>
+    </a>
+    {% else %} {% if can_participate %}
+    <a
+      href="{{ url_for('recommendation_write') }}"
+      class="recommend-summary-empty"
+    >
+      아직 사랑별이 없습니다. 첫 장소를 소개해 주세요.
+    </a>
+    {% else %}
+    <div class="recommend-summary-empty">
+      다른 학교 사용자는 사랑별 글을 열람만 할 수 있습니다.
+    </div>
+    {% endif %} {% endfor %}
+  </section>
+
+  <section class="board-list">
+    <!--
+      파란색 제목/전체 건수 영역을 누르면 일반게시판 전체 목록으로 이동합니다.
+      각 게시글을 눌러 상세 화면으로 가는 기존 링크는 아래에 그대로 있습니다.
+    -->
+    <a href="{{ url_for('board_all') }}" class="board-list-header">
+      <span>목록 (최신순)</span>
+      <span>전체 {{ total_count }}건 ›</span>
+    </a>
+
+    {% for post in posts %}
+    <a
+      href="{{ url_for('board_view', post_id=post.id) }}"
+      class="board-item{% if search %} search-result-link{% endif %}"
+      {% if search %}onclick="return window.confirm('선택한 게시글로 이동할까요?');"{% endif %}
+    >
+      <span class="item-top">
+        <span class="item-title">
+          {{ post.title }} {% if post.comments %}
+          <span class="comment-count">[{{ post.comments|length }}]</span>
+          {% endif %} {% if loop.index <= 3 %}
+          <span class="badge-new">new</span>
+          {% endif %}
+        </span>
+      </span>
+      <span class="item-meta">
+        <span>No. {{ post.id }}</span>
+        <span>작성자: {{ post.author }}</span>
+        <span>{{ post.create_date.strftime('%Y-%m-%d') }}</span>
+        <span>조회 {{ post.views }}</span>
+        <span>사랑별 {{ post.voters|length }}</span>
+      </span>
+    </a>
+    {% else %}
+    <div class="empty-board">등록된 게시글이 없습니다.</div>
+    {% endfor %}
+  </section>
+
+  {% if pagination.pages > 1 %}
+  <nav class="pagination" aria-label="게시글 페이지">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('board', page=pagination.prev_num, kw=search) }}"
+      >이전</a
+    >
+    {% endif %} {% for page_num in pagination.iter_pages(left_edge=1,
+    right_edge=1, left_current=1, right_current=1) %} {% if page_num %}
+    <a
+      href="{{ url_for('board', page=page_num, kw=search) }}"
+      class="{{ 'active' if page_num == pagination.page else '' }}"
+      >{{ page_num }}</a
+    >
+    {% endif %} {% endfor %} {% if pagination.has_next %}
+    <a href="{{ url_for('board', page=pagination.next_num, kw=search) }}"
+      >다음</a
+    >
+    {% endif %}
+  </nav>
+  {% endif %} {% if can_participate %}
+  <div class="board-actions">
+    <a href="{{ url_for('board_write') }}" class="write-btn">✏️ 글쓰기</a>
+  </div>
+  {% else %}
+  <p class="read-only-notice">
+    🔒 이 학교에 등록된 사용자만 글을 쓸 수 있습니다. 지금은 열람만 가능합니다.
+  </p>
+  {% endif %}
+</main>
+{% endblock %} {% block script %}
+<script
+  src="{{ url_for('static', filename='js/board.js') }}"
+  data-board-url="{{ url_for('board') }}"
+></script>
+{% endblock %}

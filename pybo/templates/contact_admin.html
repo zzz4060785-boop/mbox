@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}관리자에게 이메일 보내기{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/contact_admin.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main
+  class="contact-admin-page"
+  data-admin-email="{{ admin_email }}"
+  data-sender-name="{{ current_user.username }}"
+  data-sender-email="{{ current_user.email }}"
+>
+  <header class="contact-admin-header">
+    <a href="{{ url_for('main_album') }}">← 메인으로</a>
+    <div>
+      <span aria-hidden="true">✉️</span>
+      <h1>관리자에게 이메일</h1>
+    </div>
+    <p>문의 내용을 작성하면 기본 메일 앱으로 연결됩니다.</p>
+  </header>
+
+  {% if not gmail_connected and can_connect_gmail %}
+  <a class="gmail-connect-link" href="{{ url_for('gmail_connect') }}">
+    Google 관리자 Gmail 최초 연결
+  </a>
+  {% elif not gmail_connected %}
+  <p class="gmail-connect-warning">
+    관리자가 Gmail 발송 계정을 먼저 연결해야 합니다.
+  </p>
+  {% endif %}
+
+  <form class="contact-admin-form" id="contactAdminForm">
+    <label>
+      <span>받는 사람</span>
+      <input type="email" value="{{ admin_email }}" readonly />
+    </label>
+    <label>
+      <span>제목</span>
+      <input
+        id="contactAdminSubject"
+        type="text"
+        maxlength="120"
+        placeholder="문의 제목을 입력하세요."
+        required
+      />
+    </label>
+    <label>
+      <span>문의 내용</span>
+      <textarea
+        id="contactAdminMessage"
+        maxlength="3000"
+        rows="9"
+        placeholder="관리자에게 전달할 내용을 입력하세요."
+        required
+      ></textarea>
+    </label>
+    <button type="submit" {% if not gmail_connected %}disabled{% endif %}>
+      관리자에게 보내기
+    </button>
+    <p class="contact-admin-help" id="contactAdminStatus" aria-live="polite">
+      Gmail API를 통해 관리자에게 직접 전송됩니다.
+    </p>
+  </form>
+</main>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/contact_admin.js') }}"></script>
+{% endblock %}

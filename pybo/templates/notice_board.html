@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}공지사항 게시판{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/notice_board.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="notice-board-page">
+  <!-- 게시판 메인으로 돌아가는 링크입니다. -->
+  <a class="notice-back" href="{{ url_for('board') }}">← 게시판 목록</a>
+
+  <header class="notice-board-header">
+    <div>
+      <p>NOTICE</p>
+      <h1>📢 공지사항</h1>
+    </div>
+    {% if can_edit_notice %}
+    <!-- 임원/관리자에게만 공지 작성 버튼이 표시됩니다. -->
+    <a class="notice-create-btn" href="{{ url_for('notice_edit') }}">
+      ＋ 글쓰기
+    </a>
+    {% endif %}
+  </header>
+
+  <section class="notice-post-list">
+    {% for notice in notices %}
+    <article class="notice-post" id="notice-{{ notice.id }}">
+      <div class="notice-post-head">
+        <time datetime="{{ notice.create_date.isoformat() }}">
+          {{ notice.create_date.strftime('%Y-%m-%d') }}
+        </time>
+        {% if notice.modify_date %}<span>수정됨</span>{% endif %}
+      </div>
+
+      <p class="notice-post-content">{{ notice.content|hashtags }}</p>
+
+      {% if notice.image_url %}
+      <!-- 첨부 미디어는 메인이 아닌 이 공지사항 게시판에서만 보입니다. -->
+      <figure class="notice-attachment">
+        {% if notice.media_type == 'video' %}
+        <video src="{{ notice.image_url }}" controls preload="metadata"></video>
+        {% elif notice.media_type == 'audio' %}
+        <audio src="{{ notice.image_url }}" controls preload="metadata"></audio>
+        {% else %}
+        <img
+          src="{{ notice.image_url }}"
+          alt="공지사항 첨부 이미지"
+          loading="lazy"
+        />
+        {% endif %}
+        <figcaption>{{ notice.original_name or '첨부 미디어' }}</figcaption>
+      </figure>
+      {% endif %}
+
+      {% if can_edit_notice %}
+      <div class="notice-post-actions">
+        <a href="{{ url_for('notice_edit', notice_id=notice.id) }}">수정</a>
+        <form
+          action="{{ url_for('notice_edit') }}"
+          method="post"
+          onsubmit="return confirm('이 공지사항을 삭제할까요?');"
+        >
+          <input type="hidden" name="notice_id" value="{{ notice.id }}" />
+          <input type="hidden" name="action" value="delete" />
+          <button type="submit">삭제</button>
+        </form>
+      </div>
+      {% endif %}
+    </article>
+    {% else %}
+    <div class="notice-board-empty">
+      등록된 공지사항이 없습니다.
+    </div>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

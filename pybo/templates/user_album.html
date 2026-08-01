@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}유저 앨범{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/user_album.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="user-album-page">
+  <nav class="top-nav" aria-label="앨범 화면 탐색">
+    <a
+      class="back-btn"
+      href="{{ url_for('main_album') }}"
+      id="albumBackBtn"
+      aria-label="메인 앨범으로 돌아가기"
+    >
+      ←
+    </a>
+  </nav>
+
+  <h2 id="targetUserName">로딩 중...</h2>
+  <div class="photo-feed" id="userFeed"></div>
+  <p class="page-message" id="userAlbumMessage" aria-live="polite"></p>
+</main>
+{% endblock %}
+
+{% block script %}
+<script
+  src="{{ url_for('static', filename='js/user_album.js') }}"
+  data-album-url="{{ url_for('main_album') }}"
+></script>
+{% endblock %}

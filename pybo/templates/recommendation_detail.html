@@ -1,0 +1,184 @@
+{% extends "base.html" %} {% block title %}{{ post.title }}{% endblock %} {%
+block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/recommendation.css') }}"
+/>
+{% endblock %} {% block content %} {% macro comment_tree(comment, depth=0) %}
+<article class="recommend-comment" style="--depth: {{ [depth, 6]|min }}">
+  <div>
+    <strong>{{ comment.user.username }}</strong>
+    <time>{{ comment.create_date.strftime('%Y-%m-%d %H:%M') }}</time>
+    <p>{{ comment.content|hashtags }}</p>
+    {% if can_participate %}
+    <details>
+      <summary>↳ 답글</summary>
+      <form
+        method="post"
+        action="{{ url_for('recommendation_comment_create', post_id=post.id) }}"
+      >
+        <input type="hidden" name="parent_id" value="{{ comment.id }}" />
+        <input
+          name="content"
+          maxlength="1000"
+          placeholder="답글과 #태그를 남겨주세요."
+          required
+        />
+        <button>등록</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+  {% for reply in comment.replies %} {{ comment_tree(reply, depth + 1) }} {%
+  endfor %}
+</article>
+{% endmacro %}
+
+<main class="recommend-page">
+  <a class="recommend-back" href="{{ url_for('recommendation_list') }}"
+    >← 사랑별장소 목록</a
+  >
+  <article class="recommend-detail">
+    <div class="recommend-badges">
+      <span>{{ category_label }}</span>
+      <em class="{{ post.promotion_type }}"
+        >{{ '직접 홍보' if post.promotion_type == 'self_promo' else '내돈내산
+        사랑별' }}</em
+      >
+    </div>
+    <h1>{{ post.title }}</h1>
+    <h2>📍 {{ post.place_name }}</h2>
+    <p class="recommend-meta">
+      <a href="{{ url_for('main_album', profile_user=post.user.id) }}"
+        >{{ post.user.username }}</a
+      >
+      · {{ post.create_date.strftime('%Y-%m-%d') }} · 조회 {{ post.views }}
+    </p>
+    {% if post.region or post.address or post.price_range %}
+    <dl class="place-info">
+      {% if post.region %}
+      <div>
+        <dt>지역</dt>
+        <dd>{{ post.region }}</dd>
+      </div>
+      {% endif %} {% if post.address %}
+      <div>
+        <dt>주소</dt>
+        <dd>{{ post.address }}</dd>
+      </div>
+      {% endif %} {% if post.price_range %}
+      <div>
+        <dt>가격대</dt>
+        <dd>{{ post.price_range }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+    {% endif %}
+    <div class="recommend-content">{{ post.content|hashtags }}</div>
+
+    {% for media in post.media %} {% if media.media_type == 'image' %}
+    <img
+      class="recommend-media"
+      src="{{ media.file_url }}"
+      alt="{{ media.original_name }}"
+    />
+    {% elif media.media_type == 'video' %}
+    <video
+      class="recommend-media"
+      src="{{ media.file_url }}"
+      controls
+      preload="metadata"
+    ></video>
+    {% else %}
+    <audio
+      class="recommend-audio"
+      src="{{ media.file_url }}"
+      controls
+      preload="metadata"
+    ></audio>
+    {% endif %} {% endfor %}
+
+    <div class="recommend-links">
+      {% if post.external_url %}<a
+        href="{{ post.external_url }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        >🔗 관련 링크</a
+      >{% endif %} {% if post.map_url %}<a
+        href="{{ post.map_url }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        >🗺 지도에서 보기</a
+      >{% endif %}
+    </div>
+    {% if post.tags %}
+    <div class="recommend-tags">
+      {% for tag in post.tags.split(',') %}
+      <a
+        href="{{ url_for('recommendation_list', tag=tag.strip().lstrip('#')) }}"
+        >#{{ tag.strip().lstrip('#') }}</a
+      >
+      {% endfor %}
+    </div>
+    {% endif %} {% if can_participate %}
+    <div class="recommend-reactions">
+      <form
+        method="post"
+        action="{{ url_for('recommendation_react', post_id=post.id, reaction='like') }}"
+      >
+        <button class="{{ 'active' if current_reaction == 'like' else '' }}">
+          💗 사랑달 {{ like_count }}
+        </button>
+      </form>
+      <form
+        method="post"
+        action="{{ url_for('recommendation_react', post_id=post.id, reaction='dislike') }}"
+      >
+        <button
+          class="{{ 'active dislike' if current_reaction == 'dislike' else '' }}"
+        >
+          👎 싫어요 {{ dislike_count }}
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <p class="read-only-notice">
+      🔒 같은 학교 사용자만 사랑달·싫어요·댓글을 남길 수 있습니다.
+    </p>
+    {% endif %} {% if can_manage %}
+    <div class="recommend-manage">
+      <a href="{{ url_for('recommendation_edit', post_id=post.id) }}">수정</a>
+      <form
+        method="post"
+        action="{{ url_for('recommendation_delete', post_id=post.id) }}"
+        onsubmit="return confirm('이 사랑별 글을 삭제할까요?');"
+      >
+        <button>삭제</button>
+      </form>
+    </div>
+    {% endif %}
+  </article>
+
+  <section class="recommend-comments" id="comments">
+    <h2>댓글·답글 {{ post.comments|length }}</h2>
+    {% if can_participate %}
+    <form
+      class="recommend-comment-form"
+      method="post"
+      action="{{ url_for('recommendation_comment_create', post_id=post.id) }}"
+    >
+      <input
+        name="content"
+        maxlength="1000"
+        placeholder="이 장소에 대한 댓글과 #태그를 남겨주세요."
+        required
+      />
+      <button>댓글 등록</button>
+    </form>
+    {% endif %} {% for comment in root_comments %} {{ comment_tree(comment) }}
+    {% else %}
+    <p class="recommend-empty">첫 댓글을 남겨보세요.</p>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

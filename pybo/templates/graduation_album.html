@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}졸업앨범{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/graduation_album.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="graduation-page">
+      {% if is_executive %}
+      <div class="executive-control-panel">
+        <p>
+          💡 <strong>[임원 모드]</strong> 아래 앨범에서 변경하고 싶은 얼굴
+          슬롯을 클릭하세요!
+        </p>
+
+        <div id="selectedSlotDisplay">선택된 슬롯: 없음</div>
+
+        <input
+          type="file"
+          id="executiveSingleUploader"
+          accept="image/*"
+          style="display: none"
+          onchange="handleExecutiveSingleUpload()"
+        />
+
+        <button class="executive-upload-btn" onclick="triggerFileInput()">
+          📸 사진 선택하여 넣기
+        </button>
+      </div>
+      {% endif %}
+
+      <div class="album-section">
+        <div class="photo-wrap">
+          <img
+            src="{{ url_for('static', filename='images/graduation.png') }}"
+            class="bg-photo"
+            alt="배경사진"
+          />
+          <div class="face-container">
+            <div
+              class="face-slot grad-face1"
+              style="cursor: pointer"
+              data-slot-class="grad-face1"
+              onclick="selectExecutiveSlot(this, 'grad-face1')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face2"
+              style="cursor: pointer"
+              data-slot-class="grad-face2"
+              onclick="selectExecutiveSlot(this, 'grad-face2')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face3"
+              style="cursor: pointer"
+              data-slot-class="grad-face3"
+              onclick="selectExecutiveSlot(this, 'grad-face3')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face4"
+              style="cursor: pointer"
+              data-slot-class="grad-face4"
+              onclick="selectExecutiveSlot(this, 'grad-face4')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face5"
+              style="cursor: pointer"
+              data-slot-class="grad-face5"
+              onclick="selectExecutiveSlot(this, 'grad-face5')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face6"
+              style="cursor: pointer"
+              data-slot-class="grad-face6"
+              onclick="selectExecutiveSlot(this, 'grad-face6')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face7"
+              style="cursor: pointer"
+              data-slot-class="grad-face7"
+              onclick="selectExecutiveSlot(this, 'grad-face7')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+
+            <div
+              class="face-slot grad-face8"
+              style="cursor: pointer"
+              data-slot-class="grad-face8"
+              onclick="selectExecutiveSlot(this, 'grad-face8')"
+            >
+              <img
+                src="{{ url_for('static', filename='images/myface.jpg') }}"
+                class="user-face"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="comment-wrap">
+          <div class="comment-title">댓글</div>
+          <div class="comment-input-wrap">
+            <input
+              type="text"
+              placeholder="댓글 입력..."
+              class="comment-input"
+              id="commentInput1"
+            />
+            <button class="comment-btn" id="submitBtn1">등록</button>
+          </div>
+          <ul class="comment-list" id="commentList1">
+            <li class="comment-item">
+              🎓 졸업을 축하합니다! 모두 수고하셨어요.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="album-section">
+        <div class="photo-wrap">
+          <img
+            src="{{ url_for('static', filename='images/graduation_male.png') }}"
+            class="bg-photo"
+            alt="배경사진"
+          />
+          <div
+            class="face-slot2 grad-face_male1"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male1"
+            onclick="selectExecutiveSlot(this, 'grad-face_male1')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot2 grad-face_male2"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male2"
+            onclick="selectExecutiveSlot(this, 'grad-face_male2')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot2 grad-face_male3"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male3"
+            onclick="selectExecutiveSlot(this, 'grad-face_male3')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot2 grad-face_male4"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male4"
+            onclick="selectExecutiveSlot(this, 'grad-face_male4')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot2 grad-face_male5"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male5"
+            onclick="selectExecutiveSlot(this, 'grad-face_male5')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot2 grad-face_male6"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male6"
+            onclick="selectExecutiveSlot(this, 'grad-face_male6')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot2 grad-face_male7"
+            style="cursor: pointer"
+            data-slot-class="grad-face_male7"
+            onclick="selectExecutiveSlot(this, 'grad-face_male7')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male.jpg') }}"
+              class="user-face"
+            />
+          </div>
+        </div>
+        <div class="comment-wrap">
+          <div class="comment-title">댓글</div>
+          <div class="comment-input-wrap">
+            <input
+              type="text"
+              placeholder="댓글 입력..."
+              class="comment-input"
+              id="commentInput2"
+            />
+            <button class="comment-btn" id="submitBtn2">등록</button>
+          </div>
+          <ul class="comment-list" id="commentList2">
+            <li class="comment-item">🎉 다들 졸업 축하해! 보고 싶을 거다!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="album-section">
+        <div class="photo-wrap">
+          <img
+            src="{{ url_for('static', filename='images/graduation_female.png') }}"
+            class="bg-photo"
+            alt="배경사진"
+          />
+          <div
+            class="face-slot3 grad-face_female1"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female1"
+            onclick="selectExecutiveSlot(this, 'grad-face_female1')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female2"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female2"
+            onclick="selectExecutiveSlot(this, 'grad-face_female2')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female3"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female3"
+            onclick="selectExecutiveSlot(this, 'grad-face_female3')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female4"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female4"
+            onclick="selectExecutiveSlot(this, 'grad-face_female4')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female5"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female5"
+            onclick="selectExecutiveSlot(this, 'grad-face_female5')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female6"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female6"
+            onclick="selectExecutiveSlot(this, 'grad-face_female6')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female7"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female7"
+            onclick="selectExecutiveSlot(this, 'grad-face_female7')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot3 grad-face_female8"
+            style="cursor: pointer"
+            data-slot-class="grad-face_female8"
+            onclick="selectExecutiveSlot(this, 'grad-face_female8')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+        </div>
+        <div class="comment-wrap">
+          <div class="comment-title">댓글</div>
+          <div class="comment-input-wrap">
+            <input
+              type="text"
+              placeholder="댓글 입력..."
+              class="comment-input"
+              id="commentInput3"
+            />
+            <button class="comment-btn" id="submitBtn3">등록</button>
+          </div>
+          <ul class="comment-list" id="commentList3">
+            <li class="comment-item">🎉 다들 졸업 축하해! 보고 싶을 거다!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="album-section">
+        <div class="photo-wrap">
+          <img
+            src="{{ url_for('static', filename='images/grad_face_male_outing.png') }}"
+            class="bg-photo"
+            alt="배경사진"
+          />
+          <div
+            class="face-slot4 grad_face_male_outing1"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing1"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing1')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing2"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing2"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing2')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing3"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing3"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing3')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing4"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing4"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing4')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing5"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing5"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing5')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing6"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing6"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing6')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing7"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing7"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing7')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot4 grad_face_male_outing8"
+            style="cursor: pointer"
+            data-slot-class="grad_face_male_outing8"
+            onclick="selectExecutiveSlot(this, 'grad_face_male_outing8')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_male_outting.jpg') }}"
+              class="user-face"
+            />
+          </div>
+        </div>
+        <div class="comment-wrap">
+          <div class="comment-title">댓글</div>
+          <div class="comment-input-wrap">
+            <input
+              type="text"
+              placeholder="댓글 입력..."
+              class="comment-input"
+              id="commentInput4"
+            />
+            <button class="comment-btn" id="submitBtn4">등록</button>
+          </div>
+          <ul class="comment-list" id="commentList4">
+            <li class="comment-item">🎉 4번째 앨범 댓글창입니다!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="album-section">
+        <div class="photo-wrap">
+          <img
+            src="{{ url_for('static', filename='images/female_outing.png') }}"
+            class="bg-photo"
+            alt="배경사진"
+          />
+          <div
+            class="face-slot5 female_outing1"
+            style="cursor: pointer"
+            data-slot-class="female_outing1"
+            onclick="selectExecutiveSlot(this, 'female_outing1')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing2"
+            style="cursor: pointer"
+            data-slot-class="female_outing2"
+            onclick="selectExecutiveSlot(this, 'female_outing2')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing3"
+            style="cursor: pointer"
+            data-slot-class="female_outing3"
+            onclick="selectExecutiveSlot(this, 'female_outing3')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing4"
+            style="cursor: pointer"
+            data-slot-class="female_outing4"
+            onclick="selectExecutiveSlot(this, 'female_outing4')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing5"
+            style="cursor: pointer"
+            data-slot-class="female_outing5"
+            onclick="selectExecutiveSlot(this, 'female_outing5')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing6"
+            style="cursor: pointer"
+            data-slot-class="female_outing6"
+            onclick="selectExecutiveSlot(this, 'female_outing6')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing7"
+            style="cursor: pointer"
+            data-slot-class="female_outing7"
+            onclick="selectExecutiveSlot(this, 'female_outing7')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+          <div
+            class="face-slot5 female_outing8"
+            style="cursor: pointer"
+            data-slot-class="female_outing8"
+            onclick="selectExecutiveSlot(this, 'female_outing8')"
+          >
+            <img
+              src="{{ url_for('static', filename='images/myface_female.jpg') }}"
+              class="user-face"
+            />
+          </div>
+        </div>
+        <div class="comment-wrap">
+          <div class="comment-title">댓글</div>
+          <div class="comment-input-wrap">
+            <input
+              type="text"
+              placeholder="댓글 입력..."
+              class="comment-input"
+              id="commentInput5"
+            />
+            <button class="comment-btn" id="submitBtn5">등록</button>
+          </div>
+          <ul class="comment-list" id="commentList5">
+            <li class="comment-item">🎉 5번째 앨범 댓글창입니다!</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+<script id="photoRegistryData" type="application/json">
+  {{ photo_registry | tojson }}
+</script>
+<script id="facesData" type="application/json">
+  {{ faces_data | tojson }}
+</script>
+{% endblock %}
+
+{% block script %}
+<script
+  src="{{ url_for('static', filename='js/face.js') }}"
+  data-upload-url="{{ url_for('album.upload_executive_photo') }}"
+  data-comments-url="{{ url_for('album.comments_api', room_id=0) }}"
+></script>
+{% endblock %}

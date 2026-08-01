@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}우리학교 게시판 - 글쓰기{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/board_write.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="board-write-page">
+  <form
+    action="{{ url_for('board_write') }}"
+    method="post"
+    enctype="multipart/form-data"
+    id="boardWriteForm"
+  >
+    <div class="top-options">
+      <div class="back-row">
+        <a
+          href="{{ url_for('board') }}"
+          class="btn-back"
+          title="목록으로 돌아가기"
+          aria-label="목록으로 돌아가기"
+        >
+          ⇤
+        </a>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" name="is_secret" value="y" />
+          비밀글
+        </label>
+        {% if can_write_notice %}
+        <label>
+          <input type="checkbox" name="is_notice" value="y" />
+          공지
+        </label>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="write-container">
+      <div class="form-row">
+        <label class="row-label" for="postTitle">제목</label>
+        <div class="row-input">
+          <input
+            type="text"
+            name="title"
+            id="postTitle"
+            class="form-control-custom"
+            placeholder="제목을 입력하세요."
+            maxlength="200"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="editor-section">
+        <div class="editor-toolbar">
+          <select class="toolbar-select" aria-label="글꼴">
+            <option value="Dotum, sans-serif">돋움</option>
+            <option value="Gulim, sans-serif">굴림</option>
+          </select>
+          <select class="toolbar-select" aria-label="글자 크기">
+            <option value="12px">9pt</option>
+            <option value="13px">10pt</option>
+            <option value="15px">11pt</option>
+          </select>
+          <button type="button" class="toolbar-btn">가</button>
+          <button
+            type="button"
+            class="toolbar-btn"
+            style="text-decoration: underline"
+          >
+            가
+          </button>
+          <button type="button" class="toolbar-btn" style="color: red">
+            가
+          </button>
+        </div>
+
+        <div
+          id="editor"
+          class="editor-textarea"
+          contenteditable="true"
+          data-placeholder="내용을 입력해 주세요. #여행 #동창회처럼 태그할 수 있어요."
+        ></div>
+        <input type="hidden" name="content" id="hiddenContent" />
+      </div>
+
+      <div class="form-row">
+        <label class="row-label" for="tagInput">태그</label>
+        <div class="row-input">
+          <div class="tag-container" id="tagContainer">
+            <input
+              type="text"
+              id="tagInput"
+              class="tag-inner-input"
+              placeholder="여행, 동창회처럼 쉼표(,)로 구분하세요."
+            />
+          </div>
+          <input type="hidden" name="tags" id="hiddenTags" />
+
+          <div class="posted-tags-container">
+            <span class="tag-link-item" data-tag="우리학교">#우리학교</span>
+            <span class="tag-link-item" data-tag="꿀팁">#꿀팁</span>
+            <span class="tag-link-item" data-tag="벼락치기">#벼락치기</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="row-label" for="file1">파일1</label>
+        <div class="row-input file-input-wrap">
+          <input
+            type="file"
+            id="file1"
+            name="file1"
+            accept="image/*,video/mp4,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="row-label" for="file2">파일2</label>
+        <div class="row-input file-input-wrap">
+          <input
+            type="file"
+            id="file2"
+            name="file2"
+            accept="image/*,video/mp4,video/webm,audio/mpeg,audio/mp4,audio/wav,audio/ogg"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-message" id="writeMessage" aria-live="polite">
+      {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+      {% endwith %}
+    </div>
+
+    <div class="bottom-actions">
+      <a href="{{ url_for('board') }}" class="btn-base btn-list">목록</a>
+      <button type="submit" class="btn-base btn-submit">확인</button>
+    </div>
+  </form>
+</main>
+{% endblock %}
+
+{% block script %}
+<script
+  src="{{ url_for('static', filename='js/board.js') }}"
+  data-board-url="{{ url_for('board') }}"
+></script>
+{% endblock %}

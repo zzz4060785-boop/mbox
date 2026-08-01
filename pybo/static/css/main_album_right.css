@@ -1,0 +1,138 @@
+/*
+ * main_album_right.html 전용 스타일 작성 공간
+ */
+
+.nav-right .nav-right-button {
+  border: 0;
+  background: #ffffff;
+  font-family: inherit;
+}
+
+.sidebar-language-box {
+  width: calc(100% - 16px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 8px;
+  overflow: hidden;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.sidebar-language-box a {
+  min-width: 0;
+  padding: 9px 2px;
+  color: #666666;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.sidebar-language-box a + a {
+  border-left: 1px solid #eeeeee;
+}
+
+.sidebar-language-box a:hover,
+.sidebar-language-box a:focus-visible,
+.sidebar-language-box a.active {
+  background: #edf3ff;
+  color: #2f80ed;
+  outline: none;
+}
+
+.game-zone-lock-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.game-zone-lock-modal[hidden] {
+  display: none;
+}
+
+.game-zone-lock-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.game-zone-lock-box {
+  width: min(320px, 100%);
+  position: relative;
+  z-index: 1;
+  padding: 26px 20px 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+.game-zone-lock-box > span {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 30px;
+}
+
+.game-zone-lock-box h2 {
+  color: #222222;
+  font-size: 20px;
+}
+
+.game-zone-lock-box p {
+  margin-top: 9px;
+  color: #777777;
+  font-size: 13px;
+}
+
+.game-zone-lock-box button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 11px;
+  border: 0;
+  border-radius: 11px;
+  background: #2f80ed;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.contact-admin-confirm-box h2 {
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.contact-admin-confirm-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.contact-admin-confirm-actions button,
+.contact-admin-confirm-actions a {
+  width: 100%;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 11px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.contact-admin-confirm-actions button {
+  background: #eeeeee;
+  color: #555555;
+}
+
+.contact-admin-confirm-actions a {
+  background: #2f80ed;
+  color: #ffffff;
+}

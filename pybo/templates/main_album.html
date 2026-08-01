@@ -1,0 +1,441 @@
+{% extends "base.html" %} {% block title %}Friendary Album{% endblock %} {%
+block body_class %}main-album-body{% endblock %} {% block container_class
+%}main-album-container{% endblock %} {% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/main_album.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/main_album_right.css') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/bottom_box.css') }}"
+/>
+{% endblock %} {% block content %}
+<div class="album-page">
+  <h1 id="school-name">강남고등학교</h1>
+  <!-- 공지사항 팝업 시작 -->
+  <div class="event-popup" id="eventNoticePopup">
+    <div class="event-popup-header">
+      <h3>📢 공지사항</h3>
+    </div>
+
+    <div class="event-benefit">
+      <p>베타테스트에 참여해 주시는 여러분들 너무나 감사드립니다 ~~~</p>
+    </div>
+
+    <span class="event-highlight"> 가보자고~~~스톱 </span>
+
+    <div class="event-popup-footer">
+      <label>
+        <input type="checkbox" id="hideEventNoticeToday" />
+        오늘 안 보기
+      </label>
+
+      <button
+        type="button"
+        class="event-close-btn"
+        onclick="closeEventNotice()"
+      >
+        닫기
+      </button>
+    </div>
+  </div>
+  <!-- 공지사항 팝업 끝 -->
+  <div class="side-nav">
+    <div class="nav-item active" onclick="openProfilePopup()">
+      🏠 {{ tr('내 정보') }}
+    </div>
+    <div class="nav-item" onclick="openAlbum()">📸 {{ tr('나의 앨범') }}</div>
+    <div class="nav-item" onclick="openMessageModal()">
+      📩 {{ tr('나의 쪽지함') }} <span id="msg-badge" class="badge-dot">●</span>
+    </div>
+    <div class="nav-item" onclick="openPeopleFinder()">
+      👥 {{ tr('친구 찾기') }}
+    </div>
+    <div class="nav-item" onclick="openFriendList()">
+      👥 {{ tr('친구 목록') }}
+      <span id="friend-count" class="badge-count">0</span>
+    </div>
+    <a
+      class="nav-item"
+      href="{{ url_for('board', school=request.args.get('school') or current_user.school_name) }}"
+    >
+      🏫 {{ tr('교실입장') }}
+    </a>
+    <button class="nav-item" type="button" onclick="openSchoolManager()">
+      🏫 {{ tr('관심학교추가') }}
+    </button>
+  </div>
+
+  <section class="online-friends-panel" aria-live="polite">
+    <div class="online-friends-title">
+      <strong>🟢 접속 중인 1촌</strong>
+      <span id="onlineFriendCount">0</span>
+    </div>
+    <div id="onlineFriendList" class="online-friends-list">
+      <p class="online-friends-empty">접속 중인 1촌이 없습니다.</p>
+    </div>
+  </section>
+
+  {% include "main_album_right.html" %} {% include "bottom_box.html" %}
+
+  <div class="album-wrap" id="albumWrap" style="display: none">
+    <div class="album-top">
+      <button class="back-btn" onclick="closeAlbum()">&lt;</button>
+      <div>
+        <strong>{{ tr('우리들의 사진 피드') }}</strong>
+        <small>{{ tr('사진과 마음을 나누는 공간') }}</small>
+      </div>
+      <div
+        class="album-notification-slot"
+        id="albumNotificationSlot"
+        aria-label="사진 피드 알림"
+      ></div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display: none" />
+    <input
+      type="file"
+      id="aiFileInput"
+      accept="image/jpeg,image/png,image/webp"
+      style="display: none"
+    />
+    <!-- 사진 설명과 실제 파일은 서버 DB/업로드 폴더에 저장됩니다. -->
+    <div class="album-upload-box">
+      <input
+        type="text"
+        id="photoCaption"
+        maxlength="300"
+        placeholder="{{ tr('사진 이야기와 #여행 #동창회 같은 태그를 남겨보세요.') }}"
+      />
+      <button class="upload-btn" onclick="uploadPhoto()">
+        {{ tr('사진 선택·올리기') }}
+      </button>
+      <div class="ai-upload-row">
+        <select id="aiImageStyle" aria-label="AI 변환 스타일">
+          <option value="anime">애니메이션풍</option>
+          <option value="comic">코믹북풍</option>
+          <option value="watercolor">수채화풍</option>
+        </select>
+        <button type="button" class="ai-upload-btn" onclick="uploadAiPhoto()">
+          ✨ AI 변환하여 올리기
+        </button>
+      </div>
+      <p id="aiImageQuota" class="ai-image-quota">
+        이번 달 사용 가능 횟수 확인 중...
+      </p>
+      <p id="albumStatus" class="album-status" aria-live="polite"></p>
+    </div>
+    <div class="album-feed" id="albumFeed"></div>
+  </div>
+
+  <div class="profile-popup" id="profilePopup">
+    <div class="popup-box">
+      <h2>{{ tr('내 정보 수정') }}</h2>
+      <input
+        id="profileName"
+        type="text"
+        placeholder="{{ tr('이름') }}"
+        readonly
+      />
+      <input
+        id="profileSchoolInput"
+        type="text"
+        maxlength="120"
+        placeholder="{{ tr('학교') }}"
+      />
+      <input
+        id="profileSchoolYear"
+        type="text"
+        maxlength="4"
+        inputmode="numeric"
+        placeholder="{{ tr('입학년도') }}"
+      />
+      <div class="profile-demographics">
+        <input
+          id="profileAge"
+          type="number"
+          min="1"
+          max="120"
+          placeholder="{{ tr('나이') }}"
+        />
+        <select id="profileGender">
+          <option value="">{{ tr('성별 선택') }}</option>
+          <option value="male">{{ tr('남성') }}</option>
+          <option value="female">{{ tr('여성') }}</option>
+          <option value="other">{{ tr('기타') }}</option>
+        </select>
+        <input
+          id="profileNationality"
+          type="text"
+          maxlength="80"
+          placeholder="{{ tr('국적') }}"
+        />
+        <input
+          id="profileHobby"
+          type="text"
+          maxlength="200"
+          placeholder="{{ tr('취미') }}"
+        />
+      </div>
+
+      <!--
+              아래 개인정보 설정은 계정별로 DB에 저장되며 서버 API에서도 검사합니다.
+              전체 공개를 끄면 1촌을 포함한 다른 사람에게 프로필과 앨범이 숨겨집니다.
+            -->
+      <div class="privacy-settings">
+        <h3>개인정보 및 소통 설정</h3>
+
+        <div class="privacy-row">
+          <span>
+            <strong>태그 설정</strong>
+            <small>다른 사람이 내 이름을 태그할 수 있어요.</small>
+          </span>
+          <select id="tagPermission">
+            <option value="friends">1촌만 허용</option>
+            <option value="off">비허용</option>
+          </select>
+        </div>
+
+        <label class="privacy-row">
+          <span>
+            <strong>앨범 댓글</strong>
+            <small>다른 사람이 내 사진에 댓글·답글을 남깁니다.</small>
+          </span>
+          <input
+            id="allowAlbumComments"
+            type="checkbox"
+            class="privacy-toggle"
+          />
+        </label>
+
+        <label class="privacy-row">
+          <span>
+            <strong>1촌 경유 프로필 공개</strong>
+            <small>다른 사람의 1촌 목록에서 내 프로필을 찾을 수 있어요.</small>
+          </span>
+          <input
+            id="allowConnectionDiscovery"
+            type="checkbox"
+            class="privacy-toggle"
+          />
+        </label>
+
+        <label class="privacy-row">
+          <span>
+            <strong>쪽지 수신</strong>
+            <small>다른 사용자에게 쪽지를 받을 수 있어요.</small>
+          </span>
+          <input id="allowMessages" type="checkbox" class="privacy-toggle" />
+        </label>
+
+        <label class="privacy-row">
+          <span>
+            <strong>친구 검색 노출</strong>
+            <small>끄면 이름·나이·학교·성별 검색 결과에서 제외됩니다.</small>
+          </span>
+          <input
+            id="allowFriendSearch"
+            type="checkbox"
+            class="privacy-toggle"
+          />
+        </label>
+
+        <label class="privacy-row master-setting">
+          <span>
+            <strong>전체 공개</strong>
+            <small>끄면 1촌을 포함한 모든 사용자에게 비공개됩니다.</small>
+          </span>
+          <input id="isProfilePublic" type="checkbox" class="privacy-toggle" />
+        </label>
+      </div>
+      <p id="privacyStatus" class="privacy-status" aria-live="polite"></p>
+      <button onclick="saveProfileSettings()" class="btn-close">
+        저장하고 닫기
+      </button>
+    </div>
+  </div>
+
+  <div id="friendListModal" class="profile-popup">
+    <div class="popup-box">
+      <h3>✨ 나의 1촌 목록 ✨</h3>
+      <div id="friendListContainer" class="friend-list-container"></div>
+      <button onclick="closeFriendList()" class="btn-close">닫기</button>
+    </div>
+  </div>
+
+  <!-- 전체 가입자를 찾고 이름을 눌러 인맥 프로필을 여는 화면입니다. -->
+  <div id="peopleFinderModal" class="profile-popup">
+    <div class="popup-box">
+      <h3>👥 전혀 새로운 친구 찾기</h3>
+      <p class="finder-description">
+        현재 1촌과 신청 중인 사람은 제외하고 새로운 사람만 찾아드려요.
+      </p>
+      <div class="people-search-grid">
+        <input
+          id="peopleSearchInput"
+          type="text"
+          placeholder="이름"
+          onkeydown="if (event.key === 'Enter') loadPeople();"
+        />
+        <input
+          id="peopleAgeInput"
+          type="number"
+          min="1"
+          max="120"
+          placeholder="나이"
+        />
+        <input id="peopleSchoolInput" type="text" placeholder="학교" />
+        <select id="peopleGenderInput">
+          <option value="">성별 전체</option>
+          <option value="male">남성</option>
+          <option value="female">여성</option>
+          <option value="other">기타</option>
+        </select>
+        <button onclick="loadPeople()">조건으로 검색</button>
+      </div>
+      <div id="peopleListContainer" class="friend-list-container"></div>
+      <button onclick="closePeopleFinder()" class="btn-close">닫기</button>
+    </div>
+  </div>
+
+  <!--
+          사진 작성자/댓글 작성자 아이디를 누르면 열리는 사용자 관계 창입니다.
+          1촌 상태 문구, 쪽지 보내기, 친구 신청/수락 버튼이 여기 표시됩니다.
+        -->
+  <div id="userActionModal" class="profile-popup">
+    <div class="popup-box user-action-box">
+      <!--
+              본인 프로필일 때만 대표사진 영역을 눌러 사진을 등록/교체할 수 있습니다.
+              다른 사용자는 이 입력창을 사용할 수 없습니다.
+            -->
+      <button
+        type="button"
+        class="user-avatar"
+        id="profileAvatar"
+        onclick="chooseProfileImage()"
+        aria-label="대표사진 등록"
+      >
+        친
+      </button>
+      <input
+        type="file"
+        id="profileImageInput"
+        accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
+        hidden
+      />
+      <small id="profileImageHint" class="profile-image-hint"></small>
+      <h2 id="profileUsername">사용자</h2>
+      <p id="profileSchool" class="profile-school"></p>
+      <p id="relationshipLabel" class="relationship-label"></p>
+      <div id="userActionButtons" class="user-action-buttons"></div>
+
+      <!-- 쪽지 보내기 버튼을 누르면 같은 크기의 팝업 안에서 입력칸이 펼쳐집니다. -->
+      <div id="profileMessageCompose" class="profile-message-compose">
+        <textarea
+          id="profileMessageInput"
+          maxlength="1000"
+          rows="4"
+          placeholder="따뜻한 쪽지를 남겨보세요."
+        ></textarea>
+        <div>
+          <button type="button" onclick="cancelProfileMessage()">취소</button>
+          <button type="button" onclick="sendProfileMessage()">
+            쪽지 전송
+          </button>
+        </div>
+      </div>
+
+      <section class="connection-section">
+        <button
+          type="button"
+          class="connection-toggle"
+          onclick="toggleProfileConnections()"
+        >
+          <span>이 사람의 1촌 <b id="profileConnectionCount">0</b></span>
+          <span id="connectionToggleIcon">펼치기 ▾</span>
+        </button>
+        <div id="connectionPanel" hidden>
+          <p>이름을 누르면 새로운 인연으로 이어갈 수 있어요.</p>
+          <div id="profileConnections" class="profile-connections"></div>
+          <nav id="connectionPagination" class="connection-pagination"></nav>
+        </div>
+      </section>
+      <button onclick="closeUserActionModal()" class="btn-close">닫기</button>
+    </div>
+  </div>
+
+  <div class="profile-popup" id="messageModal">
+    <div class="popup-box">
+      <h2>📩 쪽지함</h2>
+      <p class="message-retention-note">받은 쪽지는 수신일로부터 30일간 보관됩니다.</p>
+      <div class="sent-message-actions">
+        <button type="button" id="deleteAllReceivedButton" onclick="deleteAllReceivedMessages()">
+          전체 삭제
+        </button>
+      </div>
+      <div id="messageList" class="message-list-container">
+        <p class="empty-msg">받은 쪽지가 없습니다.</p>
+      </div>
+
+      <div id="replySection" class="reply-section">
+        <p id="replyTo" class="reply-target-text"></p>
+        <div class="reply-input-group">
+          <input
+            type="text"
+            id="replyInput"
+            placeholder="답장을 입력하세요..."
+          />
+          <button onclick="sendReply()" class="btn-send">전송</button>
+        </div>
+      </div>
+      <button type="button" onclick="openSentMessageModal()" class="btn-sent-messages">
+        📤 보낸 쪽지함
+      </button>
+      <button onclick="closeMessageModal()" class="btn-close">닫기</button>
+    </div>
+  </div>
+
+  <div class="profile-popup" id="sentMessageModal">
+    <div class="popup-box">
+      <h2>📤 보낸 쪽지함</h2>
+      <p class="message-retention-note">보낸 쪽지는 전송일로부터 30일간 보관됩니다.</p>
+      <div class="sent-message-actions">
+        <button type="button" id="deleteAllSentButton" onclick="deleteAllSentMessages()">
+          전체 삭제
+        </button>
+      </div>
+      <div id="sentMessageList" class="message-list-container">
+        <p class="empty-msg">보낸 쪽지가 없습니다.</p>
+      </div>
+      <button type="button" onclick="closeSentMessageModal()" class="btn-close">닫기</button>
+    </div>
+  </div>
+
+  <!-- 등록 학교는 최대 2개이며 여기서 이동·탈퇴·추가할 수 있습니다. -->
+  <div class="profile-popup" id="schoolManagerModal">
+    <div class="popup-box school-manager-box">
+      <h2>🏫 등록 학교 관리</h2>
+      <p id="schoolLeaveLimit" class="school-limit-message"></p>
+      <div id="registeredSchoolList" class="registered-school-list"></div>
+      <a class="school-add-link" href="{{ url_for('school_find') }}"
+        >＋ 학교 하나 더 추가</a
+      >
+      <button type="button" onclick="closeSchoolManager()" class="btn-close">
+        닫기
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script
+  src="{{ url_for('static', filename='js/main_album.js') }}"
+  data-user-album-url="{{ url_for('user_album') }}"
+  data-current-user-id="{{ current_user.id }}"
+  data-current-username="{{ current_user.username }}"
+></script>
+<script src="{{ url_for('static', filename='js/main_album_right.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bottom_box.js') }}"></script>
+{% endblock %}

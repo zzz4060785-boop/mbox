@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}졸업앨범 메인{% endblock %}
+
+{% block stylesheet %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/album_cover.css') }}"
+/>
+{% endblock %}
+
+{% block content %}
+<main class="album-cover-page">
+  <a
+    class="album-cover-back"
+    href="{{ url_for('board') }}"
+    aria-label="게시판으로 돌아가기"
+  >
+    ←
+  </a>
+  <a
+    href="{{ url_for('album.graduation_album') }}"
+    class="album-cover-link"
+    aria-label="졸업앨범 열기"
+  >
+    <img
+      src="{{ url_for('static', filename='images/diary.jpg') }}"
+      class="cover-image"
+      alt="졸업앨범 디자인 메인 북 커버 이미지"
+    />
+  </a>
+</main>
+{% endblock %}

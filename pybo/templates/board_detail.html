@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}" />
+{% endblock %}
+{% block content %}
+<main class="board-page">
+  <div class="board-detail-toolbar">
+    <a class="detail-back" href="{{ url_for('board') }}">← 목록</a>
+    <div
+      class="board-notification-slot"
+      id="boardNotificationSlot"
+      aria-label="게시판 알림"
+    ></div>
+  </div>
+  <article class="post-detail">
+    <h1>{{ post.title }}</h1>
+    <p class="post-meta">
+      {{ post.author }} · {{ post.create_date.strftime('%Y-%m-%d %H:%M') }}
+      {% if post.modify_date %} · 수정됨{% endif %} · 조회 {{ post.views }}
+    </p>
+    <div class="post-content">{{ post.content|hashtags }}</div>
+    {% if meta and meta.tags %}
+    <p class="post-tags">
+      {% for tag in meta.tags.split(',') %}
+      <a href="{{ url_for('tag_results', tag=tag.strip().lstrip('#')) }}">
+        #{{ tag.strip().lstrip('#') }}
+      </a>
+      {% endfor %}
+    </p>
+    {% endif %}
+    {% for attachment in attachments %}
+    <figure class="post-image">
+      {% if attachment.media_type == 'image' %}
+      <a href="{{ attachment.file_url }}" target="_blank" rel="noopener noreferrer">
+        <img
+          src="{{ attachment.file_url }}"
+          alt="{{ attachment.original_name }}"
+          loading="lazy"
+        />
+      </a>
+      {% elif attachment.media_type == 'video' %}
+      <video src="{{ attachment.file_url }}" controls preload="metadata"></video>
+      {% else %}
+      <audio src="{{ attachment.file_url }}" controls preload="metadata"></audio>
+      {% endif %}
+      <figcaption>{{ attachment.original_name }}</figcaption>
+    </figure>
+    {% endfor %}
+    <div class="detail-actions">
+      {% if can_participate %}
+      <form method="post" action="{{ url_for('board_vote', post_id=post.id) }}">
+        <button type="submit">💗 사랑별 {{ post.voters|length }}</button>
+      </form>
+      {% else %}
+      <span class="read-only-notice">🔒 다른 학교 사용자는 열람만 가능합니다.</span>
+      {% endif %}
+      {% if can_manage %}
+      <a href="{{ url_for('board_edit', post_id=post.id) }}">수정</a>
+      <form method="post" action="{{ url_for('board_delete', post_id=post.id) }}"
+            onsubmit="return confirm('게시글을 삭제할까요?')">
+        <button type="submit" class="danger">삭제</button>
+      </form>
+      {% endif %}
+    </div>
+    <nav class="post-neighbors">
+      {% if previous_post %}
+      <a href="{{ url_for('board_view', post_id=previous_post.id) }}">← {{ previous_post.title }}</a>
+      {% endif %}
+      {% if next_post %}
+      <a href="{{ url_for('board_view', post_id=next_post.id) }}">{{ next_post.title }} →</a>
+      {% endif %}
+    </nav>
+  </article>
+
+  <section class="comments">
+    <h2>댓글 {{ post.comments|length }}</h2>
+    {% for comment in post.comments %}
+    <article class="comment" id="comment-{{ comment.id }}">
+      <strong>{{ comment.user.username }}</strong>
+      <time>{{ comment.create_date.strftime('%Y-%m-%d %H:%M') }}</time>
+      <p>{{ comment.content|hashtags }}</p>
+      <div class="comment-actions">
+        {% if can_participate %}
+        <form method="post" action="{{ url_for('comment_vote', comment_id=comment.id) }}">
+          <button type="submit">💗 사랑별 {{ comment.voters|length }}</button>
+        </form>
+        {% endif %}
+        {% if comment.user_id == session.get('user_id') %}
+        <a href="{{ url_for('comment_edit', comment_id=comment.id) }}">수정</a>
+        <form method="post" action="{{ url_for('comment_delete', comment_id=comment.id) }}"
+              onsubmit="return confirm('댓글을 삭제할까요?')">
+          <button type="submit" class="danger">삭제</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    <p class="empty-board">첫 댓글을 남겨보세요.</p>
+    {% endfor %}
+    {% if can_participate %}
+    <form class="comment-form" method="post"
+          action="{{ url_for('comment_create', post_id=post.id) }}">
+      <textarea name="content" maxlength="2000" required
+                placeholder="댓글을 입력하세요. #여행 #동창회처럼 태그할 수 있어요."></textarea>
+      <button type="submit">댓글 등록</button>
+    </form>
+    {% else %}
+    <p class="read-only-notice">🔒 같은 학교 사용자만 댓글을 남길 수 있습니다.</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
