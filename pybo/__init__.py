@@ -3592,14 +3592,6 @@ def create_app():
                     or "naver_user"
                 )
                 username = base_username[:50]
-                suffix = 1
-
-                while User.query.filter_by(username=username).first():
-                    suffix_text = f"_{suffix}"
-                    username = (
-                        f"{base_username[: 50 - len(suffix_text)]}{suffix_text}"
-                    )
-                    suffix += 1
 
                 user = User(
                     username=username,
@@ -3737,10 +3729,6 @@ def create_app():
 
         if len(password) < 8:
             flash("비밀번호는 8자 이상 입력해 주세요.")
-            return redirect(url_for("login2"))
-
-        if User.query.filter_by(username=username).first():
-            flash("이미 사용 중인 이름입니다.")
             return redirect(url_for("login2"))
 
         if User.query.filter_by(email=email).first():

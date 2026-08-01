@@ -11,7 +11,6 @@ class User(db.Model):
 
     username = db.Column(
         db.String(50),
-        unique=True,
         nullable=False,
     )
 
