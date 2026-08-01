@@ -103,12 +103,26 @@ chown -R appuser:www-data "$APP_PATH/pybo"
 chown -R appuser:appuser "$APP_PATH/migrations" "$APP_PATH/deploy" "$APP_PATH/scripts"
 chown appuser:appuser "$APP_PATH/config.py" "$APP_PATH/wsgi.py" "$APP_PATH/requirements.txt"
 
+install -o root -g root -m 644 \
+    "$APP_PATH/deploy/cafe24/friendary-db-backup.service" \
+    /etc/systemd/system/friendary-db-backup.service
+install -o root -g root -m 644 \
+    "$APP_PATH/deploy/cafe24/friendary-db-backup.timer" \
+    /etc/systemd/system/friendary-db-backup.timer
+systemctl daemon-reload
+systemctl enable --now friendary-db-backup.timer
+
 cd "$APP_PATH"
 DATABASE_ASSIGNMENT="$(grep '^DATABASE_URL=' /etc/friendary/env | head -n 1)"
 if [ -z "$DATABASE_ASSIGNMENT" ]; then
     echo "DATABASE_URL is missing from /etc/friendary/env" >&2
     exit 1
 fi
+
+mkdir -p "$APP_PATH/db-backups"
+chown appuser:appuser "$APP_PATH/db-backups"
+runuser -u appuser -- env "$DATABASE_ASSIGNMENT" \
+    "$APP_PATH/.venv/bin/python" scripts/backup_postgres.py
 
 runuser -u appuser -- env "$DATABASE_ASSIGNMENT" \
     "$APP_PATH/.venv/bin/flask" --app wsgi:app db upgrade

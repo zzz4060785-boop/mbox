@@ -1,0 +1,15 @@
+[Unit]
+Description=Friendary PostgreSQL backup
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/friendary
+EnvironmentFile=/etc/friendary/env
+Environment=DB_BACKUP_RETENTION_DAYS=30
+ExecStart=/opt/friendary/.venv/bin/python /opt/friendary/scripts/backup_postgres.py
+
+[Install]
+WantedBy=multi-user.target
