@@ -29,6 +29,7 @@ from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 from uuid import uuid4
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from config import Config
@@ -136,6 +137,13 @@ def login_required(view):
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    if os.getenv("BEHIND_PROXY", "").lower() in {"1", "true", "yes"}:
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=1,
+            x_proto=1,
+            x_host=1,
+        )
 
     @app.before_request
     def select_interface_language():

@@ -1,0 +1,23 @@
+[Unit]
+Description=Friendary Flask application
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=appuser
+WorkingDirectory=/opt/friendary
+EnvironmentFile=/etc/friendary/env
+ExecStart=/opt/friendary/.venv/bin/gunicorn \
+    --workers 5 \
+    --threads 2 \
+    --timeout 120 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile - \
+    --error-logfile - \
+    wsgi:app
+Restart=always
+RestartSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

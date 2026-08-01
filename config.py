@@ -37,10 +37,23 @@ def _database_uri():
     return "sqlite:///" + os.path.join(BASE_DIR, "friendary.db")
 
 
+DATABASE_URI = _database_uri()
+
+
 class Config:
-    SQLALCHEMY_DATABASE_URI = _database_uri()
+    SQLALCHEMY_DATABASE_URI = DATABASE_URI
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {}
+        if DATABASE_URI.startswith("sqlite:")
+        else {
+            "pool_pre_ping": True,
+            "pool_recycle": 1800,
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "5")),
+        }
+    )
     # 개발 중 HTML·CSS·JS 수정 결과가 이전 캐시에 가려지지 않게 합니다.
     TEMPLATES_AUTO_RELOAD = True
     SEND_FILE_MAX_AGE_DEFAULT = 0
@@ -52,6 +65,7 @@ class Config:
     SESSION_COOKIE_SECURE = os.getenv(
         "SESSION_COOKIE_SECURE", ""
     ).lower() in {"1", "true", "yes"}
+    PREFERRED_URL_SCHEME = os.getenv("PREFERRED_URL_SCHEME", "http")
     # Keep signed-in users logged in unless they opt out or explicitly log out.
     # Flask refreshes this rolling lifetime on active permanent sessions.
     PERMANENT_SESSION_LIFETIME = timedelta(days=365)
