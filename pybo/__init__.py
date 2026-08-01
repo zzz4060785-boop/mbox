@@ -1859,6 +1859,23 @@ def create_app():
         db.session.commit()
         return jsonify(message="이제 서로의 추억을 나누는 1촌이 되었습니다 ✨")
 
+    @app.delete("/api/social/friends/<int:friendship_id>")
+    @login_required
+    def friendship_delete(friendship_id):
+        friendship = db.get_or_404(Friendship, friendship_id)
+        current_user_id = session["user_id"]
+        if current_user_id not in {
+            friendship.requester_id,
+            friendship.receiver_id,
+        }:
+            return jsonify(message="이 1촌 관계를 삭제할 권한이 없습니다."), 403
+        if friendship.status != "accepted":
+            return jsonify(message="수락된 1촌 관계만 삭제할 수 있습니다."), 409
+
+        db.session.delete(friendship)
+        db.session.commit()
+        return jsonify(message="1촌 관계를 삭제했습니다.")
+
     @app.get("/api/social/friends")
     @login_required
     def friendship_list():
@@ -1914,6 +1931,9 @@ def create_app():
             friends=[
                 {
                     "user_id": friend.id,
+                    "friendship_id": _friendship_between(
+                        current_user_id, friend.id
+                    ).id,
                     "username": friend.username,
                     "profile_image_url": friend.profile_image_url,
                 }

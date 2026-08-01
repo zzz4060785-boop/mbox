@@ -33,6 +33,53 @@ async function api(url, options = {}) {
   return data;
 }
 
+function closePhotoLightbox() {
+  const lightbox = document.getElementById("photoLightbox");
+  if (!lightbox) return;
+  lightbox.hidden = true;
+  lightbox.querySelector("img").removeAttribute("src");
+  document.body.classList.remove("photo-lightbox-open");
+}
+
+function openPhotoLightbox(sourceImage) {
+  let lightbox = document.getElementById("photoLightbox");
+  if (!lightbox) {
+    lightbox = document.createElement("div");
+    lightbox.id = "photoLightbox";
+    lightbox.className = "photo-lightbox";
+    lightbox.hidden = true;
+    lightbox.setAttribute("role", "dialog");
+    lightbox.setAttribute("aria-modal", "true");
+    lightbox.setAttribute("aria-label", "사진 확대 보기");
+    lightbox.innerHTML = `
+      <button type="button" class="photo-lightbox-close" aria-label="닫기">&times;</button>
+      <img alt="확대된 앨범 사진">
+    `;
+    lightbox.addEventListener("click", (event) => {
+      if (event.target === lightbox || event.target.closest(".photo-lightbox-close")) {
+        closePhotoLightbox();
+      }
+    });
+    document.body.appendChild(lightbox);
+  }
+
+  const enlargedImage = lightbox.querySelector("img");
+  enlargedImage.src = sourceImage.currentSrc || sourceImage.src;
+  enlargedImage.alt = sourceImage.alt;
+  lightbox.hidden = false;
+  document.body.classList.add("photo-lightbox-open");
+  lightbox.querySelector(".photo-lightbox-close").focus();
+}
+
+document.addEventListener("click", (event) => {
+  const image = event.target.closest(".feed-card > img");
+  if (image) openPhotoLightbox(image);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closePhotoLightbox();
+});
+
 window.addEventListener("DOMContentLoaded", async () => {
   const schoolName = document.getElementById("school-name");
   if (schoolName) schoolName.textContent = userSchool;
@@ -531,6 +578,17 @@ async function openUserProfile(userId) {
           ),
         );
       }
+      if (data.relationship.status === "accepted") {
+        const removeButton = actionButton("1촌 삭제", () =>
+          removeFriend(
+            data.relationship.friendship_id,
+            data.user.username,
+            false,
+          ),
+        );
+        removeButton.classList.add("danger-action");
+        buttons.appendChild(removeButton);
+      }
       if (data.permissions.allow_messages) {
         buttons.appendChild(actionButton("📩 쪽지 보내기", openProfileMessage));
       } else {
@@ -685,13 +743,75 @@ function renderConnectionPagination(pagination) {
     <button ${pagination.has_next ? "" : "disabled"} onclick="loadProfileConnections(${pagination.page + 1})">다음</button>`;
 }
 
-function confirmConnectionMove(userId, clickedElement) {
+function legacyConfirmConnectionMove(userId, clickedElement) {
   const username =
     clickedElement.querySelector("strong")?.textContent?.trim() || "선택한 1촌";
   const shouldMove = confirm(
     `${username}님의 인맥 프로필로 이동할까요?\n\n확인: 프로필로 이동\n취소: 현재 화면 유지`,
   );
   if (shouldMove) openUserProfile(userId);
+}
+
+function closeConnectionChoice() {
+  const modal = document.getElementById("connectionChoiceModal");
+  if (modal) modal.hidden = true;
+}
+
+async function openConnectionMessage(userId) {
+  closeConnectionChoice();
+  const data = await api(`/api/social/users/${userId}`);
+  if (!data.permissions.allow_messages) {
+    alert("상대방이 쪽지 수신을 허용하지 않았습니다.");
+    return;
+  }
+  await openUserProfile(userId);
+  openProfileMessage();
+}
+
+function confirmConnectionMove(userId, clickedElement) {
+  const username =
+    clickedElement.querySelector("strong")?.textContent?.trim() || "선택한 1촌";
+  const friendshipId = clickedElement.closest("[data-friendship-id]")?.dataset
+    .friendshipId;
+  let modal = document.getElementById("connectionChoiceModal");
+
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "connectionChoiceModal";
+    modal.className = "connection-choice-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="connection-choice-box" role="dialog" aria-modal="true" aria-labelledby="connectionChoiceTitle">
+        <p id="connectionChoiceTitle"></p>
+        <button type="button" data-action="profile">프로필로 이동</button>
+        <button type="button" data-action="message">쪽지 보내기</button>
+        <button type="button" class="danger" data-action="delete">1촌 삭제</button>
+        <button type="button" data-action="cancel">취소</button>
+      </div>`;
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) closeConnectionChoice();
+    });
+    document.body.appendChild(modal);
+  }
+
+  modal.querySelector("p").textContent = `${username}님과 무엇을 할까요?`;
+  const profileButton = modal.querySelector('[data-action="profile"]');
+  const messageButton = modal.querySelector('[data-action="message"]');
+  const deleteButton = modal.querySelector('[data-action="delete"]');
+  const cancelButton = modal.querySelector('[data-action="cancel"]');
+  deleteButton.hidden = !friendshipId;
+  profileButton.onclick = () => {
+    closeConnectionChoice();
+    openUserProfile(userId);
+  };
+  messageButton.onclick = () => openConnectionMessage(userId);
+  deleteButton.onclick = () => {
+    closeConnectionChoice();
+    removeFriend(Number(friendshipId), username);
+  };
+  cancelButton.onclick = closeConnectionChoice;
+  modal.hidden = false;
+  profileButton.focus();
 }
 
 function relationshipShortLabel(status) {
@@ -745,6 +865,25 @@ async function acceptFriend(friendshipId) {
 }
 
 /* 1촌 목록 */
+async function removeFriend(friendshipId, username, returnToList = true) {
+  if (!confirm(`${username}님과의 1촌 관계를 삭제할까요?`)) return;
+  try {
+    const data = await api(`/api/social/friends/${friendshipId}`, {
+      method: "DELETE",
+    });
+    alert(data.message);
+    if (returnToList) {
+      await openFriendList();
+    } else {
+      closeUserActionModal();
+    }
+    await refreshSocialBadges();
+    await refreshOnlineFriends();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
 async function refreshSocialBadges() {
   try {
     const [friendData, messageData] = await Promise.all([
@@ -779,7 +918,7 @@ async function openFriendList() {
     const friends = data.friends
       .map(
         (item) => `
-      <div class="friend-item">
+      <div class="friend-item accepted" data-friendship-id="${item.friendship_id}">
         <button onclick="confirmConnectionMove(${item.user_id}, this)"><strong>${escapeHtml(item.username)}</strong></button>
         <span>✨ 함께 추억을 나누는 1촌</span>
       </div>`,
@@ -787,6 +926,20 @@ async function openFriendList() {
       .join("");
     container.innerHTML =
       requests + friends || '<p class="empty-msg">아직 1촌이 없습니다.</p>';
+    data.friends.forEach((item) => {
+      const row = container.querySelector(
+        `.friend-item.accepted[data-friendship-id="${item.friendship_id}"]`,
+      );
+      if (!row) return;
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "friend-remove-btn";
+      removeButton.textContent = "1촌 삭제";
+      removeButton.addEventListener("click", () =>
+        removeFriend(item.friendship_id, item.username),
+      );
+      row.appendChild(removeButton);
+    });
     modal.style.display = "block";
   } catch (error) {
     alert(error.message);
@@ -1125,6 +1278,7 @@ async function refreshOnlineFriends() {
           .map(
             (friend) => `
               <button type="button" class="online-friend-item"
+                data-friendship-id="${friend.friendship_id}"
                 onclick="confirmConnectionMove(${friend.user_id}, this)">
                 <span class="online-friend-dot" aria-hidden="true"></span>
                 <strong>${escapeHtml(friend.username)}</strong>
@@ -1133,6 +1287,7 @@ async function refreshOnlineFriends() {
           .join("")
       : '<p class="online-friends-empty">접속 중인 1촌이 없습니다.</p>';
   } catch (error) {
+    console.error("Failed to refresh online friends:", error);
     list.innerHTML =
       '<p class="online-friends-empty">접속 상태를 확인할 수 없습니다.</p>';
   }

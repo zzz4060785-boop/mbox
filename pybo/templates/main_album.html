@@ -3,7 +3,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 %}main-album-container{% endblock %} {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album.css', v='20260802-mobile-scroll-3') }}"
+  href="{{ url_for('static', filename='css/main_album.css', v='20260802-connection-menu-4') }}"
 />
 <link
   rel="stylesheet"
@@ -431,7 +431,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 </div>
 {% endblock %} {% block script %}
 <script
-  src="{{ url_for('static', filename='js/main_album.js') }}"
+  src="{{ url_for('static', filename='js/main_album.js', v='20260802-online-friends-5') }}"
   data-user-album-url="{{ url_for('user_album') }}"
   data-current-user-id="{{ current_user.id }}"
   data-current-username="{{ current_user.username }}"
