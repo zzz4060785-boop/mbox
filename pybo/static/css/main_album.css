@@ -26,6 +26,42 @@ body.main-album-body {
   font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
+/*
+ * Mobile browsers do not reliably pass touch gestures to a 100vh nested
+ * scroller, especially while their address bar is expanding or collapsing.
+ * Let the document own the scroll on narrow screens and keep enough page
+ * height for the absolutely positioned bottom navigation.
+ */
+@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+  html {
+    height: auto;
+    min-height: 100%;
+  }
+
+  body.main-album-body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-wrap.main-album-container {
+    height: auto;
+    min-height: calc(100vh + 120px);
+    min-height: calc(100dvh + 120px);
+    overflow: visible;
+  }
+
+  .album-page {
+    height: auto;
+    min-height: calc(100vh + 120px);
+    min-height: calc(100dvh + 120px);
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+}
+
 /* The feed has its own full-height scroller. Lock the page behind it while
    it is open so only one scrollbar is rendered. */
 .album-page.album-feed-open {
