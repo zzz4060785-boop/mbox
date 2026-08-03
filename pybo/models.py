@@ -565,8 +565,12 @@ class RecommendationComment(db.Model):
 
 class BoardNotice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    school_name = db.Column(
+        db.String(120),
+        nullable=True,
+        index=True,
+    )
     content = db.Column(db.String(300), nullable=False)
-    # 공지사항에 첨부한 이미지의 /static/uploads/... 주소입니다.
     image_url = db.Column(db.String(255), nullable=True)
     media_type = db.Column(
         db.String(20),

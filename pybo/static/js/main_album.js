@@ -250,8 +250,10 @@ function uploadPhoto() {
 }
 
 function uploadAiPhoto() {
+  const button = document.querySelector(".ai-upload-btn");
+  const userLimit = Number(button?.dataset.userLimit || 2);
   const agreed = confirm(
-    "AI 사진 변환은 한 사람당 월 1회만 사용할 수 있습니다.\n" +
+    `AI 사진 변환은 한 사람당 월 ${userLimit}회까지 사용할 수 있습니다.\n` +
       "지금 저희사이트가 가난합니다 회원수 많아지면 월 0회로 막아드릴께요.\n\n" +
       "사진을 선택하시겠습니까?",
   );
@@ -266,6 +268,7 @@ async function loadAiImageQuota() {
   try {
     const data = await api("/api/album/ai-image/status");
     quota.textContent = `이번 달 AI 변환: ${data.user_remaining}/${data.user_limit}회 사용 가능`;
+    button.dataset.userLimit = String(data.user_limit);
     button.disabled = data.user_remaining < 1 || data.global_remaining < 1;
   } catch (error) {
     quota.textContent = "AI 변환 사용량을 확인할 수 없습니다.";
@@ -277,9 +280,11 @@ async function transformSelectedPhoto(event) {
   if (!file) return;
   const styleSelect = document.getElementById("aiImageStyle");
   const styleLabel = styleSelect.options[styleSelect.selectedIndex].text;
+  const button = document.querySelector(".ai-upload-btn");
+  const userLimit = Number(button?.dataset.userLimit || 2);
   if (
     !confirm(
-      `선택한 사진을 ${styleLabel}으로 변환하여 앨범에 올릴까요?\n월 1회가 사용됩니다.`,
+      `선택한 사진을 ${styleLabel}으로 변환하여 앨범에 올릴까요?\n월 ${userLimit}회 한도에서 1회가 사용됩니다.`,
     )
   ) {
     event.target.value = "";
@@ -287,7 +292,6 @@ async function transformSelectedPhoto(event) {
   }
 
   const status = document.getElementById("albumStatus");
-  const button = document.querySelector(".ai-upload-btn");
   const formData = new FormData();
   formData.append("image", file);
   formData.append("style", styleSelect.value);
@@ -815,15 +819,14 @@ function confirmConnectionMove(userId, clickedElement) {
 }
 
 function relationshipShortLabel(status) {
-  return (
-    {
-      self: "나",
-      accepted: "나와 1촌",
-      sent: "신청 보냄",
-      received: "신청 도착",
-      none: "새 인연",
-    }[status] || ""
-  );
+  const labels = {
+    self: "나",
+    accepted: "나와 1촌",
+    sent: "신청 보냄",
+    received: "신청 도착",
+  };
+
+  return labels[status] || "";
 }
 
 function actionButton(label, handler) {
@@ -1003,9 +1006,14 @@ function closeFriendList() {
 }
 
 /* 전체 사용자 찾기: 모든 이름은 같은 인맥 프로필 창으로 연결됩니다. */
-async function openPeopleFinder() {
-  document.getElementById("peopleFinderModal").style.display = "block";
-  await loadPeople();
+function openPeopleFinder() {
+  const modal = document.getElementById("peopleFinderModal");
+  const container = document.getElementById("peopleListContainer");
+
+  modal.style.display = "block";
+
+  container.innerHTML =
+    '<p class="empty-msg">검색 조건을 입력한 뒤 검색해 주세요.</p>';
 }
 
 function closePeopleFinder() {
@@ -1014,31 +1022,98 @@ function closePeopleFinder() {
 
 async function loadPeople() {
   const query = document.getElementById("peopleSearchInput").value.trim();
-  const age = document.getElementById("peopleAgeInput").value;
+  const age = document.getElementById("peopleAgeInput").value.trim();
   const school = document.getElementById("peopleSchoolInput").value.trim();
   const gender = document.getElementById("peopleGenderInput").value;
   const container = document.getElementById("peopleListContainer");
-  container.innerHTML = '<p class="empty-msg">사람을 찾는 중입니다…</p>';
+
+  // 검색 조건이 하나도 없으면 전체 회원을 불러오지 않습니다.
+  if (!query && !age && !school && !gender) {
+    container.innerHTML =
+      '<p class="empty-msg">이름, 나이, 학교, 성별 중 하나 이상 입력해 주세요.</p>';
+    return;
+  }
+
+  container.innerHTML =
+    '<p class="empty-msg">사람을 찾는 중입니다…</p>';
+
   try {
-    const params = new URLSearchParams({ q: query, age, school, gender });
-    const data = await api(`/api/social/users?${params.toString()}`);
-    container.innerHTML = data.users.length
-      ? data.users
-          .map(
-            (user) => `
-          <button class="person-row" onclick="openUserProfile(${user.id})">
-            <span class="connection-avatar">${escapeHtml(user.username.slice(0, 1))}</span>
-            <span>
-              <strong>${escapeHtml(user.username)}</strong>
-              <small>${escapeHtml(user.school_name)} · ${user.age ? `${user.age}세` : "나이 미등록"} · ${genderLabel(user.gender)}</small>
-            </span>
-            <em>${relationshipShortLabel(user.relationship.status)}</em>
-          </button>`,
-          )
+    const params = new URLSearchParams();
+
+    if (query) {
+      params.set("q", query);
+    }
+
+    if (age) {
+      params.set("age", age);
+    }
+
+    if (school) {
+      params.set("school", school);
+    }
+
+    if (gender) {
+      params.set("gender", gender);
+    }
+
+    const data = await api(
+      `/api/social/users?${params.toString()}`
+    );
+
+    const users = Array.isArray(data.users) ? data.users : [];
+
+    container.innerHTML = users.length
+      ? users
+          .map((user) => {
+            const username = user.username || "사용자";
+            const schoolName = user.school_name || "학교 미등록";
+            const ageText = user.age
+              ? `${user.age}세`
+              : "나이 미등록";
+            const relationshipStatus =
+              user.relationship?.status || "";
+
+            return `
+              <button
+                type="button"
+                class="person-row"
+                onclick="openUserProfile(${user.id})"
+              >
+                <span class="connection-avatar">
+                  ${escapeHtml(username.slice(0, 1))}
+                </span>
+
+                <span>
+                  <strong>${escapeHtml(username)}</strong>
+                  <small>
+                    ${escapeHtml(schoolName)}
+                    · ${escapeHtml(ageText)}
+                    · ${escapeHtml(genderLabel(user.gender))}
+                  </small>
+                </span>
+
+                ${
+                  relationshipStatus
+                    ? `<em>${escapeHtml(
+                        relationshipShortLabel(
+                          relationshipStatus
+                        )
+                      )}</em>`
+                    : ""
+                }
+              </button>
+            `;
+          })
           .join("")
       : '<p class="empty-msg">조건에 맞는 사용자가 없습니다.</p>';
   } catch (error) {
-    container.innerHTML = `<p class="empty-msg">${escapeHtml(error.message)}</p>`;
+    container.innerHTML = `
+      <p class="empty-msg">
+        ${escapeHtml(
+          error.message || "사용자 검색 중 오류가 발생했습니다."
+        )}
+      </p>
+    `;
   }
 }
 

@@ -14,7 +14,21 @@
   <div class="login-box">
     <h1>{{ tr('로그인') }}</h1>
 
-    <form method="post">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="login-flash-area">
+          {% for message in messages %}
+            <p class="login-flash-message">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form
+      id="loginForm"
+      method="post"
+      action="{{ url_for('login2') }}"
+    >
       <input
         type="text"
         name="login_id"
@@ -41,23 +55,39 @@
           name="save_info"
           checked
         />
-        <label for="saveInfo">{{ tr('간편 로그인 정보 저장') }}</label>
+        <label for="saveInfo">
+          {{ tr('간편 로그인 정보 저장') }}
+        </label>
       </div>
 
-      <button type="submit" class="login-btn">{{ tr('로그인') }}</button>
+      <button type="submit" class="login-btn">
+        {{ tr('로그인') }}
+      </button>
     </form>
 
     <p class="divider">{{ tr('또는') }}</p>
 
-    <button type="button" class="sub-btn qr-btn">{{ tr('QR코드 로그인') }}</button>
+    <button type="button" class="sub-btn qr-btn">
+      {{ tr('QR코드 로그인') }}
+    </button>
 
     <div class="find-links">
-      <a href="{{ url_for('find_id') }}">{{ tr('아이디 찾기') }}</a>
+      <a href="{{ url_for('find_id') }}">
+        {{ tr('아이디 찾기') }}
+      </a>
+
       <span>|</span>
-      <a href="{{ url_for('forgot_password') }}">{{ tr('비밀번호 찾기') }}</a>
+
+      <a href="{{ url_for('forgot_password') }}">
+        {{ tr('비밀번호 찾기') }}
+      </a>
     </div>
 
-    <button type="button" class="sub-btn signup-btn" id="openSignupBtn">
+    <button
+      type="button"
+      class="sub-btn signup-btn"
+      id="openSignupBtn"
+    >
       {{ tr('새 계정 만들기') }}
     </button>
 
@@ -86,42 +116,77 @@
     </button>
   </div>
 
-  <div id="signupModal" class="signup-modal" aria-hidden="true">
-    <div class="signup-box">
-      <h2 id="signupTitle">{{ tr('회원가입') }}</h2>
+  <div
+    id="signupModal"
+    class="signup-modal"
+    aria-hidden="true"
+  >
+    <div
+      class="signup-box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="signupTitle"
+    >
+      <h2 id="signupTitle">
+        {{ tr('회원가입') }}
+      </h2>
 
-      <form method="post" action="{{ url_for('signup') }}">
+      <form
+        id="signupForm"
+        method="post"
+        action="{{ url_for('signup') }}"
+      >
         <input
           type="text"
+          id="signupUsername"
           name="username"
           class="input-field"
           placeholder="{{ tr('이름') }}"
           autocomplete="username"
+          minlength="2"
+          maxlength="50"
           required
         />
 
         <input
           type="email"
+          id="signupEmail"
           name="email"
           class="input-field"
           placeholder="{{ tr('이메일') }}"
           autocomplete="email"
+          maxlength="120"
           required
         />
 
         <input
           type="password"
+          id="signupPassword"
           name="password"
           class="input-field"
-          placeholder="{{ tr('비밀번호') }}"
+          placeholder="{{ tr('비밀번호 8자 이상') }}"
           autocomplete="new-password"
           minlength="8"
           required
         />
 
-        <button type="submit" class="login-btn">{{ tr('가입하기') }}</button>
+        <p class="signup-guide">
+          이메일 형식과 8자 이상의 비밀번호를 입력해 주세요.
+        </p>
 
-        <button type="button" class="sub-btn close-btn" id="closeSignupBtn">
+        <button
+          type="submit"
+          class="login-btn"
+          id="signupSubmitBtn"
+        >
+          {{ tr('가입하기') }}
+        </button>
+
+        <button
+          type="button"
+          class="sub-btn close-btn"
+          id="closeSignupBtn"
+        >
           {{ tr('닫기') }}
         </button>
       </form>

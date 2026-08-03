@@ -299,7 +299,10 @@ def create_app():
         """새 게시글을 같은 학교에 등록된 다른 사용자들에게 알립니다."""
         member_rows = (
             db.session.query(User.id)
-            .outerjoin(UserSchool, UserSchool.user_id == User.id)
+            .outerjoin(
+                UserSchool,
+                UserSchool.user_id == User.id,
+            )
             .filter(
                 or_(
                     User.school_name == post.school_name,
@@ -309,7 +312,12 @@ def create_app():
             .distinct()
             .all()
         )
-        target_url = url_for("board_view", post_id=post.id)
+
+        target_url = url_for(
+            "board_view",
+            post_id=post.id,
+        )
+
         for (user_id,) in member_rows:
             add_notification(
                 user_id,
@@ -322,10 +330,13 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+
+        # 기존 User 테이블에 빠진 칼럼을 추가합니다.
         user_columns = {
             column["name"]
             for column in inspect(db.engine).get_columns("user")
         }
+
         school_columns = {
             "school_name": "VARCHAR(120)",
             "school_type": "VARCHAR(30)",
@@ -336,115 +347,196 @@ def create_app():
             "nationality": "VARCHAR(80)",
             "hobby": "VARCHAR(200)",
             "profile_image_url": "VARCHAR(255)",
-            "tag_permission": "VARCHAR(20) NOT NULL DEFAULT 'friends'",
-            "allow_album_comments": "BOOLEAN NOT NULL DEFAULT 1",
-            "allow_connection_discovery": "BOOLEAN NOT NULL DEFAULT 1",
-            "allow_messages": "BOOLEAN NOT NULL DEFAULT 1",
-            "is_profile_public": "BOOLEAN NOT NULL DEFAULT 1",
-        "allow_friend_search": "BOOLEAN NOT NULL DEFAULT 1",
-        "is_executive": "BOOLEAN NOT NULL DEFAULT 0",
-        "last_login_at": "DATETIME",
-        "last_active_at": "DATETIME",
-        "executive_elected_at": "DATETIME",
+            "tag_permission": (
+                "VARCHAR(20) NOT NULL DEFAULT 'friends'"
+            ),
+            "allow_album_comments": (
+                "BOOLEAN NOT NULL DEFAULT 1"
+            ),
+            "allow_connection_discovery": (
+                "BOOLEAN NOT NULL DEFAULT 1"
+            ),
+            "allow_messages": (
+                "BOOLEAN NOT NULL DEFAULT 1"
+            ),
+            "is_profile_public": (
+                "BOOLEAN NOT NULL DEFAULT 1"
+            ),
+            "allow_friend_search": (
+                "BOOLEAN NOT NULL DEFAULT 1"
+            ),
+            "is_executive": (
+                "BOOLEAN NOT NULL DEFAULT 0"
+            ),
+            "last_login_at": "DATETIME",
+            "last_active_at": "DATETIME",
+            "executive_elected_at": "DATETIME",
         }
+
         for column_name, column_type in school_columns.items():
             if column_name not in user_columns:
                 db.session.execute(
                     text(
-                        f'ALTER TABLE "user" ADD COLUMN '
-                        f"{column_name} {column_type}"
+                        f'ALTER TABLE "user" '
+                        f"ADD COLUMN {column_name} {column_type}"
                     )
                 )
+
+        # 기존 게시글 테이블에 빠진 칼럼을 추가합니다.
         post_columns = {
             column["name"]
-            for column in inspect(db.engine).get_columns("board_post")
+            for column in inspect(db.engine).get_columns(
+                "board_post"
+            )
         }
+
         if "user_id" not in post_columns:
             db.session.execute(
-                text("ALTER TABLE board_post ADD COLUMN user_id INTEGER")
+                text(
+                    "ALTER TABLE board_post "
+                    "ADD COLUMN user_id INTEGER"
+                )
             )
+
         if "modify_date" not in post_columns:
             db.session.execute(
-                text("ALTER TABLE board_post ADD COLUMN modify_date DATETIME")
+                text(
+                    "ALTER TABLE board_post "
+                    "ADD COLUMN modify_date DATETIME"
+                )
             )
-        # 기존 DB에도 공지 이미지와 수정일 칼럼을 안전하게 추가합니다.
+
+        # 기존 공지사항 테이블에 필요한 칼럼을 추가합니다.
         notice_columns = {
             column["name"]
-            for column in inspect(db.engine).get_columns("board_notice")
+            for column in inspect(db.engine).get_columns(
+                "board_notice"
+            )
         }
+
+        if "school_name" not in notice_columns:
+            db.session.execute(
+                text(
+                    "ALTER TABLE board_notice "
+                    "ADD COLUMN school_name VARCHAR(120)"
+                )
+            )
+
         if "image_url" not in notice_columns:
             db.session.execute(
-                text("ALTER TABLE board_notice ADD COLUMN image_url VARCHAR(255)")
+                text(
+                    "ALTER TABLE board_notice "
+                    "ADD COLUMN image_url VARCHAR(255)"
+                )
             )
+
         if "modify_date" not in notice_columns:
             db.session.execute(
-                text("ALTER TABLE board_notice ADD COLUMN modify_date DATETIME")
+                text(
+                    "ALTER TABLE board_notice "
+                    "ADD COLUMN modify_date DATETIME"
+                )
             )
+
         if "media_type" not in notice_columns:
             db.session.execute(
                 text(
-                    "ALTER TABLE board_notice ADD COLUMN "
-                    "media_type VARCHAR(20) NOT NULL DEFAULT 'image'"
+                    "ALTER TABLE board_notice "
+                    "ADD COLUMN media_type "
+                    "VARCHAR(20) NOT NULL DEFAULT 'image'"
                 )
             )
+
         if "original_name" not in notice_columns:
             db.session.execute(
                 text(
-                    "ALTER TABLE board_notice ADD COLUMN "
-                    "original_name VARCHAR(255)"
+                    "ALTER TABLE board_notice "
+                    "ADD COLUMN original_name VARCHAR(255)"
                 )
             )
+
+        # 기존 첨부파일 테이블에 미디어 종류 칼럼을 추가합니다.
         attachment_columns = {
             column["name"]
-            for column in inspect(db.engine).get_columns("board_attachment")
+            for column in inspect(db.engine).get_columns(
+                "board_attachment"
+            )
         }
+
         if "media_type" not in attachment_columns:
             db.session.execute(
                 text(
-                    "ALTER TABLE board_attachment ADD COLUMN "
-                    "media_type VARCHAR(20) NOT NULL DEFAULT 'image'"
+                    "ALTER TABLE board_attachment "
+                    "ADD COLUMN media_type "
+                    "VARCHAR(20) NOT NULL DEFAULT 'image'"
                 )
             )
-        # 복수 학교 탈퇴 시 해당 학교에서 쓴 데이터만 찾기 위한 작성 당시 학교입니다.
-        for table_name in (
+
+        # 각 작성 자료에 작성 당시 학교명을 저장할 칼럼을 추가합니다.
+        school_data_tables = (
             "board_post",
             "board_comment",
             "recommendation_post",
             "recommendation_comment",
             "user_album_photo",
             "user_album_comment",
-        ):
-            columns = {
+        )
+
+        for table_name in school_data_tables:
+            table_columns = {
                 column["name"]
-                for column in inspect(db.engine).get_columns(table_name)
+                for column in inspect(db.engine).get_columns(
+                    table_name
+                )
             }
-            if "school_name" not in columns:
+
+            if "school_name" not in table_columns:
                 db.session.execute(
                     text(
                         f'ALTER TABLE "{table_name}" '
-                        'ADD COLUMN school_name VARCHAR(120)'
+                        "ADD COLUMN school_name VARCHAR(120)"
                     )
                 )
-        # 기존 단일 학교 사용자를 첫 번째 학교 소속으로 자동 이관합니다.
-        for existing_user in User.query.filter(User.school_name.isnot(None)).all():
-            if not UserSchool.query.filter_by(
+
+        # 기존 단일 학교 사용자를 UserSchool 테이블로 자동 이관합니다.
+        existing_users = User.query.filter(
+            User.school_name.isnot(None)
+        ).all()
+
+        for existing_user in existing_users:
+            existing_membership = UserSchool.query.filter_by(
                 user_id=existing_user.id,
                 school_name=existing_user.school_name,
-            ).first():
+            ).first()
+
+            if not existing_membership:
                 db.session.add(
                     UserSchool(
                         user_id=existing_user.id,
                         school_name=existing_user.school_name,
-                        school_type=existing_user.school_type or "school",
-                        school_year=existing_user.school_year or "0000",
-                        school_major=existing_user.school_major,
+                        school_type=(
+                            existing_user.school_type
+                            or "school"
+                        ),
+                        school_year=(
+                            existing_user.school_year
+                            or "0000"
+                        ),
+                        school_major=(
+                            existing_user.school_major
+                        ),
                         is_primary=True,
                     )
                 )
+
+        # 기존 앨범 댓글 테이블에 답글 부모 칼럼을 추가합니다.
         album_comment_columns = {
             column["name"]
-            for column in inspect(db.engine).get_columns("user_album_comment")
+            for column in inspect(db.engine).get_columns(
+                "user_album_comment"
+            )
         }
+
         if "parent_id" not in album_comment_columns:
             db.session.execute(
                 text(
@@ -452,6 +544,7 @@ def create_app():
                     "ADD COLUMN parent_id INTEGER"
                 )
             )
+
         db.session.commit()
 
     def login_destination(user):
@@ -1425,7 +1518,9 @@ def create_app():
         if AiImageUsage.query.filter_by(
             user_id=session["user_id"], month_key=month_key
         ).count() >= user_limit:
-            return jsonify(message="이번 달 AI 사진 변환 1회를 이미 사용했습니다."), 429
+            return jsonify(
+                message=f"이번 달 AI 사진 변환 {user_limit}회를 모두 사용했습니다."
+            ), 429
         if AiImageUsage.query.filter_by(month_key=month_key).count() >= global_limit:
             return jsonify(message="이번 달 사이트 전체 AI 변환 한도에 도달했습니다."), 429
 
@@ -1774,39 +1869,57 @@ def create_app():
     @login_required
     def social_user_list():
         """친구 찾기 화면에 전체 가입자와 나와의 관계 상태를 제공합니다."""
+
         search = request.args.get("q", "").strip()
         school = request.args.get("school", "").strip()
         gender = request.args.get("gender", "").strip()
         age = request.args.get("age", type=int)
+
         current_user_id = session["user_id"]
+
+        if not search and not school and not gender and age is None:
+            return jsonify(
+                users=[],
+                message="검색 조건을 하나 이상 입력해 주세요."
+            )
+
         related_rows = Friendship.query.filter(
             or_(
                 Friendship.requester_id == current_user_id,
                 Friendship.receiver_id == current_user_id,
             )
         ).all()
+
         related_user_ids = {
             row.receiver_id
             if row.requester_id == current_user_id
             else row.requester_id
             for row in related_rows
         }
+
         query = User.query.filter(
             User.id != current_user_id,
             User.is_profile_public.is_(True),
             User.allow_friend_search.is_(True),
         )
+
         if related_user_ids:
             query = query.filter(~User.id.in_(related_user_ids))
+
         if search:
             query = query.filter(User.username.ilike(f"%{search}%"))
+
         if school:
             query = query.filter(User.school_name.ilike(f"%{school}%"))
+
         if age is not None:
             query = query.filter(User.age == age)
+
         if gender in {"male", "female", "other"}:
             query = query.filter(User.gender == gender)
+
         users = query.order_by(User.username.asc()).limit(100).all()
+
         return jsonify(
             users=[
                 {
@@ -1816,7 +1929,7 @@ def create_app():
                     "age": user.age,
                     "gender": user.gender,
                     "relationship": _relationship_data(
-                        session["user_id"], user.id
+                        current_user_id, user.id
                     ),
                 }
                 for user in users
@@ -2243,19 +2356,38 @@ def create_app():
     @login_required
     def board():
         active_school = _active_board_school()
+        current_user = db.session.get(User, session["user_id"])
+
+        # 실제로 해당 학교에 등록한 회원만 게시판을 볼 수 있습니다.
+        if not _same_registered_school(current_user, active_school):
+            flash("이 학교에 등록된 회원만 게시판을 볼 수 있습니다.")
+            return redirect(url_for("main_album"))
+
         _maintain_executives()
-        search = request.args.get("kw", request.args.get("search", "")).strip()
+
+        search = request.args.get(
+            "kw",
+            request.args.get("search", ""),
+        ).strip()
+
         page = request.args.get("page", 1, type=int)
-        post_query = BoardPost.query
+
+        # 현재 접속한 학교의 게시글만 조회합니다.
+        post_query = BoardPost.query.filter(
+            BoardPost.school_name == active_school
+        )
 
         if search:
             keyword = f"%{search}%"
+
             post_query = post_query.filter(
                 or_(
                     BoardPost.title.ilike(keyword),
                     BoardPost.content.ilike(keyword),
                     BoardPost.author.ilike(keyword),
-                    BoardPost.user.has(User.username.ilike(keyword)),
+                    BoardPost.user.has(
+                        User.username.ilike(keyword)
+                    ),
                     BoardPost.comments.any(
                         BoardComment.content.ilike(keyword)
                     ),
@@ -2264,57 +2396,94 @@ def create_app():
 
         pagination = post_query.order_by(
             BoardPost.create_date.desc()
-        ).paginate(page=page, per_page=10, error_out=False)
+        ).paginate(
+            page=page,
+            per_page=10,
+            error_out=False,
+        )
+
         posts = pagination.items
+
+        # BoardNotice에는 현재 school_name 칼럼이 없으므로
+        # 공지는 기존 방식대로 조회합니다.
         notice_query = BoardNotice.query
-        recommendation_query = RecommendationPost.query
+
+        # 사랑별 글은 현재 학교의 글만 조회합니다.
+        recommendation_query = RecommendationPost.query.filter(
+            RecommendationPost.school_name == active_school
+        )
+
         if search:
             keyword = f"%{search}%"
+
             notice_query = notice_query.filter(
                 BoardNotice.content.ilike(keyword)
             )
+
             recommendation_query = recommendation_query.filter(
                 or_(
                     RecommendationPost.title.ilike(keyword),
                     RecommendationPost.content.ilike(keyword),
                     RecommendationPost.place_name.ilike(keyword),
-                    RecommendationPost.user.has(User.username.ilike(keyword)),
+                    RecommendationPost.user.has(
+                        User.username.ilike(keyword)
+                    ),
                 )
             )
-        notices = notice_query.order_by(BoardNotice.create_date.desc()).all()
+
+        notices = notice_query.order_by(
+            BoardNotice.create_date.desc()
+        ).all()
+
         recent_recommendations = recommendation_query.order_by(
             RecommendationPost.create_date.desc()
         ).limit(3).all()
+
         search_result_count = (
-            pagination.total + len(notices) + len(recent_recommendations)
+            pagination.total
+            + len(notices)
+            + len(recent_recommendations)
         )
+
         search_items = []
+
         if search:
             search_items.extend(
                 {
                     "kind": "일반 게시글",
                     "title": post.title,
                     "description": f"작성자 {post.author}",
-                    "url": url_for("board_view", post_id=post.id),
+                    "url": url_for(
+                        "board_view",
+                        post_id=post.id,
+                    ),
                 }
                 for post in posts
             )
+
             search_items.extend(
                 {
                     "kind": "공지사항",
                     "title": notice.content,
-                    "description": notice.create_date.strftime("%Y-%m-%d"),
-                    "url": url_for("notice_board") + f"#notice-{notice.id}",
+                    "description": notice.create_date.strftime(
+                        "%Y-%m-%d"
+                    ),
+                    "url": (
+                        url_for("notice_board")
+                        + f"#notice-{notice.id}"
+                    ),
                 }
                 for notice in notices
             )
+
             search_items.extend(
                 {
                     "kind": "사랑별 글",
                     "title": recommendation.title,
                     "description": (
                         f"{recommendation.place_name} · "
-                        f"작성자 {recommendation.user.username}"
+                        f"작성자 "
+                        f"{recommendation.user.username}"
                     ),
                     "url": url_for(
                         "recommendation_detail",
@@ -2332,16 +2501,21 @@ def create_app():
             pagination=pagination,
             search=search,
             can_edit_notice=(
-                _is_executive() and _can_participate_here()
+                _is_executive()
+                and _can_participate_here()
             ),
             can_participate=_can_participate_here(),
             active_school=active_school,
             recent_recommendations=recent_recommendations,
-            executive_application=ExecutiveApplication.query.filter_by(
-                user_id=session["user_id"],
-                school_name=active_school,
-                election_year=datetime.utcnow().year + 1,
-            ).first(),
+            executive_application=(
+                ExecutiveApplication.query.filter_by(
+                    user_id=session["user_id"],
+                    school_name=active_school,
+                    election_year=(
+                        datetime.utcnow().year + 1
+                    ),
+                ).first()
+            ),
             executives=User.query.filter_by(
                 school_name=active_school,
                 is_executive=True,
@@ -2951,35 +3125,74 @@ def create_app():
     @login_required
     def board_view(post_id):
         post = db.get_or_404(BoardPost, post_id)
-        post.views += 1
-        db.session.commit()
         user = db.session.get(User, session["user_id"])
-        meta = BoardPostMeta.query.filter_by(post_id=post.id).first()
-        attachments = BoardAttachment.query.filter_by(post_id=post.id).all()
+
+        # 해당 게시글의 학교에 실제 등록된 회원만 열람할 수 있습니다.
+        if not _same_registered_school(user, post.school_name):
+            flash("이 학교에 등록된 회원만 게시글을 볼 수 있습니다.")
+            return redirect(
+                url_for(
+                    "main_album",
+                    school=user.school_name if user else None,
+                )
+            )
+
+        meta = BoardPostMeta.query.filter_by(
+            post_id=post.id
+        ).first()
+
+        attachments = BoardAttachment.query.filter_by(
+            post_id=post.id
+        ).all()
+
         can_manage = bool(
             user
             and (
                 post.user_id == user.id
-                or (post.user_id is None and post.author == user.username)
+                or (
+                    post.user_id is None
+                    and post.author == user.username
+                )
             )
         )
-        can_participate = _same_registered_school(user, post.school_name)
+
+        # 비밀글은 작성자만 볼 수 있습니다.
         if meta and meta.is_secret and not can_manage:
             flash("비밀글은 작성자만 볼 수 있습니다.")
-            return redirect(url_for("board"))
+            return redirect(
+                url_for(
+                    "board",
+                    school=post.school_name,
+                )
+            )
+
+        # 권한 검사가 끝난 뒤에만 조회수를 증가시킵니다.
+        post.views += 1
+        db.session.commit()
+
+        # 이전 글도 같은 학교 글만 조회합니다.
         previous_post = BoardPost.query.filter(
-            BoardPost.id < post.id
-        ).order_by(BoardPost.id.desc()).first()
+            BoardPost.school_name == post.school_name,
+            BoardPost.id < post.id,
+        ).order_by(
+            BoardPost.id.desc()
+        ).first()
+
+        # 다음 글도 같은 학교 글만 조회합니다.
         next_post = BoardPost.query.filter(
-            BoardPost.id > post.id
-        ).order_by(BoardPost.id.asc()).first()
+            BoardPost.school_name == post.school_name,
+            BoardPost.id > post.id,
+        ).order_by(
+            BoardPost.id.asc()
+        ).first()
+
         return render_template(
             "board_detail.html",
             post=post,
             meta=meta,
             attachments=attachments,
             can_manage=can_manage,
-            can_participate=can_participate,
+            can_participate=True,
             previous_post=previous_post,
             next_post=next_post,
         )
@@ -3315,14 +3528,35 @@ def create_app():
     @app.route("/notices")
     @login_required
     def notice_board():
-        """공지 본문과 첨부 이미지는 이 전용 게시판에서만 보여 줍니다."""
-        _active_board_school()
-        notices = BoardNotice.query.order_by(BoardNotice.create_date.desc()).all()
+        """현재 등록 학교의 공지만 보여 줍니다."""
+        active_school = _active_board_school()
+        current_user = db.session.get(
+            User,
+            session["user_id"],
+        )
+
+        if not _same_registered_school(
+            current_user,
+            active_school,
+        ):
+            flash("이 학교에 등록된 회원만 공지사항을 볼 수 있습니다.")
+            return redirect(url_for("main_album"))
+
+        notices = BoardNotice.query.filter(
+            BoardNotice.school_name == active_school
+        ).order_by(
+            BoardNotice.create_date.desc()
+        ).all()
+
         return render_template(
             "notice_board.html",
             notices=notices,
-            can_edit_notice=_is_executive() and _can_participate_here(),
-            can_participate=_can_participate_here(),
+            can_edit_notice=(
+                _is_executive()
+                and _can_participate_here()
+            ),
+            can_participate=True,
+            active_school=active_school,
         )
 
     @app.route("/notice/edit", methods=["GET", "POST"])
@@ -3426,6 +3660,7 @@ def create_app():
         else:
             db.session.add(
                 BoardNotice(
+                    school_name=_active_board_school(),
                     content=notice_content,
                     image_url=image_url,
                     media_type=media_type,
@@ -3648,14 +3883,17 @@ def create_app():
             return redirect(url_for("main"))
 
         userinfo = token.get("userinfo") or {}
+
         subject = str(userinfo.get("sub", "")).strip()
         email = str(userinfo.get("email", "")).strip().lower()
         email_verified = userinfo.get("email_verified", False)
+        google_name = str(userinfo.get("name", "")).strip()
 
         if not subject or not email or not email_verified:
             flash("인증된 Google 이메일 정보를 확인할 수 없습니다.")
             return redirect(url_for("main"))
 
+        # 이미 이 구글 계정으로 가입한 사용자인지 확인합니다.
         oauth_account = OAuthAccount.query.filter_by(
             provider="google",
             subject=subject,
@@ -3663,53 +3901,142 @@ def create_app():
 
         if oauth_account:
             user = db.session.get(User, oauth_account.user_id)
-        else:
-            user = User.query.filter_by(email=email).first()
 
             if not user:
-                base_username = (
-                    str(userinfo.get("name", "")).strip()
-                    or email.split("@", 1)[0]
-                    or "google_user"
-                )
-                username = base_username[:50]
-                suffix = 1
+                flash("연결된 사용자 정보를 찾을 수 없습니다.")
+                return redirect(url_for("main"))
 
-                while User.query.filter_by(username=username).first():
-                    suffix_text = f"_{suffix}"
-                    username = (
-                        f"{base_username[: 50 - len(suffix_text)]}{suffix_text}"
-                    )
-                    suffix += 1
+            session.clear()
+            session["user_id"] = user.id
+            session.permanent = True
 
-                user = User(
-                    username=username,
-                    email=email,
-                    password=generate_password_hash(
-                        secrets.token_urlsafe(32)
-                    ),
-                )
-                db.session.add(user)
-                db.session.flush()
+            return login_destination(user)
 
+        # 같은 이메일로 일반회원 가입 이력이 있다면 구글 계정만 연결합니다.
+        existing_user = User.query.filter_by(email=email).first()
+
+        if existing_user:
             db.session.add(
                 OAuthAccount(
                     provider="google",
                     subject=subject,
-                    user_id=user.id,
+                    user_id=existing_user.id,
                 )
             )
             db.session.commit()
 
-        if not user:
-            flash("연결된 사용자 정보를 찾을 수 없습니다.")
+            session.clear()
+            session["user_id"] = existing_user.id
+            session.permanent = True
+
+            return login_destination(existing_user)
+
+        # 완전한 신규 회원이면 아직 User를 생성하지 않고
+        # 닉네임 설정 화면으로 이동시킵니다.
+        session.clear()
+        session["pending_social_signup"] = {
+            "provider": "google",
+            "subject": subject,
+            "email": email,
+            "suggested_name": google_name,
+        }
+
+        return redirect(url_for("social_nickname_setup"))
+
+    @app.route("/social/nickname", methods=["GET", "POST"])
+    def social_nickname_setup():
+        pending_signup = session.get("pending_social_signup")
+
+        if not pending_signup:
+            flash("소셜 로그인 정보가 만료되었습니다. 다시 로그인해 주세요.")
             return redirect(url_for("main"))
+
+        if request.method == "GET":
+            return render_template(
+                "social_nickname.html",
+                suggested_name=pending_signup.get("suggested_name", ""),
+                email=pending_signup.get("email", ""),
+            )
+
+        username = request.form.get("username", "").strip()
+
+        if len(username) < 2:
+            flash("닉네임은 2자 이상 입력해 주세요.")
+            return redirect(url_for("social_nickname_setup"))
+
+        if len(username) > 20:
+            flash("닉네임은 20자 이하로 입력해 주세요.")
+            return redirect(url_for("social_nickname_setup"))
+
+        # 한글, 영어, 숫자, 밑줄만 허용합니다.
+        if not re.fullmatch(r"[0-9A-Za-z가-힣_]+", username):
+            flash("닉네임에는 한글, 영어, 숫자, 밑줄만 사용할 수 있습니다.")
+            return redirect(url_for("social_nickname_setup"))
+
+        duplicate_user = User.query.filter_by(username=username).first()
+
+        if duplicate_user:
+            flash("이미 사용 중인 닉네임입니다.")
+            return redirect(url_for("social_nickname_setup"))
+
+        provider = pending_signup.get("provider")
+        subject = pending_signup.get("subject")
+        email = pending_signup.get("email")
+
+        if not provider or not subject or not email:
+            session.pop("pending_social_signup", None)
+            flash("소셜 로그인 정보가 올바르지 않습니다. 다시 로그인해 주세요.")
+            return redirect(url_for("main"))
+
+        # 중복 요청이나 뒤로가기 상황을 다시 검사합니다.
+        existing_oauth_account = OAuthAccount.query.filter_by(
+            provider=provider,
+            subject=subject,
+        ).first()
+
+        if existing_oauth_account:
+            user = db.session.get(User, existing_oauth_account.user_id)
+
+            session.clear()
+
+            if not user:
+                flash("연결된 사용자 정보를 찾을 수 없습니다.")
+                return redirect(url_for("main"))
+
+            session["user_id"] = user.id
+            session.permanent = True
+
+            return login_destination(user)
+
+        user = User(
+            username=username,
+            email=email,
+            password=generate_password_hash(
+                secrets.token_urlsafe(32)
+            ),
+        )
+
+        db.session.add(user)
+        db.session.flush()
+
+        db.session.add(
+            OAuthAccount(
+                provider=provider,
+                subject=subject,
+                user_id=user.id,
+            )
+        )
+
+        db.session.commit()
 
         session.clear()
         session["user_id"] = user.id
         session.permanent = True
 
-        return login_destination(user)
+        flash(f"{username}님, 가입을 환영합니다.")
+
+        # 신규 회원은 학교 등록 화면으로 보냅니다.
+        return redirect(url_for("main_success"))
 
     @app.post("/logout")
     def logout():
@@ -3720,17 +4047,26 @@ def create_app():
     @app.route("/signup", methods=["POST"])
     def signup():
         username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         if not username or not email or not password:
             flash("모든 항목을 입력해 주세요.")
             return redirect(url_for("login2"))
 
+        if len(username) < 2:
+            flash("이름은 2자 이상 입력해 주세요.")
+            return redirect(url_for("login2"))
+
+        if len(username) > 50:
+            flash("이름은 50자 이하로 입력해 주세요.")
+            return redirect(url_for("login2"))
+
         if len(password) < 8:
             flash("비밀번호는 8자 이상 입력해 주세요.")
             return redirect(url_for("login2"))
 
+        # 이메일만 중복 가입을 차단합니다.
         if User.query.filter_by(email=email).first():
             flash("이미 가입된 이메일입니다.")
             return redirect(url_for("login2"))
@@ -3741,10 +4077,15 @@ def create_app():
             password=generate_password_hash(password),
         )
 
-        db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.add(user)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("회원가입 저장 실패")
+            flash("회원가입 처리 중 오류가 발생했습니다.")
+            return redirect(url_for("login2"))
 
-        # 가입한 회원을 자동 로그인 처리
         session.clear()
         session["user_id"] = user.id
         session.permanent = True

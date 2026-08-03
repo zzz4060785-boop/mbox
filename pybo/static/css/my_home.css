@@ -1,10 +1,20 @@
+/* =========================================================
+   MY HOME 전용 스타일
+   base.css와 충돌하지 않도록 .my-home-page 아래로 제한
+   ========================================================= */
+
 .my-home-page {
+  width: 100%;
   min-height: 100vh;
   padding: 58px 12px 24px;
   background: linear-gradient(#faf9f7, #f2ece5);
 }
 
-.my-home-header > a {
+/* -------------------------
+   상단 제목 영역
+------------------------- */
+
+.my-home-page .my-home-header > a {
   display: inline-block;
   margin-bottom: 18px;
   color: #357abd;
@@ -13,57 +23,72 @@
   text-decoration: none;
 }
 
-.my-home-header > div {
+.my-home-page .my-home-header > a:hover,
+.my-home-page .my-home-header > a:focus-visible {
+  color: #245f99;
+  text-decoration: underline;
+  outline: none;
+}
+
+.my-home-page .my-home-header > div {
   display: flex;
   align-items: center;
   gap: 9px;
 }
 
-.my-home-header h1 {
+.my-home-page .my-home-header h1 {
   margin: 0;
   color: #222222;
   font-size: 24px;
 }
 
-.my-home-header > div > span {
+.my-home-page .my-home-header > div > span {
   font-size: 26px;
 }
 
-.my-home-header > p {
+.my-home-page .my-home-header > p {
   margin-top: 8px;
   color: #777777;
   font-size: 13px;
 }
 
-.classroom-card {
+/* -------------------------
+   교실 카드
+------------------------- */
+
+.my-home-page .classroom-card {
   margin-top: 24px;
   padding: 10px;
+  overflow: hidden;
   border: 1px solid #eeeeee;
   border-radius: 18px;
   background: #ffffff;
-  overflow: hidden;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
-.classroom-card-title {
+.my-home-page .classroom-card-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 4px 4px 10px;
 }
 
-.classroom-card-title strong {
+.my-home-page .classroom-card-title strong {
   color: #735238;
   font-size: 12px;
   letter-spacing: 0.8px;
 }
 
-.classroom-card-title span {
+.my-home-page .classroom-card-title span {
   color: #999999;
   font-size: 10px;
 }
 
-.classroom-scene {
+/* -------------------------
+   교실 장면
+------------------------- */
+
+.my-home-page .classroom-scene {
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -73,7 +98,29 @@
   aspect-ratio: 1700 / 921;
 }
 
-.classroom-scene img {
+/*
+  교실 배경 사진 버튼
+  기본 button CSS 영향을 받지 않도록 전부 초기화
+*/
+
+.my-home-page .classroom-photo-open {
+  width: 100%;
+  height: 100%;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.my-home-page .classroom-photo-open:focus-visible {
+  outline: 3px solid rgba(47, 128, 237, 0.8);
+  outline-offset: -3px;
+}
+
+.my-home-page .classroom-background-image {
   width: 100%;
   height: 100%;
   display: block;
@@ -81,10 +128,22 @@
   image-rendering: pixelated;
 }
 
-.classroom-avatar {
+/* data-photo-lightbox는 base.css의 공용 확대창 사용 */
+
+.my-home-page img[data-photo-lightbox] {
+  cursor: zoom-in;
+}
+
+/* -------------------------
+   아바타
+------------------------- */
+
+.my-home-page .classroom-avatar {
   width: 15%;
   position: absolute;
   bottom: 7%;
+  z-index: 2;
+  margin: 0;
   padding: 0;
   border: 2px solid transparent;
   border-radius: 10px;
@@ -93,29 +152,35 @@
   filter: drop-shadow(0 3px 2px rgba(84, 55, 30, 0.25));
 }
 
-.classroom-avatar img {
+.my-home-page .classroom-avatar img {
   width: 100%;
   height: auto;
+  display: block;
   object-fit: contain;
+  image-rendering: pixelated;
 }
 
-.classroom-avatar:hover,
-.classroom-avatar:focus-visible,
-.classroom-avatar.selected {
+.my-home-page .classroom-avatar:hover,
+.my-home-page .classroom-avatar:focus-visible,
+.my-home-page .classroom-avatar.selected {
   border-color: rgba(255, 255, 255, 0.95);
   background: rgba(255, 226, 133, 0.25);
   outline: none;
 }
 
-.avatar-male {
+.my-home-page .avatar-male {
   left: 39%;
 }
 
-.avatar-female {
+.my-home-page .avatar-female {
   left: 55%;
 }
 
-.my-home-status {
+/* -------------------------
+   안내 문구
+------------------------- */
+
+.my-home-page .my-home-status {
   min-height: 34px;
   margin: 0;
   padding: 11px 6px 2px;
@@ -124,15 +189,19 @@
   text-align: center;
 }
 
-.avatar-shop-link {
+/* -------------------------
+   아바타샵 버튼
+------------------------- */
+
+.my-home-page .avatar-shop-link {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 12px;
   padding: 13px 16px;
-  border-radius: 14px;
   border: 0;
+  border-radius: 14px;
   background: #2f80ed;
   color: #ffffff;
   font-size: 13px;
@@ -145,14 +214,18 @@
     background-color 0.2s ease;
 }
 
-.avatar-shop-link:hover,
-.avatar-shop-link:focus-visible {
+.my-home-page .avatar-shop-link:hover,
+.my-home-page .avatar-shop-link:focus-visible {
   background: #246dcb;
   transform: translateY(-1px);
   outline: none;
 }
 
-.avatar-shop-modal {
+/* -------------------------
+   아바타샵 준비중 모달
+------------------------- */
+
+.my-home-page .avatar-shop-modal {
   position: fixed;
   inset: 0;
   z-index: 2000;
@@ -161,17 +234,17 @@
   padding: 20px;
 }
 
-.avatar-shop-modal[hidden] {
+.my-home-page .avatar-shop-modal[hidden] {
   display: none;
 }
 
-.avatar-shop-modal-backdrop {
+.my-home-page .avatar-shop-modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.48);
 }
 
-.avatar-shop-modal-box {
+.my-home-page .avatar-shop-modal-box {
   width: min(320px, 100%);
   position: relative;
   z-index: 1;
@@ -182,24 +255,26 @@
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
 }
 
-.avatar-shop-lock {
+.my-home-page .avatar-shop-lock {
   display: block;
   margin-bottom: 9px;
   font-size: 30px;
 }
 
-.avatar-shop-modal-box h2 {
+.my-home-page .avatar-shop-modal-box h2 {
+  margin: 0;
   color: #222222;
   font-size: 20px;
+  line-height: 1.45;
 }
 
-.avatar-shop-modal-box p {
+.my-home-page .avatar-shop-modal-box p {
   margin-top: 9px;
   color: #777777;
   font-size: 13px;
 }
 
-.avatar-shop-modal-box button {
+.my-home-page .avatar-shop-modal-box button {
   width: 100%;
   margin-top: 20px;
   padding: 11px;
@@ -209,4 +284,29 @@
   color: #ffffff;
   font-weight: 800;
   cursor: pointer;
+}
+
+.my-home-page .avatar-shop-modal-box button:hover,
+.my-home-page .avatar-shop-modal-box button:focus-visible {
+  background: #246dcb;
+  outline: none;
+}
+
+/* -------------------------
+   작은 모바일 화면
+------------------------- */
+
+@media (max-width: 360px) {
+  .my-home-page {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .my-home-page .my-home-header h1 {
+    font-size: 21px;
+  }
+
+  .my-home-page .classroom-avatar {
+    width: 16%;
+  }
 }
