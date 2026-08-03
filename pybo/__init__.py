@@ -1300,6 +1300,12 @@ def create_app():
     def social_settings_save():
         """개인정보 설정은 로그인한 본인 계정에만 저장합니다."""
         data = request.get_json(silent=True) or {}
+        user = db.session.get(User, session["user_id"])
+        username = str(data.get("username", user.username)).strip()
+        if len(username) < 2:
+            return jsonify(message="이름은 2자 이상 입력해 주세요."), 400
+        if len(username) > 50:
+            return jsonify(message="이름은 50자 이하로 입력해 주세요."), 400
         tag_permission = data.get("tag_permission", "friends")
         if tag_permission not in {"friends", "off"}:
             return jsonify(message="태그 설정값을 확인해 주세요."), 400
@@ -1316,7 +1322,7 @@ def create_app():
         gender = str(data.get("gender", "")).strip()
         if gender not in {"", "male", "female", "other"}:
             return jsonify(message="성별 설정값을 확인해 주세요."), 400
-        user = db.session.get(User, session["user_id"])
+        user.username = username
         user.school_name = str(data.get("school_name", "")).strip()[:120] or None
         user.school_year = str(data.get("school_year", "")).strip()[:4] or None
         user.age = age
@@ -1334,7 +1340,10 @@ def create_app():
         user.is_profile_public = bool(data.get("is_profile_public"))
         user.allow_friend_search = bool(data.get("allow_friend_search"))
         db.session.commit()
-        return jsonify(message="내 정보 공개 설정이 저장되었습니다.")
+        return jsonify(
+            message="이름과 개인정보 설정이 저장되었습니다.",
+            username=user.username,
+        )
 
     @app.get("/api/album/feed")
     @login_required

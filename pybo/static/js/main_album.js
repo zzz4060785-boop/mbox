@@ -178,6 +178,13 @@ function updatePrivacyDependency() {
 }
 
 async function saveProfileSettings() {
+  const username = document.getElementById("profileName").value.trim();
+  if (username.length < 2 || username.length > 50) {
+    document.getElementById("privacyStatus").textContent =
+      "이름은 2자 이상 50자 이하로 입력해 주세요.";
+    return;
+  }
+
   const isPublic = document.getElementById("isProfilePublic").checked;
   if (
     !isPublic &&
@@ -194,6 +201,7 @@ async function saveProfileSettings() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        username,
         school_name: document.getElementById("profileSchoolInput").value,
         school_year: document.getElementById("profileSchoolYear").value,
         age: document.getElementById("profileAge").value,
@@ -213,6 +221,8 @@ async function saveProfileSettings() {
       }),
     });
     status.textContent = data.message;
+    document.getElementById("profileName").value = data.username;
+    mainAlbumScript.dataset.currentUsername = data.username;
     setTimeout(closeProfilePopup, 500);
   } catch (error) {
     status.textContent = error.message;
