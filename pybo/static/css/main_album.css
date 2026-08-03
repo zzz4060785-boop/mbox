@@ -929,6 +929,16 @@ body.photo-lightbox-open {
   text-align: center;
 }
 
+.friend-request-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.friend-request-section h4 {
+  margin: 0 0 10px;
+}
+
 .msg-item {
   margin-bottom: 8px;
   padding: 12px;

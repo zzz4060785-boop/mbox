@@ -20,8 +20,26 @@ plugins {
     id 'com.android.application'
 }
 
+// Release signing credentials are kept outside source control.
+def signingCredentialsFile = rootProject.file('signing-credentials.txt')
+def uploadKeyFile = rootProject.file('friendary-upload-key.jks')
+def uploadKeyAlias
+def uploadKeyPassword
+
+if (signingCredentialsFile.exists()) {
+    signingCredentialsFile.eachLine { line ->
+        def separator = line.indexOf(':')
+        if (separator > 0) {
+            def name = line.substring(0, separator).trim()
+            def value = line.substring(separator + 1).trim()
+            if (name.equalsIgnoreCase('Alias')) uploadKeyAlias = value
+            if (name.equalsIgnoreCase('Password')) uploadKeyPassword = value
+        }
+    }
+}
+
 def twaManifest = [
-    applicationId: 'com.friendary.app',
+    applicationId: 'com.junyoung.friendary',
     hostName: 'zzz8247.mycafe24.com', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'Friendary', // The application name.
@@ -53,9 +71,9 @@ def twaManifest = [
 android {
     compileSdkVersion 36
     buildToolsVersion "36.0.0"
-    namespace "com.friendary.app"
+    namespace "com.junyoung.friendary"
     defaultConfig {
-        applicationId "com.friendary.app"
+        applicationId "com.junyoung.friendary"
         minSdkVersion 21
         targetSdkVersion 36
         versionCode 1
@@ -151,9 +169,24 @@ android {
 
         
     }
+    signingConfigs {
+        release {
+            if (!uploadKeyFile.exists()) {
+                throw new GradleException("Missing upload keystore: ${uploadKeyFile}")
+            }
+            if (!uploadKeyAlias || !uploadKeyPassword) {
+                throw new GradleException('Missing Alias or Password in android/signing-credentials.txt')
+            }
+            storeFile uploadKeyFile
+            storePassword uploadKeyPassword
+            keyAlias uploadKeyAlias
+            keyPassword uploadKeyPassword
+        }
+    }
     buildTypes {
         release {
             minifyEnabled true
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {

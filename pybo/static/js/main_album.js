@@ -870,7 +870,10 @@ async function acceptFriend(friendshipId) {
       method: "POST",
     });
     alert(data.message);
-    await openUserProfile(selectedProfileUserId);
+    if (selectedProfileUserId) await openUserProfile(selectedProfileUserId);
+    if (document.getElementById("friendListModal").style.display === "block") {
+      await openFriendList();
+    }
     await refreshSocialBadges();
   } catch (error) {
     alert(error.message);
@@ -916,6 +919,8 @@ async function refreshSocialBadges() {
 async function openFriendList() {
   const modal = document.getElementById("friendListModal");
   const container = document.getElementById("friendListContainer");
+  const requestSection = document.getElementById("friendRequestSection");
+  const requestContainer = document.getElementById("friendRequestContainer");
   try {
     const data = await api("/api/social/friends");
     const requests = data.requests
@@ -938,7 +943,9 @@ async function openFriendList() {
       )
       .join("");
     container.innerHTML =
-      requests + friends || '<p class="empty-msg">아직 1촌이 없습니다.</p>';
+      friends || '<p class="empty-msg">아직 수락된 1촌이 없습니다.</p>';
+    requestSection.hidden = !requests;
+    requestContainer.innerHTML = requests;
     data.friends.forEach((item) => {
       const row = container.querySelector(
         `.friend-item.accepted[data-friendship-id="${item.friendship_id}"]`,

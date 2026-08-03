@@ -1348,14 +1348,11 @@ def create_app():
     @app.get("/api/album/feed")
     @login_required
     def user_album_feed():
-        owner_id = request.args.get("user_id", type=int)
         current_user_id = session["user_id"]
-        query = UserAlbumPhoto.query.join(User).filter(
-            or_(
-                User.id == current_user_id,
-                User.is_profile_public.is_(True),
-            )
-        )
+        # With no explicit profile target, this endpoint powers "My Album".
+        # Default to the signed-in user instead of exposing every public album.
+        owner_id = request.args.get("user_id", type=int) or current_user_id
+        query = UserAlbumPhoto.query
         if owner_id:
             owner = db.get_or_404(User, owner_id)
             if owner.id != current_user_id and not owner.is_profile_public:
