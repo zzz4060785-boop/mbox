@@ -692,9 +692,16 @@ def create_app():
             return jsonify(schools=[])
 
         from pybo.japan_schools import search_japan_schools
+        from pybo.us_schools import search_us_schools
+
         jp_schools = search_japan_schools(keyword, requested_type)
+        us_schools = search_us_schools(keyword, requested_type)
+
         if jp_schools and (lang == "ja" or re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", keyword)):
             return jsonify(schools=jp_schools)
+
+        if us_schools and (lang == "en" or re.search(r"[a-zA-Z]", keyword)):
+            return jsonify(schools=us_schools)
 
         if requested_type in {"대학교", "大学"}:
             univ_api_key = app.config.get("UNIVERSITY_API_KEY", "").strip()
