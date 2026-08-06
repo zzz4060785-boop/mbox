@@ -35,7 +35,7 @@
     </p>
     {% if executives %}
     <div class="current-executives">
-      {% for executive in executives %}<span>{{ executive.username }}</span>{%
+      {% for executive in executives %}<span>{{ executive.display_name }}</span>{%
       endfor %}
     </div>
     {% endif %} {% if can_participate %} {% if executive_application %}
@@ -186,7 +186,7 @@
       </span>
       <span class="item-meta">
         <span>No. {{ post.id }}</span>
-        <span>작성자: {{ post.author }}</span>
+        <span>작성자: {{ post.user.display_name if post.user else post.author }}</span>
         <span>{{ post.create_date.strftime('%Y-%m-%d') }}</span>
         <span>조회 {{ post.views }}</span>
         <span>사랑별 {{ post.voters|length }}</span>

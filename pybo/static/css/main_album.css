@@ -22,7 +22,7 @@ body.main-album-body {
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
-  background: #fffefd;
+  background: #cbf1f1;
   font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -32,7 +32,7 @@ body.main-album-body {
  * Let the document own the scroll on narrow screens and keep enough page
  * height for the absolutely positioned bottom navigation.
  */
-@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
   html {
     height: auto;
     min-height: 100%;
@@ -48,17 +48,21 @@ body.main-album-body {
 
   .mobile-wrap.main-album-container {
     height: auto;
-    min-height: calc(100vh + 120px);
-    min-height: calc(100dvh + 120px);
+    min-height: calc(100vh + 350px);
+    min-height: calc(100dvh + 350px);
     overflow: visible;
   }
 
   .album-page {
     height: auto;
-    min-height: calc(100vh + 120px);
-    min-height: calc(100dvh + 120px);
+    min-height: calc(100vh + 350px);
+    min-height: calc(100dvh + 350px);
     overflow-x: hidden;
     overflow-y: visible;
+  }
+
+  .star-sidebar-box {
+    top: 532px !important;
   }
 }
 
@@ -87,7 +91,7 @@ h1 {
   overflow: hidden;
   border: 1px solid #f1f1f1;
   border-radius: 20px;
-  background: white;
+  background: rgb(227, 223, 247);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
@@ -111,6 +115,25 @@ h1 {
   border-radius: 18px;
   background: #fff;
   box-shadow: 0 8px 25px rgb(0 0 0 / 6%);
+}
+
+.star-sidebar-box {
+  width: min(180px, calc((100% - 30px) / 2));
+  min-height: 138px;
+  position: absolute;
+  top: 532px;
+  right: 12px;
+  z-index: 10;
+  padding: 8px 4px;
+  border: 1px solid #ffe4e8;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 25px rgba(255, 64, 129, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .online-friends-title {
@@ -307,7 +330,7 @@ h1 {
   padding: 18px;
   z-index: 500;
   overflow-y: auto;
-  background: #f8f7f7;
+  background: #e0f2f5;
 }
 
 .album-top {
@@ -475,7 +498,7 @@ body.photo-lightbox-open {
 }
 
 .photo-lightbox[hidden] {
-  display: none;
+  display: none !important;
 }
 
 .photo-lightbox img {
@@ -927,6 +950,16 @@ body.photo-lightbox-open {
   color: #666;
   font-size: 14px;
   text-align: center;
+}
+
+.friend-request-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.friend-request-section h4 {
+  margin: 0 0 10px;
 }
 
 .msg-item {
@@ -1595,12 +1628,12 @@ body.photo-lightbox-open {
 .event-popup .event-popup-header h3 {
   margin: 0;
   color: inherit;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .event-popup .event-benefit {
   margin-top: 15px;
-  font-size: 13px;
+  font-size: 18px;
   line-height: 1.5;
 }
 
@@ -1612,8 +1645,8 @@ body.photo-lightbox-open {
   width: 100%;
   display: block;
   margin-top: auto;
-  color: #ff00ff;
-  font-size: 13px;
+  color: #f10769;
+  font-size: 17px;
   font-weight: bold;
   text-align: center;
 }

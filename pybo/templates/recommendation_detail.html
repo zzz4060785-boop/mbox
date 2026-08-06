@@ -7,7 +7,7 @@ block stylesheet %}
 {% endblock %} {% block content %} {% macro comment_tree(comment, depth=0) %}
 <article class="recommend-comment" style="--depth: {{ [depth, 6]|min }}">
   <div>
-    <strong>{{ comment.user.username }}</strong>
+    <strong>{{ comment.user.display_name if comment.user else '알수없음' }}</strong>
     <time>{{ comment.create_date.strftime('%Y-%m-%d %H:%M') }}</time>
     <p>{{ comment.content|hashtags }}</p>
     {% if can_participate %}
@@ -50,7 +50,7 @@ block stylesheet %}
     <h2>📍 {{ post.place_name }}</h2>
     <p class="recommend-meta">
       <a href="{{ url_for('main_album', profile_user=post.user.id) }}"
-        >{{ post.user.username }}</a
+        >{{ post.user.display_name if post.user else '알수없음' }}</a
       >
       · {{ post.create_date.strftime('%Y-%m-%d') }} · 조회 {{ post.views }}
     </p>

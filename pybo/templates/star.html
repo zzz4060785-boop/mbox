@@ -1,0 +1,86 @@
+<!-- ⭐ 사랑별 5대 구역 별표 미니 위젯 (star.html) ⭐ -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/star.css', v='20260807-pink-glow-2') }}" />
+
+<section class="star-layout-section" aria-label="사랑별 5대 구역">
+  <!-- 대형 별표 5대 구역 레이아웃 -->
+  <div class="star-layout-wrapper">
+    <div class="star-container">
+      <svg class="star-svg-bg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ff80ab" stop-opacity="0.85" />
+            <stop offset="50%" stop-color="#ff4081" stop-opacity="0.45" />
+            <stop offset="100%" stop-color="#f50057" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffcdd2" />
+            <stop offset="50%" stop-color="#ff4081" />
+            <stop offset="100%" stop-color="#c2185b" />
+          </linearGradient>
+        </defs>
+        <!-- 배경 반짝임 및 분홍빛 오각별 외곽선 -->
+        <circle cx="250" cy="250" r="220" fill="url(#starGlow)" class="pulse-glow" />
+        <polygon points="250,30 315,180 475,185 350,290 390,450 250,360 110,450 150,290 25,185 185,180" 
+                 fill="none" stroke="url(#pinkGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" class="star-outline" />
+      </svg>
+
+      <!-- 별의 중앙 노드 (중앙 사랑별만 실시간 DB 현황 모달 표시) -->
+      <a href="#" class="star-center-core" onclick="openSarangdalStatusModal(); return false;" title="사랑달 현황 보기">
+        <div class="core-inner">
+          <span class="core-icon">✨</span>
+          <span class="core-text">사랑별</span>
+        </div>
+      </a>
+
+      <!-- 별표 5개 구역 노드 (모달 창 없이 단순 # 링크) -->
+      <a href="#" class="star-zone-node zone-top" data-category="restaurant">
+        <div class="node-badge">1구역</div>
+        <div class="node-icon">🍜</div>
+        <div class="node-label">맛집</div>
+      </a>
+
+      <a href="#" class="star-zone-node zone-top-right" data-category="cafe">
+        <div class="node-badge">2구역</div>
+        <div class="node-icon">☕</div>
+        <div class="node-label">카페</div>
+      </a>
+
+      <a href="#" class="star-zone-node zone-bottom-right" data-category="alumni">
+        <div class="node-badge">3구역</div>
+        <div class="node-icon">🏬</div>
+        <div class="node-label">동창가게</div>
+      </a>
+
+      <a href="#" class="star-zone-node zone-bottom-left" data-category="travel">
+        <div class="node-badge">4구역</div>
+        <div class="node-icon">🏞️</div>
+        <div class="node-label">명소</div>
+      </a>
+
+      <a href="#" class="star-zone-node zone-top-left" data-category="other">
+        <div class="node-badge">5구역</div>
+        <div class="node-icon">💖</div>
+        <div class="node-label">추억</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- 중앙 사랑별 전용 실시간 현황 모달 창 -->
+  <div class="star-detail-modal" id="starDetailModal" hidden>
+    <div class="modal-backdrop" onclick="closeStarDetail()"></div>
+    <div class="modal-content glass-card">
+      <button type="button" class="modal-close-btn" onclick="closeStarDetail()" aria-label="닫기">&times;</button>
+      <div class="modal-header">
+        <span class="modal-icon" id="modalZoneIcon">⭐</span>
+        <h2 id="modalZoneTitle">구역 정보</h2>
+        <span class="zone-tag" id="modalZoneTag">사랑별 구역</span>
+      </div>
+
+      <div class="modal-body" id="modalZoneBody">
+        <p class="loading-msg">정보를 불러오는 중입니다...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/star.js', v='20260807-pink-glow-2') }}"></script>

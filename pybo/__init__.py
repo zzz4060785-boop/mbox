@@ -154,6 +154,16 @@ def create_app():
             preferred = request.accept_languages.best_match(["ko", "en", "ja"])
             session["language"] = preferred if preferred in SUPPORTED_LANGUAGES else "ko"
 
+    @app.url_defaults
+    def auto_static_version(endpoint, values):
+        """파일 수정 시간을 감지하여 정적 파일(JS, CSS) 캐시를 자동으로 강제 갱신합니다."""
+        if endpoint == "static":
+            filename = values.get("filename")
+            if filename and "v" not in values:
+                file_path = os.path.join(app.static_folder, filename)
+                if os.path.isfile(file_path):
+                    values["v"] = int(os.path.getmtime(file_path))
+
     @app.context_processor
     def inject_interface_language():
         language = session.get("language", "ko")
@@ -295,8 +305,11 @@ def create_app():
             )
         )
 
-    def notify_school_members(post, actor):
-        """새 게시글을 같은 학교에 등록된 다른 사용자들에게 알립니다."""
+    def notify_school_members(school_name, actor, kind, title, message, target_url):
+        """새 소식(게시글, 공지사항, 사랑별 장소 등)을 같은 학교에 등록된 다른 회원들에게 알립니다."""
+        if not school_name or not actor:
+            return
+
         member_rows = (
             db.session.query(User.id)
             .outerjoin(
@@ -305,28 +318,24 @@ def create_app():
             )
             .filter(
                 or_(
-                    User.school_name == post.school_name,
-                    UserSchool.school_name == post.school_name,
+                    User.school_name == school_name,
+                    UserSchool.school_name == school_name,
                 )
             )
             .distinct()
             .all()
         )
 
-        target_url = url_for(
-            "board_view",
-            post_id=post.id,
-        )
-
         for (user_id,) in member_rows:
-            add_notification(
-                user_id,
-                "new_post",
-                "새 게시글",
-                f"{actor.username}님이 '{post.title}' 글을 올렸습니다.",
-                target_url,
-                actor.id,
-            )
+            if user_id != actor.id:
+                add_notification(
+                    user_id,
+                    kind,
+                    title,
+                    message,
+                    target_url,
+                    actor.id,
+                )
 
     with app.app_context():
         db.create_all()
@@ -371,6 +380,8 @@ def create_app():
             "last_login_at": "DATETIME",
             "last_active_at": "DATETIME",
             "executive_elected_at": "DATETIME",
+            "sarangdal_balance": "INTEGER NOT NULL DEFAULT 1",
+            "last_sarangdal_month": "VARCHAR(7)",
         }
 
         for column_name, column_type in school_columns.items():
@@ -537,17 +548,34 @@ def create_app():
             )
         }
 
-        if "parent_id" not in album_comment_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE user_album_comment "
-                    "ADD COLUMN parent_id INTEGER"
-                )
+        # 모든 유저의 사랑달 기본값(1개 이상) 및 최근 지급월을 보장합니다.
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        db.session.execute(
+            text(
+                'UPDATE "user" SET sarangdal_balance = 1 WHERE sarangdal_balance IS NULL OR sarangdal_balance = 0'
             )
-
+        )
+        db.session.execute(
+            text(
+                f'UPDATE "user" SET last_sarangdal_month = \'{current_month}\' WHERE last_sarangdal_month IS NULL OR last_sarangdal_month = \'\''
+            )
+        )
         db.session.commit()
+        try:
+            from pybo.executive_election import check_and_run_annual_election
+            check_and_run_annual_election()
+        except Exception as e:
+            app.logger.warning(f"Annual executive election check skipped: {e}")
 
     def login_destination(user):
+        if user:
+            user.last_login_at = datetime.utcnow()
+            user.last_active_at = datetime.utcnow()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         if user and user.school_name:
             return redirect(
                 url_for(
@@ -687,13 +715,78 @@ def create_app():
     def search_schools():
         keyword = request.args.get("q", "").strip()
         requested_type = request.args.get("type", "").strip()
+        lang = session.get("language", "ko")
         if len(keyword) < 2:
             return jsonify(schools=[])
-        if requested_type == "대학교":
-            return jsonify(
-                schools=[],
-                message="대학교 검색 API는 아직 연결되지 않았습니다.",
-            )
+
+        from pybo.japan_schools import search_japan_schools
+        from pybo.us_schools import search_us_schools
+
+        jp_schools = search_japan_schools(keyword, requested_type)
+        us_schools = search_us_schools(keyword, requested_type)
+
+        if jp_schools and (lang == "ja" or re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", keyword)):
+            return jsonify(schools=jp_schools)
+
+        if us_schools and (lang == "en" or re.search(r"[a-zA-Z]", keyword)):
+            return jsonify(schools=us_schools)
+
+        if requested_type in {"대학교", "大学"}:
+            univ_api_key = app.config.get("UNIVERSITY_API_KEY", "").strip()
+            career_schools = []
+            if univ_api_key:
+                try:
+                    request_url = (
+                        "https://www.career.go.kr/cnet/openapi/getOpenApi?"
+                        + urlencode(
+                            {
+                                "apiKey": univ_api_key,
+                                "svcType": "api",
+                                "svcCode": "SCHOOL",
+                                "contentType": "json",
+                                "gubun": "univ_gubun",
+                                "searchSchulNm": keyword,
+                            }
+                        )
+                    )
+                    career_request = Request(
+                        request_url,
+                        headers={"User-Agent": "Friendary/1.0"},
+                    )
+                    with urlopen(career_request, timeout=5) as response:
+                        payload = json.loads(response.read().decode("utf-8"))
+
+                    rows = payload.get("dataSearch", {}).get("content", [])
+                    seen = set()
+                    for row in rows:
+                        raw_name = str(row.get("schoolName", "")).strip()
+                        if not raw_name:
+                            continue
+                        campus = str(row.get("campusName", "")).strip()
+                        full_name = (
+                            f"{raw_name} ({campus})"
+                            if campus and campus not in {"본교", "본교(주)"}
+                            else raw_name
+                        )
+                        if full_name in seen:
+                            continue
+                        seen.add(full_name)
+                        career_schools.append(
+                            {
+                                "name": full_name,
+                                "type": "대학교",
+                                "code": str(row.get("seq", "")),
+                                "office_code": "",
+                                "address": str(row.get("adres") or row.get("region") or ""),
+                            }
+                        )
+                        if len(career_schools) >= 30:
+                            break
+                except Exception:
+                    pass
+
+            combined_schools = jp_schools + career_schools
+            return jsonify(schools=combined_schools[:30])
 
         api_key = app.config.get("NEIS_API_KEY", "").strip()
         if not api_key:
@@ -988,6 +1081,12 @@ def create_app():
     def main_album():
         user = db.session.get(User, session["user_id"])
         return render_template("main_album.html", current_user=user)
+
+    @app.route("/star")
+    @login_required
+    def star_page():
+        user = db.session.get(User, session["user_id"])
+        return render_template("star.html", current_user=user)
 
     @app.route("/my-home")
     @login_required
@@ -1345,17 +1444,67 @@ def create_app():
             username=user.username,
         )
 
+    def _get_or_grant_user_sarangdal(user):
+        """
+        모든 유저에게 기본 1개를 제공하고, 매달 1일마다 1개씩 누적 자동 충전합니다.
+        """
+        if not user:
+            return 0
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        last_month = getattr(user, "last_sarangdal_month", None)
+
+        if not last_month:
+            if (user.sarangdal_balance or 0) < 1:
+                user.sarangdal_balance = 1
+            user.last_sarangdal_month = current_month
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        elif last_month != current_month:
+            user.sarangdal_balance = (user.sarangdal_balance or 0) + 1
+            user.last_sarangdal_month = current_month
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        return user.sarangdal_balance or 0
+
+    @app.get("/api/sarangdal/status")
+    @login_required
+    def user_sarangdal_status():
+        user = db.session.get(User, session["user_id"])
+        if not user:
+            return jsonify(error="로그인이 필요합니다."), 401
+        balance = _get_or_grant_user_sarangdal(user)
+
+        # 사용자가 남들에게 선물한 총 사랑달 개수
+        total_given = UserAlbumLike.query.filter_by(user_id=user.id).count()
+
+        # 사용자 사진이 남들에게 받은 총 사랑달 개수
+        total_received = (
+            UserAlbumLike.query.join(UserAlbumPhoto)
+            .filter(UserAlbumPhoto.user_id == user.id)
+            .count()
+        )
+
+        return jsonify(
+            username=user.username,
+            current_balance=balance,
+            total_given=total_given,
+            total_received=total_received,
+            last_month=user.last_sarangdal_month or datetime.utcnow().strftime("%Y-%m"),
+        )
+
     @app.get("/api/album/feed")
     @login_required
     def user_album_feed():
-        owner_id = request.args.get("user_id", type=int)
         current_user_id = session["user_id"]
-        query = UserAlbumPhoto.query.join(User).filter(
-            or_(
-                User.id == current_user_id,
-                User.is_profile_public.is_(True),
-            )
-        )
+        current_user = db.session.get(User, current_user_id)
+        user_sarangdal = _get_or_grant_user_sarangdal(current_user)
+        owner_id = request.args.get("user_id", type=int) or current_user_id
+        query = UserAlbumPhoto.query
         if owner_id:
             owner = db.get_or_404(User, owner_id)
             if owner.id != current_user_id and not owner.is_profile_public:
@@ -1367,7 +1516,7 @@ def create_app():
             return {
                 "id": comment.id,
                 "content": comment.content,
-                "username": comment.user.username,
+                "username": comment.user.display_name if comment.user else "알수없음",
                 "user_id": comment.user_id,
                 "created_at": comment.create_date.strftime("%Y-%m-%d %H:%M"),
                 "replies": [
@@ -1376,6 +1525,7 @@ def create_app():
             }
 
         return jsonify(
+            user_sarangdal=user_sarangdal,
             photos=[
                 {
                     "id": photo.id,
@@ -1384,7 +1534,7 @@ def create_app():
                     "created_at": photo.create_date.strftime("%Y-%m-%d %H:%M"),
                     "owner": {
                         "id": photo.user.id,
-                        "username": photo.user.username,
+                        "username": photo.user.display_name if photo.user else "알수없음",
                     },
                     "comments_allowed": (
                         photo.user_id == current_user_id
@@ -1438,6 +1588,15 @@ def create_app():
             ),
         )
         db.session.add(photo)
+        actor = db.session.get(User, session["user_id"])
+        notify_school_members(
+            photo.school_name,
+            actor,
+            "new_album_photo",
+            "📸 새 추억 앨범",
+            f"{actor.display_name}님이 앨범에 새 사진을 올려 추억을 공유했습니다.",
+            url_for("main_album", school=photo.school_name),
+        )
         db.session.commit()
         return jsonify(status="success", photo_id=photo.id), 201
 
@@ -1642,32 +1801,40 @@ def create_app():
         photo = db.get_or_404(UserAlbumPhoto, photo_id)
         if photo.user_id != session["user_id"] and not photo.user.is_profile_public:
             return jsonify(message="비공개 사진에는 반응할 수 없습니다."), 403
-        existing = UserAlbumLike.query.filter_by(
-            photo_id=photo_id,
-            user_id=session["user_id"],
-        ).first()
-        opposite = UserAlbumDislike.query.filter_by(
-            photo_id=photo_id,
-            user_id=session["user_id"],
-        ).first()
-        if existing:
-            db.session.delete(existing)
-            liked = False
-        else:
-            if opposite:
-                db.session.delete(opposite)
-            db.session.add(
-                UserAlbumLike(photo_id=photo_id, user_id=session["user_id"])
+
+        user = db.session.get(User, session["user_id"])
+        balance = _get_or_grant_user_sarangdal(user)
+
+        if balance < 1:
+            return (
+                jsonify(
+                    message="보유한 사랑달이 없습니다. (사랑달은 매달 1개씩 자동 지급됩니다)",
+                    user_sarangdal=0,
+                ),
+                400,
             )
-            liked = True
+
+        user.sarangdal_balance = balance - 1
+        db.session.add(
+            UserAlbumLike(photo_id=photo_id, user_id=user.id)
+        )
         db.session.commit()
+
         like_count = UserAlbumLike.query.filter_by(photo_id=photo_id).count()
         dislike_count = UserAlbumDislike.query.filter_by(photo_id=photo_id).count()
+        has_disliked = (
+            UserAlbumDislike.query.filter_by(
+                photo_id=photo_id, user_id=user.id
+            ).first()
+            is not None
+        )
         return jsonify(
-            liked=liked,
-            disliked=False,
+            liked=True,
+            disliked=has_disliked,
             like_count=like_count,
             dislike_count=dislike_count,
+            user_sarangdal=user.sarangdal_balance,
+            message=f"사랑달 1개를 선물했습니다! (보유한 사랑달: {user.sarangdal_balance}개)",
         )
 
     @app.post("/api/album/photos/<int:photo_id>/dislike")
@@ -1676,35 +1843,60 @@ def create_app():
         photo = db.get_or_404(UserAlbumPhoto, photo_id)
         if photo.user_id != session["user_id"] and not photo.user.is_profile_public:
             return jsonify(message="비공개 사진에는 반응할 수 없습니다."), 403
+
+        user_id = session["user_id"]
         existing = UserAlbumDislike.query.filter_by(
             photo_id=photo_id,
-            user_id=session["user_id"],
+            user_id=user_id,
         ).first()
-        opposite = UserAlbumLike.query.filter_by(
-            photo_id=photo_id,
-            user_id=session["user_id"],
-        ).first()
+
         if existing:
             db.session.delete(existing)
             disliked = False
+            msg = "싫어요 반응을 취소했습니다."
         else:
-            if opposite:
-                db.session.delete(opposite)
+            now_utc = datetime.utcnow()
+            start_of_month = now_utc.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
+            already_used = UserAlbumDislike.query.filter(
+                UserAlbumDislike.user_id == user_id,
+                UserAlbumDislike.create_date >= start_of_month,
+            ).first()
+
+            if already_used:
+                return (
+                    jsonify(
+                        message="이번 달 '싫어요' 기회를 이미 사용하셨습니다. (월 1회 제공)"
+                    ),
+                    400,
+                )
+
             db.session.add(
                 UserAlbumDislike(
                     photo_id=photo_id,
-                    user_id=session["user_id"],
+                    user_id=user_id,
                 )
             )
             disliked = True
+            msg = "싫어요 반응을 남겼습니다. (이번 달 '싫어요' 1회 사용)"
+
         db.session.commit()
+
+        has_liked = (
+            UserAlbumLike.query.filter_by(
+                photo_id=photo_id, user_id=user_id
+            ).first()
+            is not None
+        )
         return jsonify(
-            liked=False,
+            liked=has_liked,
             disliked=disliked,
             like_count=UserAlbumLike.query.filter_by(photo_id=photo_id).count(),
             dislike_count=UserAlbumDislike.query.filter_by(
                 photo_id=photo_id
             ).count(),
+            message=msg,
         )
 
     @app.post("/api/album/photos/<int:photo_id>/comments")
@@ -1766,7 +1958,7 @@ def create_app():
             comment={
                 "id": comment.id,
                 "content": comment.content,
-                "username": actor.username,
+                "username": actor.display_name,
                 "user_id": actor.id,
             }
         ), 201
@@ -2209,6 +2401,78 @@ def create_app():
         ).update({"is_read": True})
         db.session.commit()
         return jsonify(status="success")
+
+    @app.get("/api/social/chat/<int:target_id>")
+    @login_required
+    def direct_message_conversation(target_id):
+        _purge_expired_direct_messages()
+        current_id = session["user_id"]
+        target = db.get_or_404(User, target_id)
+        messages = (
+            DirectMessage.query.filter(
+                or_(
+                    (
+                        (DirectMessage.sender_id == current_id)
+                        & (DirectMessage.receiver_id == target_id)
+                    ),
+                    (
+                        (DirectMessage.sender_id == target_id)
+                        & (DirectMessage.receiver_id == current_id)
+                    ),
+                )
+            )
+            .order_by(DirectMessage.create_date.asc())
+            .limit(50)
+            .all()
+        )
+
+        DirectMessage.query.filter_by(
+            sender_id=target_id,
+            receiver_id=current_id,
+            is_read=False,
+        ).update({"is_read": True})
+        db.session.commit()
+
+        return jsonify(
+            target={
+                "id": target.id,
+                "username": target.username,
+                "profile_image_url": target.profile_image_url,
+            },
+            messages=[
+                {
+                    "id": msg.id,
+                    "sender_id": msg.sender_id,
+                    "receiver_id": msg.receiver_id,
+                    "content": msg.content,
+                    "created_at": msg.create_date.strftime("%H:%M"),
+                }
+                for msg in messages
+            ],
+        )
+
+    @app.post("/api/social/classroom/invite")
+    @login_required
+    def classroom_invite():
+        data = request.get_json(silent=True) or {}
+        target_id = data.get("target_id")
+        target_user = db.session.get(User, target_id) if target_id else None
+        if not target_user or target_user.id == session["user_id"]:
+            return jsonify(message="소환할 1촌을 확인해 주세요."), 400
+
+        current_user = db.session.get(User, session["user_id"])
+        target_url = url_for("my_home", chat_user=current_user.id)
+
+        add_notification(
+            target_user.id,
+            "classroom_invite",
+            "교실 소환 초대",
+            f"{current_user.username}님이 나만의 교실로 회원님을 소환(초대)했습니다! 🏫",
+            target_url,
+            current_user.id,
+        )
+        db.session.commit()
+        return jsonify(message=f"{target_user.username}님을 교실로 소환(초대)했습니다!")
 
     @app.route("/user-album")
     @login_required
@@ -2930,6 +3194,15 @@ def create_app():
                     original_name=original_name,
                 )
             )
+        creator = db.session.get(User, session["user_id"])
+        notify_school_members(
+            post.school_name,
+            creator,
+            "new_recommendation",
+            "💗 새 사랑별 장소",
+            f"{creator.display_name}님이 '{post.title}' 장소를 추천했습니다.",
+            url_for("recommendation_detail", post_id=post.id),
+        )
         db.session.commit()
         flash("사랑별 글이 등록되었습니다.")
         return redirect(url_for("recommendation_detail", post_id=post.id))
@@ -3305,7 +3578,14 @@ def create_app():
         if is_notice and can_write_notice:
             db.session.add(BoardNotice(content=title))
 
-        notify_school_members(post, user)
+        notify_school_members(
+            post.school_name,
+            user,
+            "new_post",
+            "새 게시글",
+            f"{user.display_name}님이 '{post.title}' 글을 올렸습니다.",
+            url_for("board_view", post_id=post.id),
+        )
         db.session.commit()
         flash("게시글이 등록되었습니다.")
         return redirect(url_for("board"))
@@ -3677,6 +3957,16 @@ def create_app():
                 )
             )
 
+        if not notice:
+            creator = db.session.get(User, session["user_id"])
+            notify_school_members(
+                _active_board_school(),
+                creator,
+                "new_notice",
+                "📢 새 공지사항",
+                f"{creator.display_name}님이 새 공지사항을 등록했습니다.",
+                url_for("notice_board"),
+            )
         db.session.commit()
         flash("공지사항이 수정되었습니다." if notice else "공지사항이 등록되었습니다.")
         return redirect(url_for("notice_board"))

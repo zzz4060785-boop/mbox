@@ -92,6 +92,7 @@ class Config:
         os.getenv("KAKAO_CLIENT_ID", ""),
     )
     NEIS_API_KEY = os.getenv("NEIS_API_KEY", "")
+    UNIVERSITY_API_KEY = os.getenv("UNIVERSITY_API_KEY", "")
 
     # 공지사항·앨범을 관리할 임원 계정의 user.id 목록입니다.
     # 여러 명이면 실행 환경에서 EXECUTIVE_USER_IDS=1,3,7 형태로 지정하세요.

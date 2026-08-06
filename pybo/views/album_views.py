@@ -14,7 +14,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from pybo import db, login_required
-from pybo.models import AlbumComment, AlbumPhoto
+from pybo.models import AlbumComment, AlbumPhoto, User
 
 
 bp = Blueprint("album", __name__, url_prefix="/album")
@@ -22,23 +22,23 @@ bp = Blueprint("album", __name__, url_prefix="/album")
 
 FACES_DATA = {
     1: [
-        {"grad_face_num": 1, "top": "245px", "left": "75px"},
-        {"grad_face_num": 2, "top": "237px", "left": "188px"},
-        {"grad_face_num": 3, "top": "239px", "left": "290px"},
+        {"grad_face_num": 1, "top": "242px", "left": "74px"},
+        {"grad_face_num": 2, "top": "235px", "left": "189px"},
+        {"grad_face_num": 3, "top": "239px", "left": "291px"},
         {"grad_face_num": 4, "top": "239px", "left": "388px"},
-        {"grad_face_num": 5, "top": "386px", "left": "72px"},
-        {"grad_face_num": 6, "top": "377px", "left": "183px"},
-        {"grad_face_num": 7, "top": "385px", "left": "282px"},
-        {"grad_face_num": 8, "top": "382px", "left": "394px"},
+        {"grad_face_num": 5, "top": "382px", "left": "73px"},
+        {"grad_face_num": 6, "top": "377px", "left": "182px"},
+        {"grad_face_num": 7, "top": "381px", "left": "287px"},
+        {"grad_face_num": 8, "top": "380px", "left": "395px"},
     ],
     2: [
         {"grad_face_num": 1, "top": "247px", "left": "102px"},
         {"grad_face_num": 2, "top": "264px", "left": "175px"},
         {"grad_face_num": 3, "top": "302px", "left": "240px"},
         {"grad_face_num": 4, "top": "291px", "left": "311px"},
-        {"grad_face_num": 5, "top": "452px", "left": "146px"},
-        {"grad_face_num": 6, "top": "446px", "left": "224px"},
-        {"grad_face_num": 7, "top": "477px", "left": "349px"},
+        {"grad_face_num": 5, "top": "452px", "left": "144px"},
+        {"grad_face_num": 6, "top": "449px", "left": "229px"},
+        {"grad_face_num": 7, "top": "485px", "left": "351px"},
     ],
     3: [
         {"grad_face_num": 1, "top": "190px", "left": "75px"},
@@ -51,19 +51,33 @@ FACES_DATA = {
         {"grad_face_num": 8, "top": "342px", "left": "384px"},
     ],
     4: [
-        {"grad_face_num": 1, "top": "231px", "left": "71px"},
-        {"grad_face_num": 2, "top": "223px", "left": "177px"},
-        {"grad_face_num": 3, "top": "227px", "left": "274px"},
+        {"grad_face_num": 1, "top": "250px", "left": "122px"},
+        {"grad_face_num": 2, "top": "272px", "left": "263px"},
+        {"grad_face_num": 3, "top": "266px", "left": "356px"},
+        {"grad_face_num": 4, "top": "424px", "left": "99px"},
+        {"grad_face_num": 5, "top": "432px", "left": "192px"},
+        {"grad_face_num": 6, "top": "442px", "left": "273px"},
+        {"grad_face_num": 7, "top": "429px", "left": "361px"},
+        {"grad_face_num": 8, "top": "273px", "left": "206px"},
     ],
     5: [
-        {"grad_face_num": 1, "top": "231px", "left": "71px"},
-        {"grad_face_num": 2, "top": "223px", "left": "177px"},
+        {"grad_face_num": 1, "top": "284px", "left": "149px"},
+        {"grad_face_num": 2, "top": "144px", "left": "324px"},
+        {"grad_face_num": 3, "top": "258px", "left": "201px"},
+        {"grad_face_num": 4, "top": "262px", "left": "268px"},
+        {"grad_face_num": 5, "top": "304px", "left": "340px"},
+        {"grad_face_num": 6, "top": "134px", "left": "148px"},
+        {"grad_face_num": 7, "top": "135px", "left": "208px"},
+        {"grad_face_num": 8, "top": "141px", "left": "264px"},
     ],
 }
 
 
-def _executive_ids():
-    return set(current_app.config.get("EXECUTIVE_USER_IDS", []))
+def _is_user_executive(user_id):
+    if not user_id:
+        return False
+    user = db.session.get(User, user_id)
+    return bool(user and user.is_executive_user)
 
 
 @bp.route("/")
@@ -77,7 +91,7 @@ def graduation_album():
         "graduation_album.html",
         faces_data=FACES_DATA,
         photo_registry=photo_registry,
-        is_executive=session.get("user_id") in _executive_ids(),
+        is_executive=_is_user_executive(session.get("user_id")),
     )
 
 
@@ -102,7 +116,7 @@ def get_faces(album_id):
 
 @bp.post("/api/executive/upload-photo")
 def upload_executive_photo():
-    if session.get("user_id") not in _executive_ids():
+    if not _is_user_executive(session.get("user_id")):
         return jsonify(status="error", message="임원 권한이 필요합니다."), 403
 
     image = request.files.get("image")

@@ -17,7 +17,7 @@
   <header class="notice-board-header">
     <div>
       <p>NOTICE</p>
-      <h1>📢 공지사항</h1>
+      <h1>📢 👑 공지사항</h1>
     </div>
     {% if can_edit_notice %}
     <!-- 임원/관리자에게만 공지 작성 버튼이 표시됩니다. -->
@@ -37,7 +37,7 @@
         {% if notice.modify_date %}<span>수정됨</span>{% endif %}
       </div>
 
-      <p class="notice-post-content">{{ notice.content|hashtags }}</p>
+      <p class="notice-post-content">👑 {{ notice.content|hashtags }}</p>
 
       {% if notice.image_url %}
       <!-- 첨부 미디어는 메인이 아닌 이 공지사항 게시판에서만 보입니다. -->

@@ -1,4 +1,4 @@
-const CACHE_NAME = "friendary-shell-v1";
+const CACHE_NAME = "friendary-shell-v3";
 const STATIC_ASSETS = [
   "/static/manifest.webmanifest",
   "/static/css/base.css",
