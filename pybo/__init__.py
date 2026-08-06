@@ -154,6 +154,16 @@ def create_app():
             preferred = request.accept_languages.best_match(["ko", "en", "ja"])
             session["language"] = preferred if preferred in SUPPORTED_LANGUAGES else "ko"
 
+    @app.url_defaults
+    def auto_static_version(endpoint, values):
+        """파일 수정 시간을 감지하여 정적 파일(JS, CSS) 캐시를 자동으로 강제 갱신합니다."""
+        if endpoint == "static":
+            filename = values.get("filename")
+            if filename and "v" not in values:
+                file_path = os.path.join(app.static_folder, filename)
+                if os.path.isfile(file_path):
+                    values["v"] = int(os.path.getmtime(file_path))
+
     @app.context_processor
     def inject_interface_language():
         language = session.get("language", "ko")

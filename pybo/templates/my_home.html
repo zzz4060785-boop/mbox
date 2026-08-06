@@ -7,7 +7,7 @@
 {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/my_home.css', v='20260807-chat-v20') }}"
+  href="{{ url_for('static', filename='css/my_home.css') }}"
 />
 {% endblock %}
 
@@ -222,5 +222,5 @@
 {% endblock %}
 
 {% block script %}
-<script src="{{ url_for('static', filename='js/my_home.js', v='20260807-chat-v20') }}"></script>
+<script src="{{ url_for('static', filename='js/my_home.js') }}"></script>
 {% endblock %}
