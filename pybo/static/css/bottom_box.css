@@ -68,8 +68,8 @@
   margin: 12px 0;
 }
 
-@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
   .album-page > .bottom-box {
-    top: 795px;
+    top: 795px !important;
   }
 }

@@ -32,7 +32,7 @@ body.main-album-body {
  * Let the document own the scroll on narrow screens and keep enough page
  * height for the absolutely positioned bottom navigation.
  */
-@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
   html {
     height: auto;
     min-height: 100%;
@@ -48,21 +48,21 @@ body.main-album-body {
 
   .mobile-wrap.main-album-container {
     height: auto;
-    min-height: calc(100vh + 320px);
-    min-height: calc(100dvh + 320px);
+    min-height: calc(100vh + 350px);
+    min-height: calc(100dvh + 350px);
     overflow: visible;
   }
 
   .album-page {
     height: auto;
-    min-height: calc(100vh + 320px);
-    min-height: calc(100dvh + 320px);
+    min-height: calc(100vh + 350px);
+    min-height: calc(100dvh + 350px);
     overflow-x: hidden;
     overflow-y: visible;
   }
 
   .star-sidebar-box {
-    top: 645px;
+    top: 645px !important;
   }
 }
 
