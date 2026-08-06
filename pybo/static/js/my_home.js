@@ -31,21 +31,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatUserId = urlParams.get("chat_user");
 
   let lastSeenMessageId = 0;
+  let chatCheckTimer = null;
 
   async function initClassroomChat() {
-    if (!chatUserId) {
-      if (status) {
-        status.textContent =
-          "접속 중인 1촌 목록에서 '1:1 대화하기'를 누르면 짝꿍 아바타가 교실에 등장합니다!";
-      }
-      return;
-    }
-
+    const leaveBtn = document.getElementById("classroomLeaveBtn");
     const slot2 = document.getElementById("avatarSlot2");
     const slot2Name = document.getElementById("avatarSlot2Name");
     const chatTargetName = document.getElementById("chatTargetName");
     const chatInput = document.getElementById("classroomChatInput");
     const chatSendBtn = document.getElementById("classroomChatSendBtn");
+
+    if (!chatUserId) {
+      if (leaveBtn) leaveBtn.hidden = true;
+      if (status) {
+        status.textContent =
+          "접속 중인 1촌 목록에서 '1:1 대화하기'나 '📢 1촌 소환하기'를 누르면 짝꿍 아바타가 교실에 등장합니다!";
+      }
+      return;
+    }
 
     try {
       const response = await fetch(`/api/social/users/${chatUserId}`);
@@ -61,9 +64,34 @@ document.addEventListener("DOMContentLoaded", () => {
       if (slot2Name) slot2Name.textContent = targetUser.username;
       if (chatTargetName)
         chatTargetName.textContent = `${targetUser.username}님과 대화 중`;
+      if (leaveBtn) leaveBtn.hidden = false;
 
       if (status) {
         status.textContent = `${targetUser.username}님과 교실에 입실했습니다! 대화를 나눠보세요.`;
+      }
+
+      // 입실 기념 환영 말풍선 팝업
+      setTimeout(() => {
+        showSpeechBubble(
+          2,
+          `✨ 안녕! ${targetUser.username}(이)가 교실에 입실했어!`
+        );
+      }, 800);
+
+      // 교실 나가기 (대화 종료) 버튼 이벤트
+      if (leaveBtn) {
+        leaveBtn.onclick = () => {
+          if (chatCheckTimer) clearInterval(chatCheckTimer);
+          showSpeechBubble(1, "👋 교실 대화를 종료하고 퇴장했습니다.");
+          if (slot2) slot2.hidden = true;
+          leaveBtn.hidden = true;
+          if (chatTargetName) chatTargetName.textContent = "대화 상대 선택 안 됨";
+          window.history.pushState({}, document.title, "/my-home");
+          if (status) {
+            status.textContent =
+              "교실 대화가 종료되었습니다. 언제든 다른 1촌을 소환하거나 대화할 수 있습니다.";
+          }
+        };
       }
 
       // 대화 전송 이벤트
@@ -131,13 +159,79 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       checkIncomingMessages();
-      setInterval(checkIncomingMessages, 3000);
+      chatCheckTimer = setInterval(checkIncomingMessages, 3000);
     } catch (error) {
       console.error("Failed to init classroom chat:", error);
     }
   }
 
   initClassroomChat();
+
+  /* =========================
+     1촌 교실 소환(초대) 모달
+  ========================= */
+  const inviteModalBtn = document.getElementById("classroomInviteModalBtn");
+  const inviteModal = document.getElementById("classroomInviteModal");
+  const inviteCloseBtn = document.getElementById("classroomInviteCloseBtn");
+  const inviteCloseBackdrop = document.getElementById(
+    "classroomInviteCloseBackdrop"
+  );
+  const inviteList = document.getElementById("classroomInviteList");
+
+  function closeInviteModal() {
+    if (inviteModal) inviteModal.hidden = true;
+  }
+
+  if (inviteModalBtn && inviteModal) {
+    inviteModalBtn.addEventListener("click", async () => {
+      inviteModal.hidden = false;
+      if (!inviteList) return;
+      inviteList.innerHTML =
+        "<p style='font-size:12px;color:#888;'>접속 중인 1촌을 확인 중...</p>";
+      try {
+        const res = await fetch("/api/social/presence", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok || !data.friends || data.friends.length === 0) {
+          inviteList.innerHTML =
+            "<p style='font-size:12px;color:#888;'>현재 접속 중인 1촌이 없습니다.</p>";
+          return;
+        }
+
+        inviteList.innerHTML = data.friends
+          .map(
+            (friend) => `
+          <div class="classroom-invite-item">
+            <span><strong>${friend.username}</strong></span>
+            <button type="button" onclick="sendClassroomInvite(${friend.user_id}, '${friend.username}')">📢 소환하기</button>
+          </div>`
+          )
+          .join("");
+      } catch (e) {
+        inviteList.innerHTML =
+          "<p style='font-size:12px;color:red;'>1촌 목록을 불러오지 못했습니다.</p>";
+      }
+    });
+
+    if (inviteCloseBtn)
+      inviteCloseBtn.addEventListener("click", closeInviteModal);
+    if (inviteCloseBackdrop)
+      inviteCloseBackdrop.addEventListener("click", closeInviteModal);
+  }
+
+  window.sendClassroomInvite = async function (targetId, username) {
+    try {
+      const res = await fetch("/api/social/classroom/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_id: targetId }),
+      });
+      const data = await res.json();
+      alert(data.message || `${username}님에게 교실 소환 초대를 보냈습니다!`);
+      closeInviteModal();
+    } catch (e) {
+      alert("소환 초대를 보내지 못했습니다.");
+    }
+  };
 
   /* =========================
      아바타 클릭 선택
@@ -156,7 +250,9 @@ document.addEventListener("DOMContentLoaded", () => {
      교실 사진 확대
   ========================= */
   const classroomPhotoOpen = document.getElementById("classroomPhotoOpen");
-  const classroomPhotoImage = document.querySelector(".classroom-background-image");
+  const classroomPhotoImage = document.querySelector(
+    ".classroom-background-image"
+  );
   let photoLightbox = null;
   let photoLightboxImage = null;
   let photoLightboxClose = null;
@@ -250,6 +346,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (shopModal && !shopModal.hidden) {
       closeAvatarShopModal();
+    }
+    if (inviteModal && !inviteModal.hidden) {
+      closeInviteModal();
     }
   });
 });

@@ -98,7 +98,11 @@
     <div class="classroom-chat-bar" id="classroomChatBar">
       <div class="chat-header-info">
         <span>💬 <strong>1:1 교실 대화</strong></span>
-        <span id="chatTargetName" class="chat-target-name">대화 상대 선택 안 됨</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="chatTargetName" class="chat-target-name">대화 상대 선택 안 됨</span>
+          <button type="button" id="classroomInviteModalBtn" class="classroom-invite-btn">📢 1촌 소환하기</button>
+          <button type="button" id="classroomLeaveBtn" class="classroom-leave-btn" hidden>🚪 대화 나가기</button>
+        </div>
       </div>
       <div class="chat-input-row">
         <input
@@ -109,6 +113,17 @@
         />
         <button type="button" id="classroomChatSendBtn">전송</button>
       </div>
+    </div>
+
+    <!-- 1촌 교실 소환 모달 -->
+    <div class="avatar-shop-modal" id="classroomInviteModal" hidden>
+      <div class="avatar-shop-modal-backdrop" id="classroomInviteCloseBackdrop"></div>
+      <section class="avatar-shop-modal-box" style="width:min(380px, 95%);text-align:left;">
+        <h3 style="margin-top:0;">📢 접속 중인 1촌 교실 소환하기</h3>
+        <p style="font-size:12px;color:#666;margin:4px 0 10px;">선택한 1촌에게 교실 초대 알림을 보내 이 교실로 불러옵니다.</p>
+        <div id="classroomInviteList" style="max-height:220px;overflow-y:auto;margin:10px 0;display:flex;flex-direction:column;gap:6px;"></div>
+        <button type="button" id="classroomInviteCloseBtn" style="background:#888;">닫기</button>
+      </section>
     </div>
 
     <p

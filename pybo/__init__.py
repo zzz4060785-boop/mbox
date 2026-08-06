@@ -2420,6 +2420,29 @@ def create_app():
             ],
         )
 
+    @app.post("/api/social/classroom/invite")
+    @login_required
+    def classroom_invite():
+        data = request.get_json(silent=True) or {}
+        target_id = data.get("target_id")
+        target_user = db.session.get(User, target_id) if target_id else None
+        if not target_user or target_user.id == session["user_id"]:
+            return jsonify(message="소환할 1촌을 확인해 주세요."), 400
+
+        current_user = db.session.get(User, session["user_id"])
+        target_url = url_for("my_home", chat_user=current_user.id)
+
+        add_notification(
+            target_user.id,
+            "classroom_invite",
+            "교실 소환 초대",
+            f"{current_user.username}님이 나만의 교실로 회원님을 소환(초대)했습니다! 🏫",
+            target_url,
+            current_user.id,
+        )
+        db.session.commit()
+        return jsonify(message=f"{target_user.username}님을 교실로 소환(초대)했습니다!")
+
     @app.route("/user-album")
     @login_required
     def user_album():

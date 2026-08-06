@@ -808,6 +808,7 @@ function confirmConnectionMove(userId, clickedElement) {
       <div class="connection-choice-box" role="dialog" aria-modal="true" aria-labelledby="connectionChoiceTitle">
         <p id="connectionChoiceTitle"></p>
         <button type="button" data-action="chat" style="background:#2f80ed;color:#fff;font-weight:700;">💬 1:1 교실 대화하기</button>
+        <button type="button" data-action="invite" style="background:#27ae60;color:#fff;font-weight:700;">📢 내 교실로 소환하기</button>
         <button type="button" data-action="message">📩 쪽지 보내기</button>
         <button type="button" data-action="profile">👤 프로필 보기</button>
         <button type="button" class="danger" data-action="delete">1촌 삭제</button>
@@ -821,6 +822,7 @@ function confirmConnectionMove(userId, clickedElement) {
 
   modal.querySelector("p").textContent = `${username}님과 무엇을 할까요?`;
   const chatButton = modal.querySelector('[data-action="chat"]');
+  const inviteButton = modal.querySelector('[data-action="invite"]');
   const messageButton = modal.querySelector('[data-action="message"]');
   const profileButton = modal.querySelector('[data-action="profile"]');
   const deleteButton = modal.querySelector('[data-action="delete"]');
@@ -831,6 +833,19 @@ function confirmConnectionMove(userId, clickedElement) {
   chatButton.onclick = () => {
     closeConnectionChoice();
     window.location.href = `/my-home?chat_user=${userId}`;
+  };
+  inviteButton.onclick = async () => {
+    closeConnectionChoice();
+    try {
+      const data = await api("/api/social/classroom/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_id: userId }),
+      });
+      alert(data.message);
+    } catch (error) {
+      alert(error.message);
+    }
   };
   messageButton.onclick = () => openConnectionMessage(userId);
   profileButton.onclick = () => {
