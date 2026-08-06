@@ -7,6 +7,10 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>졸업앨범</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}"
+    />
     <style>
       * {
         margin: 0;
@@ -963,5 +967,6 @@
       window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
     </script>
     <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/photo_lightbox.js') }}"></script>
   </body>
 </html>

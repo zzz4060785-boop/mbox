@@ -52,11 +52,18 @@ body.photo-lightbox-open {
   overflow: hidden !important;
 }
 
-img[data-photo-lightbox] {
-  cursor: zoom-in;
+img[data-photo-lightbox],
+.bg-photo,
+.user-face,
+.photo-wrap img {
+  cursor: pointer !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
 }
 
-#sharedPhotoLightbox.photo-lightbox {
+#sharedPhotoLightbox.photo-lightbox,
+#photoLightbox.photo-lightbox,
+.photo-lightbox {
   position: fixed;
   inset: 0;
   z-index: 20000;
@@ -67,11 +74,13 @@ img[data-photo-lightbox] {
   cursor: zoom-out;
 }
 
-#sharedPhotoLightbox.photo-lightbox[hidden] {
-  display: none;
+.photo-lightbox[hidden],
+#sharedPhotoLightbox[hidden],
+#photoLightbox[hidden] {
+  display: none !important;
 }
 
-#sharedPhotoLightbox.photo-lightbox img {
+.photo-lightbox img {
   width: auto;
   max-width: 100%;
   max-height: calc(100vh - 68px);
@@ -80,16 +89,27 @@ img[data-photo-lightbox] {
   cursor: default;
 }
 
-#sharedPhotoLightbox .photo-lightbox-close {
+.photo-lightbox .photo-lightbox-close {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
-  left: max(12px, env(safe-area-inset-left));
-  padding: 9px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 20px;
+  right: 16px;
+  left: auto;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
+
+.photo-lightbox .photo-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+

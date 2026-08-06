@@ -3,9 +3,11 @@
 
   function closePhotoLightbox() {
     const lightbox = document.getElementById("sharedPhotoLightbox");
-    if (!lightbox || lightbox.hidden) return;
+    if (!lightbox) return;
     lightbox.hidden = true;
-    lightbox.querySelector("img").removeAttribute("src");
+    lightbox.style.display = "none";
+    const img = lightbox.querySelector("img");
+    if (img) img.removeAttribute("src");
     document.body.classList.remove("photo-lightbox-open");
     opener?.focus();
   }
@@ -21,7 +23,7 @@
       lightbox.setAttribute("aria-modal", "true");
       lightbox.setAttribute("aria-label", "사진 확대 보기");
       lightbox.innerHTML = `
-        <button type="button" class="photo-lightbox-close">&larr; 뒤로가기</button>
+        <button type="button" class="photo-lightbox-close" aria-label="닫기">&times;</button>
         <img alt="확대된 사진">
       `;
       lightbox.addEventListener("click", (event) => {
@@ -37,16 +39,27 @@
 
     const enlargedImage = lightbox.querySelector("img");
     enlargedImage.src = sourceImage.currentSrc || sourceImage.src;
-    enlargedImage.alt = sourceImage.alt;
+    enlargedImage.alt = sourceImage.alt || "확대된 사진";
     opener = sourceImage;
     lightbox.hidden = false;
+    lightbox.style.display = "grid";
     document.body.classList.add("photo-lightbox-open");
     lightbox.querySelector(".photo-lightbox-close").focus();
   }
 
   document.addEventListener("click", (event) => {
-    const image = event.target.closest("img[data-photo-lightbox]");
+    if (
+      document.querySelector(".executive-control-panel") &&
+      event.target.closest("[data-slot-class], .face-slot, .face-slot2, .face-slot3, .face-slot4, .face-slot5")
+    ) {
+      return;
+    }
+
+    const image = event.target.closest(
+      "img[data-photo-lightbox], .bg-photo, .user-face, .photo-wrap img"
+    );
     if (!image) return;
+
     event.preventDefault();
     openPhotoLightbox(image);
   });
@@ -55,3 +68,4 @@
     if (event.key === "Escape") closePhotoLightbox();
   });
 })();
+

@@ -9,14 +9,25 @@
 
     <meta name="theme-color" content="#6d28d9" />
     <meta name="application-name" content="Friendary" />
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/friendary-app-icon-192.png') }}" />
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/friendary-app-icon-192.png') }}" />
+    <link
+      rel="manifest"
+      href="{{ url_for('static', filename='manifest.webmanifest') }}"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="{{ url_for('static', filename='icons/friendary-app-icon-192.png') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="{{ url_for('static', filename='icons/friendary-app-icon-192.png') }}"
+    />
 
     <!-- 모든 페이지에 적용되는 모바일 공통 CSS -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/base.css') }}"
+      href="{{ url_for('static', filename='css/base.css', v='20260806-lightbox-3') }}"
     />
     <link
       rel="stylesheet"
@@ -35,34 +46,25 @@
       container_class 블록에서 지정합니다.
     -->
     <div class="mobile-wrap {% block container_class %}{% endblock %}">
-      {% if session.get("user_id") %}
-      {% include "notifications.html" %}
+      {% if session.get("user_id") %} {% include "notifications.html" %}
       <form class="logout-form" method="post" action="{{ url_for('logout') }}">
         <button class="logout-btn" type="submit">{{ tr('로그아웃') }}</button>
       </form>
-      {% endif %}
-
-      {#
-        게시글 작성 오류는 board_write.html의 폼 안에서 표시하므로
-        공통 화면 맨 위 알림에서는 제외합니다.
-      #}
-      {% if request.endpoint not in ("main", "board_write") %}
-      {% with messages = get_flashed_messages() %} {% if messages %}
+      {% endif %} {# 게시글 작성 오류는 board_write.html의 폼 안에서 표시하므로
+      공통 화면 맨 위 알림에서는 제외합니다. #} {% if request.endpoint not in
+      ("main", "board_write") %} {% with messages = get_flashed_messages() %} {%
+      if messages %}
       <div class="flash-messages">
         {% for message in messages %}
         <div class="flash-message">{{ message }}</div>
         {% endfor %}
       </div>
-      {% endif %} {% endwith %}
-      {% endif %}
-      {% block content %} {% endblock %}
-
+      {% endif %} {% endwith %} {% endif %} {% block content %} {% endblock %}
     </div>
 
     {% if session.get("user_id") %}
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-    {% endif %}
-    {% block script %} {% endblock %}
+    {% endif %} {% block script %} {% endblock %}
     <script>
       window.FRIENDARY_LANGUAGE = {{ current_language|tojson }};
       window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
@@ -71,7 +73,9 @@
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("{{ url_for('static', filename='js/service-worker.js') }}");
+          navigator.serviceWorker.register(
+            "{{ url_for('static', filename='js/service-worker.js') }}",
+          );
         });
       }
     </script>

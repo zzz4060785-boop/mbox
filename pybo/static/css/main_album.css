@@ -475,7 +475,7 @@ body.photo-lightbox-open {
 }
 
 .photo-lightbox[hidden] {
-  display: none;
+  display: none !important;
 }
 
 .photo-lightbox img {

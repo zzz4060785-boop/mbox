@@ -37,7 +37,8 @@ function closePhotoLightbox() {
   const lightbox = document.getElementById("photoLightbox");
   if (!lightbox) return;
   lightbox.hidden = true;
-  lightbox.querySelector("img").removeAttribute("src");
+  lightbox.style.display = "none";
+  lightbox.querySelector("img")?.removeAttribute("src");
   document.body.classList.remove("photo-lightbox-open");
 }
 
@@ -67,6 +68,7 @@ function openPhotoLightbox(sourceImage) {
   enlargedImage.src = sourceImage.currentSrc || sourceImage.src;
   enlargedImage.alt = sourceImage.alt;
   lightbox.hidden = false;
+  lightbox.style.display = "grid";
   document.body.classList.add("photo-lightbox-open");
   lightbox.querySelector(".photo-lightbox-close").focus();
 }
