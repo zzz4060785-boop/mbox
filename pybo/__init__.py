@@ -687,64 +687,71 @@ def create_app():
     def search_schools():
         keyword = request.args.get("q", "").strip()
         requested_type = request.args.get("type", "").strip()
+        lang = session.get("language", "ko")
         if len(keyword) < 2:
             return jsonify(schools=[])
-        if requested_type == "대학교":
+
+        from pybo.japan_schools import search_japan_schools
+        jp_schools = search_japan_schools(keyword, requested_type)
+        if jp_schools and (lang == "ja" or re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", keyword)):
+            return jsonify(schools=jp_schools)
+
+        if requested_type in {"대학교", "大学"}:
             univ_api_key = app.config.get("UNIVERSITY_API_KEY", "").strip()
-            if not univ_api_key:
-                return jsonify(error="UNIVERSITY_API_KEY가 설정되지 않았습니다."), 503
+            career_schools = []
+            if univ_api_key:
+                try:
+                    request_url = (
+                        "https://www.career.go.kr/cnet/openapi/getOpenApi?"
+                        + urlencode(
+                            {
+                                "apiKey": univ_api_key,
+                                "svcType": "api",
+                                "svcCode": "SCHOOL",
+                                "contentType": "json",
+                                "gubun": "univ_gubun",
+                                "searchSchulNm": keyword,
+                            }
+                        )
+                    )
+                    career_request = Request(
+                        request_url,
+                        headers={"User-Agent": "Friendary/1.0"},
+                    )
+                    with urlopen(career_request, timeout=5) as response:
+                        payload = json.loads(response.read().decode("utf-8"))
 
-            try:
-                request_url = (
-                    "https://www.career.go.kr/cnet/openapi/getOpenApi?"
-                    + urlencode(
-                        {
-                            "apiKey": univ_api_key,
-                            "svcType": "api",
-                            "svcCode": "SCHOOL",
-                            "contentType": "json",
-                            "gubun": "univ_gubun",
-                            "searchSchulNm": keyword,
-                        }
-                    )
-                )
-                career_request = Request(
-                    request_url,
-                    headers={"User-Agent": "Friendary/1.0"},
-                )
-                with urlopen(career_request, timeout=5) as response:
-                    payload = json.loads(response.read().decode("utf-8"))
+                    rows = payload.get("dataSearch", {}).get("content", [])
+                    seen = set()
+                    for row in rows:
+                        raw_name = str(row.get("schoolName", "")).strip()
+                        if not raw_name:
+                            continue
+                        campus = str(row.get("campusName", "")).strip()
+                        full_name = (
+                            f"{raw_name} ({campus})"
+                            if campus and campus not in {"본교", "본교(주)"}
+                            else raw_name
+                        )
+                        if full_name in seen:
+                            continue
+                        seen.add(full_name)
+                        career_schools.append(
+                            {
+                                "name": full_name,
+                                "type": "대학교",
+                                "code": str(row.get("seq", "")),
+                                "office_code": "",
+                                "address": str(row.get("adres") or row.get("region") or ""),
+                            }
+                        )
+                        if len(career_schools) >= 30:
+                            break
+                except Exception:
+                    pass
 
-                rows = payload.get("dataSearch", {}).get("content", [])
-                schools = []
-                seen = set()
-                for row in rows:
-                    raw_name = str(row.get("schoolName", "")).strip()
-                    if not raw_name:
-                        continue
-                    campus = str(row.get("campusName", "")).strip()
-                    full_name = (
-                        f"{raw_name} ({campus})"
-                        if campus and campus not in {"본교", "본교(주)"}
-                        else raw_name
-                    )
-                    if full_name in seen:
-                        continue
-                    seen.add(full_name)
-                    schools.append(
-                        {
-                            "name": full_name,
-                            "type": "대학교",
-                            "code": str(row.get("seq", "")),
-                            "office_code": "",
-                            "address": str(row.get("adres") or row.get("region") or ""),
-                        }
-                    )
-                    if len(schools) >= 30:
-                        break
-                return jsonify(schools=schools)
-            except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
-                return jsonify(error="대학교 정보 서비스에 연결하지 못했습니다."), 502
+            combined_schools = jp_schools + career_schools
+            return jsonify(schools=combined_schools[:30])
 
         api_key = app.config.get("NEIS_API_KEY", "").strip()
         if not api_key:
