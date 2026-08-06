@@ -539,14 +539,18 @@ def create_app():
             )
         }
 
-        if "parent_id" not in album_comment_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE user_album_comment "
-                    "ADD COLUMN parent_id INTEGER"
-                )
+        # 모든 유저의 사랑달 기본값(1개 이상) 및 최근 지급월을 보장합니다.
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        db.session.execute(
+            text(
+                'UPDATE "user" SET sarangdal_balance = 1 WHERE sarangdal_balance IS NULL OR sarangdal_balance = 0'
             )
-
+        )
+        db.session.execute(
+            text(
+                f'UPDATE "user" SET last_sarangdal_month = \'{current_month}\' WHERE last_sarangdal_month IS NULL OR last_sarangdal_month = \'\''
+            )
+        )
         db.session.commit()
 
     def login_destination(user):
@@ -1420,18 +1424,22 @@ def create_app():
 
     def _get_or_grant_user_sarangdal(user):
         """
-        매달 1개씩 사랑달을 자동 지급하며, 보유 중인 사랑달 개수를 반환합니다.
+        모든 유저에게 기본 1개를 제공하고, 매달 1일마다 1개씩 누적 자동 충전합니다.
         """
         if not user:
             return 0
         current_month = datetime.utcnow().strftime("%Y-%m")
-        balance = getattr(user, "sarangdal_balance", None)
-        if balance is None:
-            balance = 1
-            user.sarangdal_balance = 1
-
         last_month = getattr(user, "last_sarangdal_month", None)
-        if last_month != current_month:
+
+        if not last_month:
+            if (user.sarangdal_balance or 0) < 1:
+                user.sarangdal_balance = 1
+            user.last_sarangdal_month = current_month
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        elif last_month != current_month:
             user.sarangdal_balance = (user.sarangdal_balance or 0) + 1
             user.last_sarangdal_month = current_month
             try:
@@ -1439,7 +1447,7 @@ def create_app():
             except Exception:
                 db.session.rollback()
 
-        return user.sarangdal_balance
+        return user.sarangdal_balance or 0
 
     @app.get("/api/sarangdal/status")
     @login_required
@@ -1776,13 +1784,6 @@ def create_app():
             )
 
         user.sarangdal_balance = balance - 1
-        opposite = UserAlbumDislike.query.filter_by(
-            photo_id=photo_id,
-            user_id=session["user_id"],
-        ).first()
-        if opposite:
-            db.session.delete(opposite)
-
         db.session.add(
             UserAlbumLike(photo_id=photo_id, user_id=user.id)
         )
@@ -1790,9 +1791,15 @@ def create_app():
 
         like_count = UserAlbumLike.query.filter_by(photo_id=photo_id).count()
         dislike_count = UserAlbumDislike.query.filter_by(photo_id=photo_id).count()
+        has_disliked = (
+            UserAlbumDislike.query.filter_by(
+                photo_id=photo_id, user_id=user.id
+            ).first()
+            is not None
+        )
         return jsonify(
             liked=True,
-            disliked=False,
+            disliked=has_disliked,
             like_count=like_count,
             dislike_count=dislike_count,
             user_sarangdal=user.sarangdal_balance,
@@ -1805,35 +1812,60 @@ def create_app():
         photo = db.get_or_404(UserAlbumPhoto, photo_id)
         if photo.user_id != session["user_id"] and not photo.user.is_profile_public:
             return jsonify(message="비공개 사진에는 반응할 수 없습니다."), 403
+
+        user_id = session["user_id"]
         existing = UserAlbumDislike.query.filter_by(
             photo_id=photo_id,
-            user_id=session["user_id"],
+            user_id=user_id,
         ).first()
-        opposite = UserAlbumLike.query.filter_by(
-            photo_id=photo_id,
-            user_id=session["user_id"],
-        ).first()
+
         if existing:
             db.session.delete(existing)
             disliked = False
+            msg = "싫어요 반응을 취소했습니다."
         else:
-            if opposite:
-                db.session.delete(opposite)
+            now_utc = datetime.utcnow()
+            start_of_month = now_utc.replace(
+                day=1, hour=0, minute=0, second=0, microsecond=0
+            )
+            already_used = UserAlbumDislike.query.filter(
+                UserAlbumDislike.user_id == user_id,
+                UserAlbumDislike.create_date >= start_of_month,
+            ).first()
+
+            if already_used:
+                return (
+                    jsonify(
+                        message="이번 달 '싫어요' 기회를 이미 사용하셨습니다. (월 1회 제공)"
+                    ),
+                    400,
+                )
+
             db.session.add(
                 UserAlbumDislike(
                     photo_id=photo_id,
-                    user_id=session["user_id"],
+                    user_id=user_id,
                 )
             )
             disliked = True
+            msg = "싫어요 반응을 남겼습니다. (이번 달 '싫어요' 1회 사용)"
+
         db.session.commit()
+
+        has_liked = (
+            UserAlbumLike.query.filter_by(
+                photo_id=photo_id, user_id=user_id
+            ).first()
+            is not None
+        )
         return jsonify(
-            liked=False,
+            liked=has_liked,
             disliked=disliked,
             like_count=UserAlbumLike.query.filter_by(photo_id=photo_id).count(),
             dislike_count=UserAlbumDislike.query.filter_by(
                 photo_id=photo_id
             ).count(),
+            message=msg,
         )
 
     @app.post("/api/album/photos/<int:photo_id>/comments")
@@ -2338,6 +2370,55 @@ def create_app():
         ).update({"is_read": True})
         db.session.commit()
         return jsonify(status="success")
+
+    @app.get("/api/social/chat/<int:target_id>")
+    @login_required
+    def direct_message_conversation(target_id):
+        _purge_expired_direct_messages()
+        current_id = session["user_id"]
+        target = db.get_or_404(User, target_id)
+        messages = (
+            DirectMessage.query.filter(
+                or_(
+                    (
+                        (DirectMessage.sender_id == current_id)
+                        & (DirectMessage.receiver_id == target_id)
+                    ),
+                    (
+                        (DirectMessage.sender_id == target_id)
+                        & (DirectMessage.receiver_id == current_id)
+                    ),
+                )
+            )
+            .order_by(DirectMessage.create_date.asc())
+            .limit(50)
+            .all()
+        )
+
+        DirectMessage.query.filter_by(
+            sender_id=target_id,
+            receiver_id=current_id,
+            is_read=False,
+        ).update({"is_read": True})
+        db.session.commit()
+
+        return jsonify(
+            target={
+                "id": target.id,
+                "username": target.username,
+                "profile_image_url": target.profile_image_url,
+            },
+            messages=[
+                {
+                    "id": msg.id,
+                    "sender_id": msg.sender_id,
+                    "receiver_id": msg.receiver_id,
+                    "content": msg.content,
+                    "created_at": msg.create_date.strftime("%H:%M"),
+                }
+                for msg in messages
+            ],
+        )
 
     @app.route("/user-album")
     @login_required

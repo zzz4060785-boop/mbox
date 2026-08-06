@@ -36,47 +36,79 @@
       <span>나만의 공간</span>
     </div>
 
-    <div class="classroom-scene">
+    <div class="classroom-scene" id="classroomScene">
 
- <!-- 교실 사진 확대 버튼 -->
-<button
-  class="classroom-photo-open"
-  id="classroomPhotoOpen"
-  type="button"
-  aria-label="교실 사진 크게 보기"
->
-  <img
-    class="classroom-background-image"
-    src="{{ url_for('static', filename='images/my_home_empty_classroom.png') }}"
-    alt="창문과 문, 마루만 있는 빈 픽셀 교실"
-    data-photo-lightbox
-  />
-</button>
-
+      <!-- 교실 사진 확대 버튼 -->
       <button
-        class="classroom-avatar avatar-male"
+        class="classroom-photo-open"
+        id="classroomPhotoOpen"
         type="button"
-        data-avatar-name="남성 아바타"
-        aria-label="남성 아바타 선택"
+        aria-label="교실 사진 크게 보기"
       >
         <img
-          src="{{ url_for('static', filename='images/avatar_male.png') }}"
-          alt="남성 아바타"
+          class="classroom-background-image"
+          src="{{ url_for('static', filename='images/my_home_empty_classroom.png') }}"
+          alt="창문과 문, 마루만 있는 빈 픽셀 교실"
+          data-photo-lightbox
         />
       </button>
 
-      <button
-        class="classroom-avatar avatar-female"
-        type="button"
-        data-avatar-name="여성 아바타"
-        aria-label="여성 아바타 선택"
-      >
-        <img
-          src="{{ url_for('static', filename='images/avatar_female.png') }}"
-          alt="여성 아바타"
-        />
-      </button>
+      <!-- 최대 8인 아바타 슬롯 영역 -->
+      <div id="classroomAvatarSlots" class="classroom-avatar-slots">
+        <!-- JS에서 슬롯별 아바타 및 말풍선을 동적으로 생성/배치합니다 -->
+        <div class="classroom-avatar avatar-slot-1" id="avatarSlot1" data-slot="1">
+          <div class="speech-bubble" id="speechBubble1" hidden></div>
+          <span class="avatar-name-tag">{{ current_user.username }} (나)</span>
+          <img src="{{ url_for('static', filename='images/avatar_male.png') }}" alt="내 아바타" />
+        </div>
+        <div class="classroom-avatar avatar-slot-2" id="avatarSlot2" data-slot="2" hidden>
+          <div class="speech-bubble" id="speechBubble2" hidden></div>
+          <span class="avatar-name-tag" id="avatarSlot2Name">1촌</span>
+          <img src="{{ url_for('static', filename='images/avatar_female.png') }}" alt="1촌 아바타" />
+        </div>
+        <div class="classroom-avatar avatar-slot-3" id="avatarSlot3" data-slot="3" hidden>
+          <div class="speech-bubble" id="speechBubble3" hidden></div>
+          <span class="avatar-name-tag">슬롯 3</span>
+        </div>
+        <div class="classroom-avatar avatar-slot-4" id="avatarSlot4" data-slot="4" hidden>
+          <div class="speech-bubble" id="speechBubble4" hidden></div>
+          <span class="avatar-name-tag">슬롯 4</span>
+        </div>
+        <div class="classroom-avatar avatar-slot-5" id="avatarSlot5" data-slot="5" hidden>
+          <div class="speech-bubble" id="speechBubble5" hidden></div>
+          <span class="avatar-name-tag">슬롯 5</span>
+        </div>
+        <div class="classroom-avatar avatar-slot-6" id="avatarSlot6" data-slot="6" hidden>
+          <div class="speech-bubble" id="speechBubble6" hidden></div>
+          <span class="avatar-name-tag">슬롯 6</span>
+        </div>
+        <div class="classroom-avatar avatar-slot-7" id="avatarSlot7" data-slot="7" hidden>
+          <div class="speech-bubble" id="speechBubble7" hidden></div>
+          <span class="avatar-name-tag">슬롯 7</span>
+        </div>
+        <div class="classroom-avatar avatar-slot-8" id="avatarSlot8" data-slot="8" hidden>
+          <div class="speech-bubble" id="speechBubble8" hidden></div>
+          <span class="avatar-name-tag">슬롯 8</span>
+        </div>
+      </div>
 
+    </div>
+
+    <!-- 1:1 대화 및 말풍선 채팅 입력 상자 -->
+    <div class="classroom-chat-bar" id="classroomChatBar">
+      <div class="chat-header-info">
+        <span>💬 <strong>1:1 교실 대화</strong></span>
+        <span id="chatTargetName" class="chat-target-name">대화 상대 선택 안 됨</span>
+      </div>
+      <div class="chat-input-row">
+        <input
+          type="text"
+          id="classroomChatInput"
+          maxlength="200"
+          placeholder="교실에서 나눌 이야기를 입력해 보세요... (말풍선 표시)"
+        />
+        <button type="button" id="classroomChatSendBtn">전송</button>
+      </div>
     </div>
 
     <p

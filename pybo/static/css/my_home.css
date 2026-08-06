@@ -138,10 +138,13 @@
    아바타
 ------------------------- */
 
+/* -------------------------
+   8인 아바타 슬롯 & 말풍선
+------------------------- */
+
 .my-home-page .classroom-avatar {
-  width: 15%;
+  width: 14%;
   position: absolute;
-  bottom: 7%;
   z-index: 2;
   margin: 0;
   padding: 0;
@@ -150,6 +153,11 @@
   background: transparent;
   cursor: pointer;
   filter: drop-shadow(0 3px 2px rgba(84, 55, 30, 0.25));
+  transition: bottom 0.3s ease, left 0.3s ease;
+}
+
+.my-home-page .classroom-avatar[hidden] {
+  display: none !important;
 }
 
 .my-home-page .classroom-avatar img {
@@ -160,20 +168,138 @@
   image-rendering: pixelated;
 }
 
-.my-home-page .classroom-avatar:hover,
-.my-home-page .classroom-avatar:focus-visible,
-.my-home-page .classroom-avatar.selected {
-  border-color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 226, 133, 0.25);
+/* 8개 위치 슬롯 */
+.my-home-page .avatar-slot-1 { left: 36%; bottom: 8%; z-index: 10; }
+.my-home-page .avatar-slot-2 { left: 54%; bottom: 8%; z-index: 10; }
+.my-home-page .avatar-slot-3 { left: 18%; bottom: 8%; z-index: 10; }
+.my-home-page .avatar-slot-4 { left: 72%; bottom: 8%; z-index: 10; }
+.my-home-page .avatar-slot-5 { left: 28%; bottom: 28%; z-index: 5; }
+.my-home-page .avatar-slot-6 { left: 46%; bottom: 28%; z-index: 5; }
+.my-home-page .avatar-slot-7 { left: 62%; bottom: 28%; z-index: 5; }
+.my-home-page .avatar-slot-8 { left: 78%; bottom: 28%; z-index: 5; }
+
+/* 이름 뱃지 */
+.my-home-page .avatar-name-tag {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* 아바타 머리 위 픽셀 말풍선 */
+.my-home-page .speech-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 24px;
+  min-width: 80px;
+  max-width: 190px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  color: #111111;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: break-word;
+  text-align: center;
+  z-index: 30;
+  pointer-events: none;
+  animation: speechBubblePop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.my-home-page .speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 6px 0;
+  border-style: solid;
+  border-color: #222222 transparent transparent;
+}
+
+@keyframes speechBubblePop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* -------------------------
+   1:1 교실 대화 채팅바
+------------------------- */
+
+.my-home-page .classroom-chat-bar {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #eae6e1;
+  border-radius: 14px;
+  background: #fdfcfb;
+}
+
+.my-home-page .chat-header-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+  font-size: 12px;
+  color: #444;
+}
+
+.my-home-page .chat-target-name {
+  color: #2f80ed;
+  font-weight: 700;
+}
+
+.my-home-page .chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.my-home-page #classroomChatInput {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #d0c8bf;
+  border-radius: 10px;
+  font-size: 13px;
   outline: none;
 }
 
-.my-home-page .avatar-male {
-  left: 39%;
+.my-home-page #classroomChatInput:focus {
+  border-color: #2f80ed;
+  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
 }
 
-.my-home-page .avatar-female {
-  left: 55%;
+.my-home-page #classroomChatSendBtn {
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #2f80ed;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.my-home-page #classroomChatSendBtn:hover {
+  background: #246dcb;
 }
 
 /* -------------------------

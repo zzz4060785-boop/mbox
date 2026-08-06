@@ -527,6 +527,10 @@ async function toggleDislike(photoId, button) {
       method: "POST",
     });
     updateReactionButtons(button.closest(".feed-card"), data);
+    if (data.message) {
+      const status = document.getElementById("albumStatus");
+      if (status) status.textContent = data.message;
+    }
   } catch (error) {
     alert(error.message);
   } finally {
@@ -803,8 +807,9 @@ function confirmConnectionMove(userId, clickedElement) {
     modal.innerHTML = `
       <div class="connection-choice-box" role="dialog" aria-modal="true" aria-labelledby="connectionChoiceTitle">
         <p id="connectionChoiceTitle"></p>
-        <button type="button" data-action="profile">프로필로 이동</button>
-        <button type="button" data-action="message">쪽지 보내기</button>
+        <button type="button" data-action="chat" style="background:#2f80ed;color:#fff;font-weight:700;">💬 1:1 교실 대화하기</button>
+        <button type="button" data-action="message">📩 쪽지 보내기</button>
+        <button type="button" data-action="profile">👤 프로필 보기</button>
         <button type="button" class="danger" data-action="delete">1촌 삭제</button>
         <button type="button" data-action="cancel">취소</button>
       </div>`;
@@ -815,23 +820,30 @@ function confirmConnectionMove(userId, clickedElement) {
   }
 
   modal.querySelector("p").textContent = `${username}님과 무엇을 할까요?`;
-  const profileButton = modal.querySelector('[data-action="profile"]');
+  const chatButton = modal.querySelector('[data-action="chat"]');
   const messageButton = modal.querySelector('[data-action="message"]');
+  const profileButton = modal.querySelector('[data-action="profile"]');
   const deleteButton = modal.querySelector('[data-action="delete"]');
   const cancelButton = modal.querySelector('[data-action="cancel"]');
+
   deleteButton.hidden = !friendshipId;
+
+  chatButton.onclick = () => {
+    closeConnectionChoice();
+    window.location.href = `/my-home?chat_user=${userId}`;
+  };
+  messageButton.onclick = () => openConnectionMessage(userId);
   profileButton.onclick = () => {
     closeConnectionChoice();
     openUserProfile(userId);
   };
-  messageButton.onclick = () => openConnectionMessage(userId);
   deleteButton.onclick = () => {
     closeConnectionChoice();
     removeFriend(Number(friendshipId), username);
   };
   cancelButton.onclick = closeConnectionChoice;
   modal.hidden = false;
-  profileButton.focus();
+  chatButton.focus();
 }
 
 function relationshipShortLabel(status) {
