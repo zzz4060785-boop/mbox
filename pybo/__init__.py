@@ -305,8 +305,11 @@ def create_app():
             )
         )
 
-    def notify_school_members(post, actor):
-        """새 게시글을 같은 학교에 등록된 다른 사용자들에게 알립니다."""
+    def notify_school_members(school_name, actor, kind, title, message, target_url):
+        """새 소식(게시글, 공지사항, 사랑별 장소 등)을 같은 학교에 등록된 다른 회원들에게 알립니다."""
+        if not school_name or not actor:
+            return
+
         member_rows = (
             db.session.query(User.id)
             .outerjoin(
@@ -315,28 +318,24 @@ def create_app():
             )
             .filter(
                 or_(
-                    User.school_name == post.school_name,
-                    UserSchool.school_name == post.school_name,
+                    User.school_name == school_name,
+                    UserSchool.school_name == school_name,
                 )
             )
             .distinct()
             .all()
         )
 
-        target_url = url_for(
-            "board_view",
-            post_id=post.id,
-        )
-
         for (user_id,) in member_rows:
-            add_notification(
-                user_id,
-                "new_post",
-                "새 게시글",
-                f"{actor.username}님이 '{post.title}' 글을 올렸습니다.",
-                target_url,
-                actor.id,
-            )
+            if user_id != actor.id:
+                add_notification(
+                    user_id,
+                    kind,
+                    title,
+                    message,
+                    target_url,
+                    actor.id,
+                )
 
     with app.app_context():
         db.create_all()
@@ -1589,6 +1588,15 @@ def create_app():
             ),
         )
         db.session.add(photo)
+        actor = db.session.get(User, session["user_id"])
+        notify_school_members(
+            photo.school_name,
+            actor,
+            "new_album_photo",
+            "📸 새 추억 앨범",
+            f"{actor.display_name}님이 앨범에 새 사진을 올려 추억을 공유했습니다.",
+            url_for("main_album", school=photo.school_name),
+        )
         db.session.commit()
         return jsonify(status="success", photo_id=photo.id), 201
 
@@ -3186,6 +3194,15 @@ def create_app():
                     original_name=original_name,
                 )
             )
+        creator = db.session.get(User, session["user_id"])
+        notify_school_members(
+            post.school_name,
+            creator,
+            "new_recommendation",
+            "💗 새 사랑별 장소",
+            f"{creator.display_name}님이 '{post.title}' 장소를 추천했습니다.",
+            url_for("recommendation_detail", post_id=post.id),
+        )
         db.session.commit()
         flash("사랑별 글이 등록되었습니다.")
         return redirect(url_for("recommendation_detail", post_id=post.id))
@@ -3561,7 +3578,14 @@ def create_app():
         if is_notice and can_write_notice:
             db.session.add(BoardNotice(content=title))
 
-        notify_school_members(post, user)
+        notify_school_members(
+            post.school_name,
+            user,
+            "new_post",
+            "새 게시글",
+            f"{user.display_name}님이 '{post.title}' 글을 올렸습니다.",
+            url_for("board_view", post_id=post.id),
+        )
         db.session.commit()
         flash("게시글이 등록되었습니다.")
         return redirect(url_for("board"))
@@ -3933,6 +3957,16 @@ def create_app():
                 )
             )
 
+        if not notice:
+            creator = db.session.get(User, session["user_id"])
+            notify_school_members(
+                _active_board_school(),
+                creator,
+                "new_notice",
+                "📢 새 공지사항",
+                f"{creator.display_name}님이 새 공지사항을 등록했습니다.",
+                url_for("notice_board"),
+            )
         db.session.commit()
         flash("공지사항이 수정되었습니다." if notice else "공지사항이 등록되었습니다.")
         return redirect(url_for("notice_board"))
