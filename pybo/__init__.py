@@ -371,6 +371,8 @@ def create_app():
             "last_login_at": "DATETIME",
             "last_active_at": "DATETIME",
             "executive_elected_at": "DATETIME",
+            "sarangdal_balance": "INTEGER NOT NULL DEFAULT 1",
+            "last_sarangdal_month": "VARCHAR(7)",
         }
 
         for column_name, column_type in school_columns.items():
