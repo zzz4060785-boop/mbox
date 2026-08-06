@@ -14,7 +14,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from pybo import db, login_required
-from pybo.models import AlbumComment, AlbumPhoto
+from pybo.models import AlbumComment, AlbumPhoto, User
 
 
 bp = Blueprint("album", __name__, url_prefix="/album")
@@ -73,8 +73,11 @@ FACES_DATA = {
 }
 
 
-def _executive_ids():
-    return set(current_app.config.get("EXECUTIVE_USER_IDS", []))
+def _is_user_executive(user_id):
+    if not user_id:
+        return False
+    user = db.session.get(User, user_id)
+    return bool(user and user.is_executive_user)
 
 
 @bp.route("/")
@@ -88,7 +91,7 @@ def graduation_album():
         "graduation_album.html",
         faces_data=FACES_DATA,
         photo_registry=photo_registry,
-        is_executive=session.get("user_id") in _executive_ids(),
+        is_executive=_is_user_executive(session.get("user_id")),
     )
 
 
