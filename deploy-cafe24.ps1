@@ -133,8 +133,9 @@ rm -f "$ARCHIVE"
 echo "Cafe24 service is active. Backup: $BACKUP_DIR/friendary-$STAMP.tar.gz"
 '@
 
+    $RemoteDeployLf = $RemoteDeploy.Replace("`r`n", "`n").Replace("`r", "`n")
     $RemoteDeployBase64 = [Convert]::ToBase64String(
-        [Text.Encoding]::UTF8.GetBytes($RemoteDeploy)
+        [Text.Encoding]::UTF8.GetBytes($RemoteDeployLf)
     )
     $RemoteCommand = "echo '$RemoteDeployBase64' | base64 -d | bash"
 

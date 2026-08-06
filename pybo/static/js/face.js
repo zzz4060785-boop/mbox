@@ -63,14 +63,14 @@ const executivePhotoRegistry = {
 // 1. 현재 임원이 선택한 슬롯 정보를 저장할 전역 변수
 let currentSelectedSlot = null;
 
-// 2. 앨범 내 얼굴 슬롯을 클릭했을 때 실행할 함수
+// 2. 앨범 내 얼굴 슬롯을 클릭했을 때 실행할 함수 (선택 및 노란색 테두리 하이라이트 표시)
 function selectExecutiveSlot(element, slotName) {
   // 기존에 선택된 슬롯이 있다면 하이라이트 제거
   if (currentSelectedSlot) {
     currentSelectedSlot.classList.remove("face-selected-highlight");
   }
 
-  // 새로운 슬롯 선택 및 하이라이트 추가
+  // 새로운 슬롯 선택 및 노란색 테두리 하이라이트 추가
   currentSelectedSlot = element;
   currentSelectedSlot.classList.add("face-selected-highlight");
 
@@ -81,14 +81,16 @@ function selectExecutiveSlot(element, slotName) {
   }
 }
 
-// 3. [📸 사진 선택하여 넣기] 버튼 클릭 시 파일 창을 열어주는 함수
+// 3. [📸 사진 선택하여 넣기] 버튼 클릭 시 확인창을 띄우고 파일 선택창을 열어주는 함수
 function triggerFileInput() {
   if (!currentSelectedSlot) {
     alert("⚠️ 먼저 변경할 얼굴 슬롯을 클릭해 주세요!");
     return;
   }
-  const uploader = document.getElementById("executiveSingleUploader");
-  if (uploader) uploader.click();
+  if (confirm("사진을 올리시겠습니까?")) {
+    const uploader = document.getElementById("executiveSingleUploader");
+    if (uploader) uploader.click();
+  }
 }
 
 // 임원급 이상만 사진 단일 업로드 및 미리보기 핸들러
@@ -494,15 +496,13 @@ window.logAllFaceCoordinates = function () {
   return result;
 };
 
-// DOM 준비 시 자동 활성화
+// DOM 준비 시 자동 활성화 (임원 드래그 방지: enableFaceDragMode 자동 실행 제외)
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     applyResponsiveFaceCoordinates();
-    enableFaceDragMode();
   });
 } else {
   applyResponsiveFaceCoordinates();
-  enableFaceDragMode();
 }
 
 window.addEventListener("resize", applyResponsiveFaceCoordinates);

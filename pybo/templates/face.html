@@ -953,7 +953,7 @@
         </div>
       </div>
     </div>
-    <script src="{{ url_for('static', filename='js/face.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/face.js', v='20260807-5') }}"></script>
 
     <script>
       const savedPhotos = {{ photo_registry | tojson }};
@@ -967,6 +967,6 @@
       window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
     </script>
     <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/photo_lightbox.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/photo_lightbox.js', v='20260807-3') }}"></script>
   </body>
 </html>

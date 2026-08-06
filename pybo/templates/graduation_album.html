@@ -609,9 +609,9 @@
 
 {% block script %}
 <script
-  src="{{ url_for('static', filename='js/face.js') }}"
+  src="{{ url_for('static', filename='js/face.js', v='20260807-5') }}"
   data-upload-url="{{ url_for('album.upload_executive_photo') }}"
   data-comments-url="{{ url_for('album.comments_api', room_id=0) }}"
 ></script>
-<script src="{{ url_for('static', filename='js/photo_lightbox.js', v='20260806-lightbox-3') }}"></script>
+<script src="{{ url_for('static', filename='js/photo_lightbox.js', v='20260807-3') }}"></script>
 {% endblock %}

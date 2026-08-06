@@ -80,7 +80,27 @@ img[data-photo-lightbox],
   display: none !important;
 }
 
-.photo-lightbox img {
+.photo-lightbox-container {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 68px);
+  max-height: calc(100dvh - 68px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.photo-lightbox-container .photo-wrap {
+  width: 100%;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.photo-lightbox img,
+.photo-lightbox-container img {
   width: auto;
   max-width: 100%;
   max-height: calc(100vh - 68px);

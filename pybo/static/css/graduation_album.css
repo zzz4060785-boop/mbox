@@ -331,10 +331,21 @@
         transform: scale(0.98); /* 클릭했을 때 살짝 눌리는 효과 */
       }
 
+      /* 슬롯 마우스 호버 효과 */
+      .face-slot:hover,
+      .face-slot2:hover,
+      .face-slot3:hover,
+      .face-slot4:hover,
+      .face-slot5:hover {
+        border-color: #ffd43b !important;
+        box-shadow: 0 0 10px #ffd43b !important;
+      }
+
       /* (보너스) 임원이 슬롯을 클릭해 선택했을 때 생기는 클래스 효과 */
       .face-selected-highlight {
+        border-color: #ffd43b !important;
         outline: 3px solid #ffd43b !important;
         outline-offset: 2px;
-        box-shadow: 0 0 12px #ffd43b;
-        transition: outline 0.1s ease;
+        box-shadow: 0 0 14px #ffd43b, 0 0 4px #ffd43b !important;
+        transition: all 0.2s ease;
       }
