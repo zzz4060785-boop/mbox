@@ -1056,6 +1056,12 @@ def create_app():
         user = db.session.get(User, session["user_id"])
         return render_template("main_album.html", current_user=user)
 
+    @app.route("/star")
+    @login_required
+    def star_page():
+        user = db.session.get(User, session["user_id"])
+        return render_template("star.html", current_user=user)
+
     @app.route("/my-home")
     @login_required
     def my_home():
@@ -1434,6 +1440,32 @@ def create_app():
                 db.session.rollback()
 
         return user.sarangdal_balance
+
+    @app.get("/api/sarangdal/status")
+    @login_required
+    def user_sarangdal_status():
+        user = db.session.get(User, session["user_id"])
+        if not user:
+            return jsonify(error="로그인이 필요합니다."), 401
+        balance = _get_or_grant_user_sarangdal(user)
+
+        # 사용자가 남들에게 선물한 총 사랑달 개수
+        total_given = UserAlbumLike.query.filter_by(user_id=user.id).count()
+
+        # 사용자 사진이 남들에게 받은 총 사랑달 개수
+        total_received = (
+            UserAlbumLike.query.join(UserAlbumPhoto)
+            .filter(UserAlbumPhoto.user_id == user.id)
+            .count()
+        )
+
+        return jsonify(
+            username=user.username,
+            current_balance=balance,
+            total_given=total_given,
+            total_received=total_received,
+            last_month=user.last_sarangdal_month or datetime.utcnow().strftime("%Y-%m"),
+        )
 
     @app.get("/api/album/feed")
     @login_required

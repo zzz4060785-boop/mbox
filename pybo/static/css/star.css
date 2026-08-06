@@ -1,0 +1,271 @@
+/* =========================================================
+   ⭐ 사랑별(Star) 우측 사이드바 전용 초미니 위젯 스타일 (star.css)
+   ========================================================= */
+
+.star-layout-section {
+  position: relative;
+  width: 100%;
+  margin: 4px auto 2px;
+  padding: 2px 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+  clear: both;
+}
+
+/* 별표 오각형 인터랙티브 레이아웃 래퍼 */
+.star-layout-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.star-container {
+  position: relative;
+  width: 125px;
+  height: 125px;
+  margin: 0 auto;
+}
+
+.star-svg-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pulse-glow {
+  animation: starPulse 3s infinite alternate ease-in-out;
+}
+
+@keyframes starPulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+.star-outline {
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.6));
+}
+
+/* 센터 코어 (중앙 노드) */
+.star-center-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #fff8e1 100%);
+  border: 1.5px solid #fbc02d;
+  box-shadow: 0 0 6px rgba(255, 193, 7, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.star-center-core:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
+}
+
+.core-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.core-icon {
+  font-size: 0.6rem;
+  line-height: 1;
+}
+.core-text {
+  font-size: 0.45rem;
+  font-weight: 800;
+  color: #d35400;
+  line-height: 1;
+}
+
+/* 별의 5대 구역 노드 버튼 */
+.star-zone-node {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(4px);
+  border: 1px solid #ffe082;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+  padding: 1px;
+  text-align: center;
+}
+
+.star-zone-node:hover {
+  transform: scale(1.1) translateY(-1px);
+  border-color: #ffa000;
+  box-shadow: 0 4px 8px rgba(255, 160, 0, 0.3);
+  background: #ffffff;
+  z-index: 8;
+}
+
+.node-badge {
+  font-size: 0.38rem;
+  font-weight: 700;
+  background: #fff3e0;
+  color: #e65100;
+  padding: 0 2px;
+  border-radius: 3px;
+  margin-bottom: 1px;
+  line-height: 1;
+}
+
+.node-icon {
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.node-label {
+  font-size: 0.45rem;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.node-desc {
+  display: none;
+}
+
+/* 오각형 5대 위치 사이드바 전용 초미니 배치 (125px 영역) */
+.zone-top {
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.zone-top-right {
+  top: 28px;
+  right: -2px;
+}
+.zone-bottom-right {
+  bottom: 2px;
+  right: 6px;
+}
+.zone-bottom-left {
+  bottom: 2px;
+  left: 6px;
+}
+.zone-top-left {
+  top: 28px;
+  left: -2px;
+}
+
+/* 모달 상세 창 */
+.star-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.star-detail-modal[hidden] {
+  display: none !important;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.glass-card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  max-height: 75vh;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 2;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f2f6;
+  font-size: 1.1rem;
+  color: #747d8c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #fff3e0;
+}
+
+.modal-icon {
+  font-size: 1.4rem;
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #2c3e50;
+}
+
+.zone-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #fff8e1;
+  color: #f57f17;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
