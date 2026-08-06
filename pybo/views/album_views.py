@@ -116,7 +116,7 @@ def get_faces(album_id):
 
 @bp.post("/api/executive/upload-photo")
 def upload_executive_photo():
-    if session.get("user_id") not in _executive_ids():
+    if not _is_user_executive(session.get("user_id")):
         return jsonify(status="error", message="임원 권한이 필요합니다."), 403
 
     image = request.files.get("image")
