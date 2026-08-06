@@ -1,5 +1,5 @@
 <!-- ⭐ 사랑별 5대 구역 별표 미니 위젯 (star.html) ⭐ -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/star.css', v='20260807-star-6') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/star.css', v='20260807-pink-glow-1') }}" />
 
 <section class="star-layout-section" aria-label="사랑별 5대 구역">
   <!-- 대형 별표 5대 구역 레이아웃 -->
@@ -8,23 +8,23 @@
       <svg class="star-svg-bg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
         <defs>
           <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ffdf00" stop-opacity="0.8" />
-            <stop offset="50%" stop-color="#ffaa00" stop-opacity="0.4" />
-            <stop offset="100%" stop-color="#ff7700" stop-opacity="0" />
+            <stop offset="0%" stop-color="#ff80ab" stop-opacity="0.85" />
+            <stop offset="50%" stop-color="#ff4081" stop-opacity="0.45" />
+            <stop offset="100%" stop-color="#f50057" stop-opacity="0" />
           </radialGradient>
-          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#fff59d" />
-            <stop offset="50%" stop-color="#fbc02d" />
-            <stop offset="100%" stop-color="#f57f17" />
+          <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffcdd2" />
+            <stop offset="50%" stop-color="#ff4081" />
+            <stop offset="100%" stop-color="#c2185b" />
           </linearGradient>
         </defs>
-        <!-- 배경 반짝임 및 오각별 외곽선 -->
+        <!-- 배경 반짝임 및 분홍빛 오각별 외곽선 -->
         <circle cx="250" cy="250" r="220" fill="url(#starGlow)" class="pulse-glow" />
         <polygon points="250,30 315,180 475,185 350,290 390,450 250,360 110,450 150,290 25,185 185,180" 
-                 fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="star-outline" />
+                 fill="none" stroke="url(#pinkGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" class="star-outline" />
       </svg>
 
-      <!-- 별의 중앙 노드 (클릭 시 사랑달 현황 모달 열기) -->
+      <!-- 별의 중앙 노드 (분홍빛 모달 현황) -->
       <a href="#" class="star-center-core" onclick="openSarangdalStatusModal(); return false;" title="사랑달 현황 보기">
         <div class="core-inner">
           <span class="core-icon">✨</span>
@@ -83,4 +83,4 @@
   </div>
 </section>
 
-<script src="{{ url_for('static', filename='js/star.js', v='20260807-star-6') }}"></script>
+<script src="{{ url_for('static', filename='js/star.js', v='20260807-pink-glow-1') }}"></script>

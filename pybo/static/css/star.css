@@ -1,5 +1,5 @@
 /* =========================================================
-   ⭐ 사랑별(Star) 우측 사이드바 전용 초미니 위젯 스타일 (star.css)
+   ⭐ 사랑별(Star) 로맨틱 분홍빛 위젯 스타일 (star.css)
    ========================================================= */
 
 .star-layout-section {
@@ -45,21 +45,15 @@
 }
 
 @keyframes starPulse {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
+  0% { transform: scale(0.95); opacity: 0.6; }
+  100% { transform: scale(1.06); opacity: 0.95; }
 }
 
 .star-outline {
-  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.6));
+  filter: drop-shadow(0 0 5px rgba(255, 64, 129, 0.7));
 }
 
-/* 센터 코어 (중앙 노드) */
+/* 센터 코어 (중앙 로맨틱 핑크 노드) */
 .star-center-core {
   position: absolute;
   top: 50%;
@@ -68,9 +62,9 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 0%, #fff8e1 100%);
-  border: 1.5px solid #fbc02d;
-  box-shadow: 0 0 6px rgba(255, 193, 7, 0.5);
+  background: radial-gradient(circle, #ffffff 0%, #ffe4e8 100%);
+  border: 1.5px solid #ff4081;
+  box-shadow: 0 0 8px rgba(255, 64, 129, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -78,11 +72,12 @@
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none;
 }
 
 .star-center-core:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-  box-shadow: 0 0 10px rgba(255, 193, 7, 0.8);
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 0 12px rgba(255, 64, 129, 0.9);
 }
 
 .core-inner {
@@ -91,18 +86,10 @@
   align-items: center;
 }
 
-.core-icon {
-  font-size: 0.6rem;
-  line-height: 1;
-}
-.core-text {
-  font-size: 0.45rem;
-  font-weight: 800;
-  color: #d35400;
-  line-height: 1;
-}
+.core-icon { font-size: 0.6rem; line-height: 1; }
+.core-text { font-size: 0.45rem; font-weight: 800; color: #c2185b; line-height: 1; }
 
-/* 별의 5대 구역 노드 버튼 */
+/* 별의 5대 구역 노드 버튼 (핑크 톤 테두리) */
 .star-zone-node {
   position: absolute;
   width: 35px;
@@ -110,8 +97,8 @@
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(4px);
-  border: 1px solid #ffe082;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  border: 1px solid #ff80ab;
+  box-shadow: 0 2px 5px rgba(255, 64, 129, 0.15);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -121,12 +108,13 @@
   transition: all 0.2s ease;
   padding: 1px;
   text-align: center;
+  text-decoration: none;
 }
 
 .star-zone-node:hover {
   transform: scale(1.1) translateY(-1px);
-  border-color: #ffa000;
-  box-shadow: 0 4px 8px rgba(255, 160, 0, 0.3);
+  border-color: #ff4081;
+  box-shadow: 0 4px 10px rgba(255, 64, 129, 0.35);
   background: #ffffff;
   z-index: 8;
 }
@@ -134,8 +122,8 @@
 .node-badge {
   font-size: 0.38rem;
   font-weight: 700;
-  background: #fff3e0;
-  color: #e65100;
+  background: #ffe4e8;
+  color: #c2185b;
   padding: 0 2px;
   border-radius: 3px;
   margin-bottom: 1px;
@@ -159,28 +147,12 @@
   display: none;
 }
 
-/* 오각형 5대 위치 사이드바 전용 초미니 배치 (125px 영역) */
-.zone-top {
-  top: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.zone-top-right {
-  top: 28px;
-  right: -2px;
-}
-.zone-bottom-right {
-  bottom: 2px;
-  right: 6px;
-}
-.zone-bottom-left {
-  bottom: 2px;
-  left: 6px;
-}
-.zone-top-left {
-  top: 28px;
-  left: -2px;
-}
+/* 오각형 5대 위치 배치 (125px 영역) */
+.zone-top { top: -2px; left: 50%; transform: translateX(-50%); }
+.zone-top-right { top: 28px; right: -2px; }
+.zone-bottom-right { bottom: 2px; right: 6px; }
+.zone-bottom-left { bottom: 2px; left: 6px; }
+.zone-top-left { top: 28px; left: -2px; }
 
 /* 모달 상세 창 */
 .star-detail-modal {
@@ -217,8 +189,8 @@
   max-height: 75vh;
   background: rgba(255, 255, 255, 0.98);
   border-radius: 18px;
-  border: 1px solid rgba(255, 215, 0, 0.4);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 64, 129, 0.3);
+  box-shadow: 0 16px 40px rgba(255, 64, 129, 0.18);
   padding: 16px;
   overflow-y: auto;
   z-index: 2;
@@ -247,25 +219,18 @@
   gap: 6px;
   margin-bottom: 12px;
   padding-bottom: 6px;
-  border-bottom: 2px solid #fff3e0;
+  border-bottom: 2px solid #ffe4e8;
 }
 
-.modal-icon {
-  font-size: 1.4rem;
-}
-.modal-header h2 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #2c3e50;
-}
+.modal-icon { font-size: 1.4rem; }
+.modal-header h2 { margin: 0; font-size: 1rem; font-weight: 800; color: #2c3e50; }
 
 .zone-tag {
   margin-left: auto;
   font-size: 0.6rem;
   font-weight: 700;
-  background: #fff8e1;
-  color: #f57f17;
+  background: #ffe4e8;
+  color: #c2185b;
   padding: 2px 6px;
   border-radius: 8px;
 }
