@@ -54,8 +54,8 @@
 
       .face-slot2 {
         position: absolute;
-        width: 61px; /* 원하시는 크기로 변경하세요 (예: 80px) */
-        height: 61px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        width: 61px;
+        height: 61px;
         border-radius: 50%;
         overflow: hidden;
         border: 2px solid white;
@@ -65,8 +65,8 @@
 
       .face-slot3 {
         position: absolute;
-        width: 70px; /* 원하시는 크기로 변경하세요 (예: 80px) */
-        height: 70px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
         overflow: hidden;
         border: 2px solid white;
@@ -75,8 +75,8 @@
       }
       .face-slot4 {
         position: absolute;
-        width: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
-        height: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         overflow: hidden;
         border: 2px solid white;
@@ -85,8 +85,8 @@
       }
       .face-slot5 {
         position: absolute;
-        width: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
-        height: 50px; /* 원하시는 크기로 변경하세요 (예: 80px) */
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         overflow: hidden;
         border: 2px solid white;
@@ -101,21 +101,21 @@
 
       /* ─── 1번째 졸업사진 좌표 ─── */
       /* prettier-ignore */
-      .grad-face1 { top: 245px; left: 75px; }
+      .grad-face1 { top: 242px; left: 74px; }
       /* prettier-ignore */
-      .grad-face2 { top: 223px; left: 177px; }
+      .grad-face2 { top: 235px; left: 189px; }
       /* prettier-ignore */
-      .grad-face3 { top: 227px; left: 274px; }
+      .grad-face3 { top: 239px; left: 291px; }
       /* prettier-ignore */
-      .grad-face4 { top: 226px; left: 368px; }
+      .grad-face4 { top: 239px; left: 388px; }
       /* prettier-ignore */
-      .grad-face5 { top: 362px; left: 68px; }
+      .grad-face5 { top: 382px; left: 73px; }
       /* prettier-ignore */
-      .grad-face6 { top: 356px; left: 173px; }
+      .grad-face6 { top: 377px; left: 182px; }
       /* prettier-ignore */
-      .grad-face7 { top: 361px; left: 271px; }
+      .grad-face7 { top: 381px; left: 287px; }
       /* prettier-ignore */
-      .grad-face8 { top: 358px; left: 372px; }
+      .grad-face8 { top: 380px; left: 395px; }
 
       /* ─── 2번째 졸업사진 좌표 ─── */
       /* prettier-ignore */
@@ -127,11 +127,11 @@
       /* prettier-ignore */
       .grad-face_male4 { top: 291px; left: 311px; }
       /* prettier-ignore */
-      .grad-face_male5 { top: 451px; left: 145px; }
+      .grad-face_male5 { top: 452px; left: 144px; }
       /* prettier-ignore */
-      .grad-face_male6 { top: 449px; left: 227px; }
+      .grad-face_male6 { top: 449px; left: 229px; }
       /* prettier-ignore */
-      .grad-face_male7 { top: 482px; left: 351px; }
+      .grad-face_male7 { top: 485px; left: 351px; }
 
       /* 3번째 졸업사진 좌표 */
       /* prettier-ignore */
@@ -153,39 +153,39 @@
 
       /* 4번째 졸업사진 좌표 */
       /* prettier-ignore */
-      .grad_face_male_outing1 { top: 250px; left: 80px; }
+      .grad_face_male_outing1 { top: 250px; left: 122px; }
       /* prettier-ignore */
-      .grad_face_male_outing2 { top: 250px; left: 80px; }
+      .grad_face_male_outing2 { top: 272px; left: 263px; }
       /* prettier-ignore */
-      .grad_face_male_outing3 { top: 250px; left: 80px; }
+      .grad_face_male_outing3 { top: 266px; left: 356px; }
       /* prettier-ignore */
-      .grad_face_male_outing4 { top: 250px; left: 80px; }
+      .grad_face_male_outing4 { top: 424px; left: 99px; }
       /* prettier-ignore */
-      .grad_face_male_outing5 { top: 250px; left: 80px; }
+      .grad_face_male_outing5 { top: 432px; left: 192px; }
       /* prettier-ignore */
-      .grad_face_male_outing6 { top: 250px; left: 80px; }
+      .grad_face_male_outing6 { top: 442px; left: 273px; }
       /* prettier-ignore */
-      .grad_face_male_outing7 { top: 250px; left: 80px; }
+      .grad_face_male_outing7 { top: 429px; left: 361px; }
       /* prettier-ignore */
-      .grad_face_male_outing8 { top: 250px; left: 80px; }
+      .grad_face_male_outing8 { top: 273px; left: 206px; }
 
       /* 5번째 졸업사진 좌표 */
       /* prettier-ignore */
-      .female_outing1 { top: 250px; left: 80px; }
+      .female_outing1 { top: 284px; left: 149px; }
       /* prettier-ignore */
-      .female_outing2 { top: 250px; left: 80px; }
+      .female_outing2 { top: 144px; left: 324px; }
       /* prettier-ignore */
-      .female_outing3 { top: 250px; left: 80px; }
+      .female_outing3 { top: 258px; left: 201px; }
       /* prettier-ignore */
-      .female_outing4 { top: 250px; left: 80px; }
+      .female_outing4 { top: 262px; left: 268px; }
       /* prettier-ignore */
-      .female_outing5 { top: 250px; left: 80px; }
+      .female_outing5 { top: 304px; left: 340px; }
       /* prettier-ignore */
-      .female_outing6 { top: 250px; left: 80px; }
+      .female_outing6 { top: 134px; left: 148px; }
       /* prettier-ignore */
-      .female_outing7 { top: 250px; left: 80px; }
+      .female_outing7 { top: 135px; left: 208px; }
       /* prettier-ignore */
-      .female_outing8 { top: 250px; left: 80px; }
+      .female_outing8 { top: 141px; left: 264px; }
 
       /* 댓글 영역 */
       .comment-wrap {

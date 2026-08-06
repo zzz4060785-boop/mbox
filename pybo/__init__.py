@@ -562,8 +562,21 @@ def create_app():
             )
         )
         db.session.commit()
+        try:
+            from pybo.executive_election import check_and_run_annual_election
+            check_and_run_annual_election()
+        except Exception as e:
+            app.logger.warning(f"Annual executive election check skipped: {e}")
 
     def login_destination(user):
+        if user:
+            user.last_login_at = datetime.utcnow()
+            user.last_active_at = datetime.utcnow()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         if user and user.school_name:
             return redirect(
                 url_for(
@@ -1504,7 +1517,7 @@ def create_app():
             return {
                 "id": comment.id,
                 "content": comment.content,
-                "username": comment.user.username,
+                "username": comment.user.display_name if comment.user else "알수없음",
                 "user_id": comment.user_id,
                 "created_at": comment.create_date.strftime("%Y-%m-%d %H:%M"),
                 "replies": [
@@ -1522,7 +1535,7 @@ def create_app():
                     "created_at": photo.create_date.strftime("%Y-%m-%d %H:%M"),
                     "owner": {
                         "id": photo.user.id,
-                        "username": photo.user.username,
+                        "username": photo.user.display_name if photo.user else "알수없음",
                     },
                     "comments_allowed": (
                         photo.user_id == current_user_id
@@ -1937,7 +1950,7 @@ def create_app():
             comment={
                 "id": comment.id,
                 "content": comment.content,
-                "username": actor.username,
+                "username": actor.display_name,
                 "user_id": actor.id,
             }
         ), 201

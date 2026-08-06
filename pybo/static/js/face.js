@@ -351,22 +351,160 @@ if (photoRegistryData) {
   });
 }
 
-const facesDataElement = document.getElementById("facesData");
-if (facesDataElement) {
-  const facesData = JSON.parse(facesDataElement.textContent || "{}");
+const DESIGN_BASE_WIDTH = 430;
+
+function applyResponsiveFaceCoordinates() {
+  const facesDataElement = document.getElementById("facesData");
+  if (!facesDataElement) return;
+
+  let facesData = {};
+  try {
+    facesData = JSON.parse(facesDataElement.textContent || "{}");
+  } catch (e) {
+    return;
+  }
+
   const albumSections = document.querySelectorAll(".album-section");
 
   Object.entries(facesData).forEach(([albumNumber, coordinates]) => {
     const section = albumSections[Number(albumNumber) - 1];
     if (!section) return;
 
+    const photoWrap = section.querySelector(".photo-wrap") || section;
+    const currentWidth = photoWrap.offsetWidth || DESIGN_BASE_WIDTH;
+    const scale = currentWidth / DESIGN_BASE_WIDTH;
+
     const faceSlots = section.querySelectorAll("[data-slot-class]");
     coordinates.forEach((coordinate) => {
       const slot = faceSlots[coordinate.grad_face_num - 1];
       if (!slot) return;
 
-      slot.style.top = coordinate.top;
-      slot.style.left = coordinate.left;
+      const baseTop = parseFloat(coordinate.top);
+      const baseLeft = parseFloat(coordinate.left);
+
+      if (!isNaN(baseTop) && !isNaN(baseLeft)) {
+        slot.dataset.baseTop = baseTop;
+        slot.dataset.baseLeft = baseLeft;
+        slot.style.top = `${Math.round(baseTop * scale)}px`;
+        slot.style.left = `${Math.round(baseLeft * scale)}px`;
+        slot.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      }
     });
   });
 }
+
+// -----------------------------------------------------------------
+// 4. 🎯 얼굴 드래그 앤 드롭 위치 조정 기능 (터치 / 마우스 반응형 지원)
+// -----------------------------------------------------------------
+function enableFaceDragMode() {
+  document.querySelectorAll("[data-slot-class]").forEach((slot) => {
+    slot.style.cursor = "move";
+    slot.style.touchAction = "none";
+
+    slot.onpointerdown = (event) => {
+      event.preventDefault();
+
+      const section = slot.closest(".album-section");
+      if (!section) return;
+
+      const photoWrap = section.querySelector(".photo-wrap") || section;
+      const currentWidth = photoWrap.offsetWidth || DESIGN_BASE_WIDTH;
+      const scale = currentWidth / DESIGN_BASE_WIDTH;
+
+      const sectionRect = section.getBoundingClientRect();
+      const scaleX = sectionRect.width ? section.offsetWidth / sectionRect.width : 1;
+
+      const startX = event.clientX;
+      const startY = event.clientY;
+
+      const currentLeft = parseFloat(slot.style.left) || 0;
+      const currentTop = parseFloat(slot.style.top) || 0;
+
+      if (slot.setPointerCapture) {
+        try {
+          slot.setPointerCapture(event.pointerId);
+        } catch (e) {
+          console.warn("setPointerCapture failed:", e);
+        }
+      }
+
+      let lastBaseLeft = parseFloat(slot.dataset.baseLeft) || Math.round(currentLeft / (scale || 1));
+      let lastBaseTop = parseFloat(slot.dataset.baseTop) || Math.round(currentTop / (scale || 1));
+
+      slot.onpointermove = (moveEvent) => {
+        const deltaX = (moveEvent.clientX - startX) * scaleX;
+        const deltaY = (moveEvent.clientY - startY) * scaleX;
+
+        const newCurrentLeft = currentLeft + deltaX;
+        const newCurrentTop = currentTop + deltaY;
+
+        slot.style.left = `${Math.round(newCurrentLeft)}px`;
+        slot.style.top = `${Math.round(newCurrentTop)}px`;
+
+        lastBaseLeft = Math.round(newCurrentLeft / (scale || 1));
+        lastBaseTop = Math.round(newCurrentTop / (scale || 1));
+      };
+
+      slot.onpointerup = () => {
+        slot.onpointermove = null;
+        if (slot.releasePointerCapture && slot.hasPointerCapture && slot.hasPointerCapture(event.pointerId)) {
+          try {
+            slot.releasePointerCapture(event.pointerId);
+          } catch (e) {}
+        }
+
+        slot.dataset.baseLeft = lastBaseLeft;
+        slot.dataset.baseTop = lastBaseTop;
+
+        console.log(
+          slot.dataset.slotClass,
+          "left:",
+          `${lastBaseLeft}px`,
+          "top:",
+          `${lastBaseTop}px`
+        );
+      };
+    };
+  });
+
+  console.log("얼굴 드래그 모드가 켜졌습니다.");
+}
+
+// 개발자 및 임원을 위한 전역 접근 제어
+window.enableFaceDragMode = enableFaceDragMode;
+window.applyResponsiveFaceCoordinates = applyResponsiveFaceCoordinates;
+
+window.logAllFaceCoordinates = function () {
+  const result = {};
+  document.querySelectorAll(".album-section").forEach((section, idx) => {
+    const albumId = idx + 1;
+    result[albumId] = [];
+    section.querySelectorAll("[data-slot-class]").forEach((slot, sIdx) => {
+      const baseTop = slot.dataset.baseTop || parseFloat(slot.style.top) || 0;
+      const baseLeft = slot.dataset.baseLeft || parseFloat(slot.style.left) || 0;
+      result[albumId].push({
+        grad_face_num: sIdx + 1,
+        top: `${Math.round(baseTop)}px`,
+        left: `${Math.round(baseLeft)}px`,
+      });
+    });
+  });
+  console.log("=== 현재 모든 얼굴 슬롯 좌표 (기준 430px) ===");
+  console.log(JSON.stringify(result, null, 2));
+  return result;
+};
+
+// DOM 준비 시 자동 활성화
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    applyResponsiveFaceCoordinates();
+    enableFaceDragMode();
+  });
+} else {
+  applyResponsiveFaceCoordinates();
+  enableFaceDragMode();
+}
+
+window.addEventListener("resize", applyResponsiveFaceCoordinates);
+window.addEventListener("orientationchange", applyResponsiveFaceCoordinates);
+
