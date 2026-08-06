@@ -70,6 +70,6 @@
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
   .album-page > .bottom-box {
-    top: 765px !important;
+    top: 665px !important;
   }
 }
