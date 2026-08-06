@@ -67,3 +67,9 @@
   z-index: 20;
   margin: 12px 0;
 }
+
+@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+  .album-page > .bottom-box {
+    top: 795px;
+  }
+}
