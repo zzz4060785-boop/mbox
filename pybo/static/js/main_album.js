@@ -509,6 +509,10 @@ async function toggleLike(photoId, button) {
       method: "POST",
     });
     updateReactionButtons(button.closest(".feed-card"), data);
+    if (data.message) {
+      const status = document.getElementById("albumStatus");
+      if (status) status.textContent = data.message;
+    }
   } catch (error) {
     alert(error.message);
   } finally {

@@ -77,6 +77,8 @@ class User(db.Model):
     last_login_at = db.Column(db.DateTime, nullable=True)
     last_active_at = db.Column(db.DateTime, nullable=True, index=True)
     executive_elected_at = db.Column(db.DateTime, nullable=True)
+    sarangdal_balance = db.Column(db.Integer, nullable=False, default=1)
+    last_sarangdal_month = db.Column(db.String(7), nullable=True)
 
 
 class Notification(db.Model):
@@ -287,14 +289,6 @@ class UserAlbumLike(db.Model):
         db.DateTime,
         nullable=False,
         default=datetime.utcnow,
-    )
-
-    __table_args__ = (
-        db.UniqueConstraint(
-            "photo_id",
-            "user_id",
-            name="uq_user_album_like_photo_user",
-        ),
     )
 
 

@@ -1410,12 +1410,35 @@ def create_app():
             username=user.username,
         )
 
+    def _get_or_grant_user_sarangdal(user):
+        """
+        매달 1개씩 사랑달을 자동 지급하며, 보유 중인 사랑달 개수를 반환합니다.
+        """
+        if not user:
+            return 0
+        current_month = datetime.utcnow().strftime("%Y-%m")
+        balance = getattr(user, "sarangdal_balance", None)
+        if balance is None:
+            balance = 1
+            user.sarangdal_balance = 1
+
+        last_month = getattr(user, "last_sarangdal_month", None)
+        if last_month != current_month:
+            user.sarangdal_balance = (user.sarangdal_balance or 0) + 1
+            user.last_sarangdal_month = current_month
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        return user.sarangdal_balance
+
     @app.get("/api/album/feed")
     @login_required
     def user_album_feed():
         current_user_id = session["user_id"]
-        # With no explicit profile target, this endpoint powers "My Album".
-        # Default to the signed-in user instead of exposing every public album.
+        current_user = db.session.get(User, current_user_id)
+        user_sarangdal = _get_or_grant_user_sarangdal(current_user)
         owner_id = request.args.get("user_id", type=int) or current_user_id
         query = UserAlbumPhoto.query
         if owner_id:
@@ -1438,6 +1461,7 @@ def create_app():
             }
 
         return jsonify(
+            user_sarangdal=user_sarangdal,
             photos=[
                 {
                     "id": photo.id,
@@ -1704,32 +1728,41 @@ def create_app():
         photo = db.get_or_404(UserAlbumPhoto, photo_id)
         if photo.user_id != session["user_id"] and not photo.user.is_profile_public:
             return jsonify(message="비공개 사진에는 반응할 수 없습니다."), 403
-        existing = UserAlbumLike.query.filter_by(
-            photo_id=photo_id,
-            user_id=session["user_id"],
-        ).first()
+
+        user = db.session.get(User, session["user_id"])
+        balance = _get_or_grant_user_sarangdal(user)
+
+        if balance < 1:
+            return (
+                jsonify(
+                    message="보유한 사랑달이 없습니다. (사랑달은 매달 1개씩 자동 지급됩니다)",
+                    user_sarangdal=0,
+                ),
+                400,
+            )
+
+        user.sarangdal_balance = balance - 1
         opposite = UserAlbumDislike.query.filter_by(
             photo_id=photo_id,
             user_id=session["user_id"],
         ).first()
-        if existing:
-            db.session.delete(existing)
-            liked = False
-        else:
-            if opposite:
-                db.session.delete(opposite)
-            db.session.add(
-                UserAlbumLike(photo_id=photo_id, user_id=session["user_id"])
-            )
-            liked = True
+        if opposite:
+            db.session.delete(opposite)
+
+        db.session.add(
+            UserAlbumLike(photo_id=photo_id, user_id=user.id)
+        )
         db.session.commit()
+
         like_count = UserAlbumLike.query.filter_by(photo_id=photo_id).count()
         dislike_count = UserAlbumDislike.query.filter_by(photo_id=photo_id).count()
         return jsonify(
-            liked=liked,
+            liked=True,
             disliked=False,
             like_count=like_count,
             dislike_count=dislike_count,
+            user_sarangdal=user.sarangdal_balance,
+            message=f"사랑달 1개를 선물했습니다! (보유한 사랑달: {user.sarangdal_balance}개)",
         )
 
     @app.post("/api/album/photos/<int:photo_id>/dislike")
