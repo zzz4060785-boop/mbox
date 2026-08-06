@@ -1628,12 +1628,12 @@ body.photo-lightbox-open {
 .event-popup .event-popup-header h3 {
   margin: 0;
   color: inherit;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .event-popup .event-benefit {
   margin-top: 15px;
-  font-size: 13px;
+  font-size: 18px;
   line-height: 1.5;
 }
 
@@ -1645,8 +1645,8 @@ body.photo-lightbox-open {
   width: 100%;
   display: block;
   margin-top: auto;
-  color: #ff00ff;
-  font-size: 13px;
+  color: #f10769;
+  font-size: 17px;
   font-weight: bold;
   text-align: center;
 }

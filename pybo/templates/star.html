@@ -1,5 +1,5 @@
 <!-- ⭐ 사랑별 5대 구역 별표 미니 위젯 (star.html) ⭐ -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/star.css', v='20260807-pink-glow-1') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/star.css', v='20260807-pink-glow-2') }}" />
 
 <section class="star-layout-section" aria-label="사랑별 5대 구역">
   <!-- 대형 별표 5대 구역 레이아웃 -->
@@ -24,7 +24,7 @@
                  fill="none" stroke="url(#pinkGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" class="star-outline" />
       </svg>
 
-      <!-- 별의 중앙 노드 (분홍빛 모달 현황) -->
+      <!-- 별의 중앙 노드 (중앙 사랑별만 실시간 DB 현황 모달 표시) -->
       <a href="#" class="star-center-core" onclick="openSarangdalStatusModal(); return false;" title="사랑달 현황 보기">
         <div class="core-inner">
           <span class="core-icon">✨</span>
@@ -32,32 +32,32 @@
         </div>
       </a>
 
-      <!-- 별표 5개 구역 노드 (# 링크) -->
-      <a href="#" class="star-zone-node zone-top" data-category="restaurant" onclick="return handleStarZoneClick(event, 'restaurant')">
+      <!-- 별표 5개 구역 노드 (모달 창 없이 단순 # 링크) -->
+      <a href="#" class="star-zone-node zone-top" data-category="restaurant">
         <div class="node-badge">1구역</div>
         <div class="node-icon">🍜</div>
         <div class="node-label">맛집</div>
       </a>
 
-      <a href="#" class="star-zone-node zone-top-right" data-category="cafe" onclick="return handleStarZoneClick(event, 'cafe')">
+      <a href="#" class="star-zone-node zone-top-right" data-category="cafe">
         <div class="node-badge">2구역</div>
         <div class="node-icon">☕</div>
         <div class="node-label">카페</div>
       </a>
 
-      <a href="#" class="star-zone-node zone-bottom-right" data-category="alumni" onclick="return handleStarZoneClick(event, 'alumni')">
+      <a href="#" class="star-zone-node zone-bottom-right" data-category="alumni">
         <div class="node-badge">3구역</div>
         <div class="node-icon">🏬</div>
         <div class="node-label">동창가게</div>
       </a>
 
-      <a href="#" class="star-zone-node zone-bottom-left" data-category="travel" onclick="return handleStarZoneClick(event, 'travel')">
+      <a href="#" class="star-zone-node zone-bottom-left" data-category="travel">
         <div class="node-badge">4구역</div>
         <div class="node-icon">🏞️</div>
         <div class="node-label">명소</div>
       </a>
 
-      <a href="#" class="star-zone-node zone-top-left" data-category="other" onclick="return handleStarZoneClick(event, 'other')">
+      <a href="#" class="star-zone-node zone-top-left" data-category="other">
         <div class="node-badge">5구역</div>
         <div class="node-icon">💖</div>
         <div class="node-label">추억</div>
@@ -65,7 +65,7 @@
     </div>
   </div>
 
-  <!-- 선택한 구역 상세 리스트 및 사랑달 현황 모달 -->
+  <!-- 중앙 사랑별 전용 실시간 현황 모달 창 -->
   <div class="star-detail-modal" id="starDetailModal" hidden>
     <div class="modal-backdrop" onclick="closeStarDetail()"></div>
     <div class="modal-content glass-card">
@@ -83,4 +83,4 @@
   </div>
 </section>
 
-<script src="{{ url_for('static', filename='js/star.js', v='20260807-pink-glow-1') }}"></script>
+<script src="{{ url_for('static', filename='js/star.js', v='20260807-pink-glow-2') }}"></script>
