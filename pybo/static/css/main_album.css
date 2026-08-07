@@ -1,4 +1,4 @@
-* {
+.main-album-body * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -72,7 +72,7 @@ body.main-album-body {
   overflow-y: hidden;
 }
 
-h1 {
+.album-page > h1 {
   text-align: center;
   font-size: 18px;
   font-weight: bold;

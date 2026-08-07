@@ -83,7 +83,7 @@ function closeStarDetail() {
 }
 
 function createStarParticles() {
-  const container = document.querySelector(".star-container");
+  const container = document.querySelector(".star-layout-section .star-container");
   if (!container) return;
 
   for (let i = 0; i < 8; i++) {

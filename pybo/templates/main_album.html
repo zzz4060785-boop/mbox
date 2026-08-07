@@ -13,6 +13,10 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   rel="stylesheet"
   href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-star-v12') }}"
 />
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/star.css', v='20260808-scoped-1') }}"
+/>
 {% endblock %} {% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
@@ -462,4 +466,5 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 ></script>
 <script src="{{ url_for('static', filename='js/main_album_right.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bottom_box.js') }}"></script>
+<script src="{{ url_for('static', filename='js/star.js', v='20260808-scoped-1') }}"></script>
 {% endblock %}

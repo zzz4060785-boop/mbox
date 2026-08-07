@@ -61,15 +61,13 @@
  * 앨범 메인의 좌우 사이드바 바로 아래에 배치합니다.
  */
 .album-page > .bottom-box {
-  position: absolute;
-  top: 700px;
-  left: 12px;
+  position: relative;
   z-index: 20;
-  margin: 12px 0;
+  margin: 700px 12px 12px;
 }
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
   .album-page > .bottom-box {
-    top: 682px !important;
+    margin-top: 682px;
   }
 }
