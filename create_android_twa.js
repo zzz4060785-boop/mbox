@@ -28,7 +28,7 @@ class FriendaryPrompt {
       ["URL path:", "/"],
       ["Application name:", "Friendary"],
       ["Short name:", "Friendary"],
-      ["Application ID:", "com.friendary.app"],
+      ["Application ID:", "com.junyoung.friendary"],
       ["Starting version code", "1"],
       ["Status bar color:", "#6d28d9"],
       ["Splash screen color:", "#fffaf5"],

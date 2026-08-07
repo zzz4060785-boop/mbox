@@ -130,6 +130,12 @@ runuser -u appuser -- env "$DATABASE_ASSIGNMENT" \
 
 systemctl restart friendary
 systemctl is-active --quiet friendary
+
+if [ -f /etc/nginx/conf.d/friendary-assetlinks.conf ]; then
+    rm -f /etc/nginx/conf.d/friendary-assetlinks.conf
+    nginx -t && systemctl reload nginx || true
+fi
+
 rm -f "$ARCHIVE"
 echo "Cafe24 service is active. Backup: $BACKUP_DIR/friendary-$STAMP.tar.gz"
 '@

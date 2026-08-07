@@ -4,14 +4,54 @@ document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.querySelector("form");
   if (loginForm) {
     loginForm.addEventListener("submit", function (e) {
-      // HTML에서 name="login"으로 바꿨으므로 email 대신 login으로 가져옵니다.
-      const loginValue = this.login.value;
-      const passwordValue = this.password.value;
+      e.preventDefault();
+
+      const loginValue = this.login ? this.login.value.trim() : "";
+      const passwordValue = this.password ? this.password.value : "";
 
       if (!loginValue || !passwordValue) {
         alert("아이디(이메일)와 비밀번호를 입력해주세요!");
-        e.preventDefault();
+        return;
       }
+
+      const remember = this.remember ? this.remember.checked : false;
+
+      fetch("/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          login: loginValue,
+          password: passwordValue,
+          remember: remember,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.redirect_url) {
+            window.location.replace(data.redirect_url);
+          } else {
+            let msgBox = document.querySelector(".login-form-messages");
+            if (!msgBox) {
+              msgBox = document.createElement("div");
+              msgBox.className = "login-form-messages";
+              msgBox.setAttribute("role", "alert");
+              const checkWrap = document.querySelector(".check-wrap");
+              if (checkWrap && checkWrap.parentNode) {
+                checkWrap.parentNode.insertBefore(msgBox, checkWrap.nextSibling);
+              } else {
+                loginForm.appendChild(msgBox);
+              }
+            }
+            msgBox.innerHTML = `<p class="login-form-message">${data.message || "아이디 또는 비밀번호를 확인해 주세요."}</p>`;
+          }
+        })
+        .catch((err) => {
+          console.error("Login fetch error:", err);
+          alert("로그인 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
+        });
     });
   }
 

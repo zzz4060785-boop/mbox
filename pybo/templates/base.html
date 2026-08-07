@@ -76,10 +76,10 @@
     <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
     <script>
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register(
-            "{{ url_for('static', filename='js/service-worker.js') }}",
-          );
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let registration of registrations) {
+            registration.unregister();
+          }
         });
       }
     </script>

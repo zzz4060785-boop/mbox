@@ -7,6 +7,7 @@ from flask import (
     url_for,
     flash,
     session,
+    send_from_directory,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -163,6 +164,17 @@ def create_app():
                 file_path = os.path.join(app.static_folder, filename)
                 if os.path.isfile(file_path):
                     values["v"] = int(os.path.getmtime(file_path))
+
+    @app.after_request
+    def set_response_cache_headers(response):
+        """안드로이드 웹뷰에서 HTML 페이지나 POST 결과를 캐싱하여 발생하는 ERR_CACHE_MISS를 방지합니다."""
+        if response.mimetype == "text/html":
+            response.headers["Cache-Control"] = (
+                "no-cache, must-revalidate"
+            )
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
 
     @app.context_processor
     def inject_interface_language():
@@ -582,7 +594,7 @@ def create_app():
         except Exception as e:
             app.logger.warning(f"Annual executive election check skipped: {e}")
 
-    def login_destination(user):
+    def get_login_destination_url(user):
         if user:
             user.last_login_at = datetime.utcnow()
             user.last_active_at = datetime.utcnow()
@@ -592,16 +604,17 @@ def create_app():
                 db.session.rollback()
 
         if user and user.school_name:
-            return redirect(
-                url_for(
-                    "main_album",
-                    school=user.school_name,
-                    type=user.school_type,
-                    year=user.school_year,
-                    major=user.school_major or None,
-                )
+            return url_for(
+                "main_album",
+                school=user.school_name,
+                type=user.school_type,
+                year=user.school_year,
+                major=user.school_major or None,
             )
-        return redirect(url_for("main_success"))
+        return url_for("main_success")
+
+    def login_destination(user):
+        return redirect(get_login_destination_url(user), code=303)
 
     def remember_login_id(response, login_id, should_remember):
         """로그인 상태 유지 선택에 따라 마지막 아이디 쿠키를 관리합니다."""
@@ -644,24 +657,43 @@ def create_app():
             )
 
         if request.method == "POST":
-            login_id = request.form.get("login", "").strip()
-            password = request.form.get("password", "")
+            is_ajax = (
+                request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                or request.is_json
+                or "application/json" in request.headers.get("Accept", "")
+            )
+
+            if request.is_json:
+                data = request.get_json() or {}
+                login_id = str(data.get("login", "")).strip()
+                password = str(data.get("password", ""))
+                should_remember = bool(data.get("remember"))
+            else:
+                login_id = request.form.get("login", "").strip()
+                password = request.form.get("password", "")
+                should_remember = request.form.get("remember") == "on"
 
             user = User.query.filter(
                 or_(User.username == login_id, User.email == login_id)
             ).first()
 
             if not user or not check_password_hash(user.password, password):
+                if is_ajax:
+                    return jsonify(success=False, message="아이디 또는 비밀번호를 확인해 주세요."), 400
                 flash("아이디 또는 비밀번호를 확인해 주세요.")
-                return redirect(url_for("main"))
+                return redirect(url_for("main"), code=303)
 
             session.clear()
             session["user_id"] = user.id
-            should_remember = request.form.get("remember") == "on"
             session.permanent = should_remember
 
+            dest_url = get_login_destination_url(user)
+            if is_ajax:
+                resp = jsonify(success=True, redirect_url=dest_url)
+                return remember_login_id(resp, login_id, should_remember)
+
             return remember_login_id(
-                login_destination(user),
+                redirect(dest_url, code=303),
                 login_id,
                 should_remember,
             )
@@ -687,6 +719,16 @@ def create_app():
     def account_deletion():
         return render_template("account_deletion.html")
 
+    @app.get("/.well-known/assetlinks.json")
+    @app.get("/assetlinks.json")
+    def assetlinks():
+        assetlinks_dir = os.path.join(app.static_folder, ".well-known")
+        return send_from_directory(assetlinks_dir, "assetlinks.json", mimetype="application/json")
+
+    @app.get("/manifest.webmanifest")
+    def webmanifest():
+        return send_from_directory(app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
+
     @app.route("/login2", methods=["GET", "POST"])
     def login2():
         if request.method == "GET" and session.get("user_id"):
@@ -695,24 +737,43 @@ def create_app():
             )
 
         if request.method == "POST":
-            login_id = request.form.get("login_id", "").strip()
-            password = request.form.get("password", "")
+            is_ajax = (
+                request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                or request.is_json
+                or "application/json" in request.headers.get("Accept", "")
+            )
+
+            if request.is_json:
+                data = request.get_json() or {}
+                login_id = str(data.get("login_id", "")).strip()
+                password = str(data.get("password", ""))
+                should_remember = bool(data.get("save_info"))
+            else:
+                login_id = request.form.get("login_id", "").strip()
+                password = request.form.get("password", "")
+                should_remember = request.form.get("save_info") == "on"
 
             user = User.query.filter(
                 or_(User.username == login_id, User.email == login_id)
             ).first()
 
             if not user or not check_password_hash(user.password, password):
+                if is_ajax:
+                    return jsonify(success=False, message="아이디 또는 비밀번호를 확인해 주세요."), 400
                 flash("아이디 또는 비밀번호를 확인해 주세요.")
-                return redirect(url_for("login2"))
+                return redirect(url_for("login2"), code=303)
 
             session.clear()
             session["user_id"] = user.id
-            should_remember = request.form.get("save_info") == "on"
             session.permanent = should_remember
 
+            dest_url = get_login_destination_url(user)
+            if is_ajax:
+                resp = jsonify(success=True, redirect_url=dest_url)
+                return remember_login_id(resp, login_id, should_remember)
+
             return remember_login_id(
-                login_destination(user),
+                redirect(dest_url, code=303),
                 login_id,
                 should_remember,
             )

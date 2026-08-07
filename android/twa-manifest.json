@@ -1,5 +1,5 @@
 {
-  "packageId": "com.friendary.app",
+  "packageId": "com.junyoung.friendary",
   "host": "zzz8247.mycafe24.com",
   "name": "Friendary",
   "launcherName": "Friendary",
@@ -20,12 +20,12 @@
     "path": "android\\friendary-upload-key.jks",
     "alias": "friendary"
   },
-  "appVersionName": "1",
-  "appVersionCode": 1,
+  "appVersionName": "1.1.0",
+  "appVersionCode": 13,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://zzz8247.mycafe24.com/static/manifest.webmanifest",
-  "fallbackType": "customtabs",
+  "fallbackType": "webview",
   "features": {},
   "alphaDependencies": {
     "enabled": false
@@ -43,5 +43,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1"
+  "appVersion": "1.1.0"
 }

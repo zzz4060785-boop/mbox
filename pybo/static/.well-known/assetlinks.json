@@ -1,0 +1,41 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.friendary.app",
+      "sha256_cert_fingerprints": [
+        "98:99:BA:35:D8:4B:C7:65:DB:16:62:B0:37:DB:89:AA:E5:52:60:52:80:71:40:39:B1:6D:29:CE:D6:5E:20:46",
+        "4F:1B:CA:6D:33:FE:47:51:F7:C2:2C:D2:38:04:12:65:27:0F:F6:4E:A5:14:5D:2D:E0:AE:81:51:47:83:2B:35",
+        "94:03:D2:65:EC:83:07:8A:94:64:32:EC:BD:37:F1:9F:7D:AA:D0:E4:F2:C5:CE:44:B0:2C:E9:C7:51:1E:1A:71",
+        "7D:B5:18:7C:1E:E7:03:68:52:16:D4:F2:F0:4A:26:FA:F8:8C:1E:AA:C1:26:BC:54:99:99:9B:41:40:F9:64:D4"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.junyoung.friendary",
+      "sha256_cert_fingerprints": [
+        "98:99:BA:35:D8:4B:C7:65:DB:16:62:B0:37:DB:89:AA:E5:52:60:52:80:71:40:39:B1:6D:29:CE:D6:5E:20:46",
+        "4F:1B:CA:6D:33:FE:47:51:F7:C2:2C:D2:38:04:12:65:27:0F:F6:4E:A5:14:5D:2D:E0:AE:81:51:47:83:2B:35",
+        "94:03:D2:65:EC:83:07:8A:94:64:32:EC:BD:37:F1:9F:7D:AA:D0:E4:F2:C5:CE:44:B0:2C:E9:C7:51:1E:1A:71",
+        "7D:B5:18:7C:1E:E7:03:68:52:16:D4:F2:F0:4A:26:FA:F8:8C:1E:AA:C1:26:BC:54:99:99:9B:41:40:F9:64:D4"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.pinkjson.friendary",
+      "sha256_cert_fingerprints": [
+        "98:99:BA:35:D8:4B:C7:65:DB:16:62:B0:37:DB:89:AA:E5:52:60:52:80:71:40:39:B1:6D:29:CE:D6:5E:20:46",
+        "4F:1B:CA:6D:33:FE:47:51:F7:C2:2C:D2:38:04:12:65:27:0F:F6:4E:A5:14:5D:2D:E0:AE:81:51:47:83:2B:35",
+        "94:03:D2:65:EC:83:07:8A:94:64:32:EC:BD:37:F1:9F:7D:AA:D0:E4:F2:C5:CE:44:B0:2C:E9:C7:51:1E:1A:71",
+        "7D:B5:18:7C:1E:E7:03:68:52:16:D4:F2:F0:4A:26:FA:F8:8C:1E:AA:C1:26:BC:54:99:99:9B:41:40:F9:64:D4"
+      ]
+    }
+  }
+]

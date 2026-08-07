@@ -1,4 +1,4 @@
-const CACHE_NAME = "friendary-shell-v3";
+const CACHE_NAME = "friendary-shell-v4";
 const STATIC_ASSETS = [
   "/static/manifest.webmanifest",
   "/static/css/base.css",
@@ -36,13 +36,18 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const network = fetch(event.request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        }
-        return response;
-      });
+      const network = fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => {
+          return cached || new Response("", { status: 503, statusText: "Service Unavailable" });
+        });
+
       return cached || network;
     }),
   );
