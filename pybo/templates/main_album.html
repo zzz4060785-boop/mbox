@@ -3,16 +3,18 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 %}main-album-container{% endblock %} {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album.css', v='20260807-star-v12') }}"
+  href="{{ url_for('static', filename='css/main_album.css', v='20260807-footer-fix99') }}"
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album_right.css', v='20260807-star-v12') }}"
+  href="{{ url_for('static', filename='css/main_album_right.css', v='20260807-lock-v1') }}"
 />
+
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-star-v12') }}"
+  href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-footer-fix99') }}"
 />
+
 {% endblock %} {% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
@@ -452,8 +454,12 @@ block body_class %}main-album-body{% endblock %} {% block container_class
       </button>
     </div>
   </div>
+  {% include "footer.html" %}
 </div>
-{% endblock %} {% block script %}
+{% endblock %}
+
+{% block footer %}{% endblock %}
+ {% block script %}
 <script
   src="{{ url_for('static', filename='js/main_album.js') }}"
   data-user-album-url="{{ url_for('user_album') }}"

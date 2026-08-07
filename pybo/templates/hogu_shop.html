@@ -18,7 +18,11 @@
       <h1>아바타샵</h1>
     </div>
     <p>{{ current_user.username }}님의 아바타를 꾸며보세요.</p>
+    <div style="margin-top: 10px;">
+      <a href="{{ url_for('payment.store') }}" style="display: inline-block; padding: 8px 14px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: bold;">💖 사랑달 충전 및 결제하기 ➔</a>
+    </div>
   </header>
+
 
   <section class="hogu-shop-list" aria-label="아바타 상품">
     <button class="hogu-shop-item" type="button" data-item-name="남성 기본 아바타">

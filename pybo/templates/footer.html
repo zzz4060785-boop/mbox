@@ -1,0 +1,43 @@
+<footer class="app-footer" aria-label="전자상거래 사업자 정보 및 법적 고지">
+  <div class="footer-container">
+    <div class="footer-links">
+      <a href="{{ url_for('privacy_policy') }}" class="footer-link bold">개인정보처리방침</a>
+      <span class="footer-divider">|</span>
+      <a href="{{ url_for('terms_of_service') }}" class="footer-link bold">이용약관 및 환불정책</a>
+      <span class="footer-divider">|</span>
+      <a href="{{ url_for('payment.store') }}" class="footer-link bold">상품 및 결제 안내</a>
+      <span class="footer-divider">|</span>
+      <a href="{{ url_for('account_deletion') }}" class="footer-link">계정 삭제 요청</a>
+
+
+    </div>
+
+    <div class="footer-biz-info">
+      <p class="biz-row">
+        <span><strong>상호명:</strong> {{ biz_info.name }}</span>
+        <span class="dot">•</span>
+        <span><strong>대표자:</strong> {{ biz_info.owner }}</span>
+      </p>
+      <p class="biz-row">
+        <span><strong>사업자등록번호:</strong> {{ biz_info.biz_no }}</span>
+        <span class="dot">•</span>
+        <span><strong>통신판매업신고:</strong> {{ biz_info.mail_order_no }}</span>
+      </p>
+      <p class="biz-row">
+        <span><strong>사업장 소재지:</strong> {{ biz_info.address }}</span>
+      </p>
+      <p class="biz-row">
+        <span><strong>고객센터:</strong> {{ biz_info.phone }}</span>
+        <span class="dot">•</span>
+        <span><strong>이메일:</strong> <a href="mailto:{{ biz_info.email }}">{{ biz_info.email }}</a></span>
+      </p>
+      <p class="biz-row escrow-badge">
+        <span>🛡️ <strong>구매안전서비스(에스크로):</strong> {{ biz_info.escrow }}</span>
+      </p>
+    </div>
+
+    <div class="footer-copyright">
+      <p>&copy; 2026 {{ biz_info.name }}. All rights reserved.</p>
+    </div>
+  </div>
+</footer>

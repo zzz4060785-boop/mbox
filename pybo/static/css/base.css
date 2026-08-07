@@ -133,3 +133,116 @@ img[data-photo-lightbox],
   background: rgba(255, 255, 255, 0.35);
 }
 
+/* App E-commerce Legal Footer (Light Gray Theme) */
+.app-footer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  z-index: 10;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 20px 16px 35px;
+  font-size: 11px;
+  line-height: 1.6;
+  border-top: 1px solid #e2e8f0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.footer-link {
+  color: #475569;
+  text-decoration: none;
+}
+
+.footer-link.bold {
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+  color: #0f172a;
+}
+
+.footer-divider {
+  color: #cbd5e1;
+}
+
+.footer-biz-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.biz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.biz-row strong {
+  color: #334155;
+}
+
+.biz-row a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.biz-row .dot {
+  color: #cbd5e1;
+}
+
+.escrow-badge {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed #cbd5e1;
+  color: #059669;
+}
+
+.footer-copyright {
+  margin-top: 4px;
+  color: #94a3b8;
+}
+
+
+/* 앨범 메인 페이지(.album-page)는 모든 요소가 absolute 배치이므로 푸터도 absolute로 맨 하단 790px(모바일 780px)에 강제 배치합니다 */
+.album-page > .app-footer,
+.album-page .app-footer {
+  position: absolute;
+  top: 790px;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 10;
+  margin-top: 0;
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .album-page > .app-footer,
+  .album-page .app-footer {
+    top: 780px !important;
+  }
+}
+
+
+
+

@@ -48,18 +48,19 @@ body.main-album-body {
 
   .mobile-wrap.main-album-container {
     height: auto;
-    min-height: calc(100vh + 350px);
-    min-height: calc(100dvh + 350px);
+    min-height: calc(100vh + 550px);
+    min-height: calc(100dvh + 550px);
     overflow: visible;
   }
 
   .album-page {
     height: auto;
-    min-height: calc(100vh + 350px);
-    min-height: calc(100dvh + 350px);
+    min-height: calc(100vh + 550px);
+    min-height: calc(100dvh + 550px);
     overflow-x: hidden;
     overflow-y: visible;
   }
+
 
   .star-sidebar-box {
     top: 532px !important;

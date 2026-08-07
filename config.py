@@ -101,3 +101,21 @@ class Config:
         for user_id in os.getenv("EXECUTIVE_USER_IDS", "1").split(",")
         if user_id.strip().isdigit()
     ]
+
+    # 전자상거래 통신판매업 사업자 정보 (웹사이트 하단 필수 표기사항)
+    COMPANY_NAME = os.getenv("COMPANY_NAME", "프렌다이어리 (Friendary)")
+
+    COMPANY_OWNER = os.getenv("COMPANY_OWNER", "대표자명")
+    COMPANY_BIZ_NO = os.getenv("COMPANY_BIZ_NO", "000-00-00000")
+    COMPANY_MAIL_ORDER_NO = os.getenv("COMPANY_MAIL_ORDER_NO", "통신판매업 신고 준비중")
+    COMPANY_ADDRESS = os.getenv("COMPANY_ADDRESS", "사업장 소재지 입력 필요")
+    COMPANY_PHONE = os.getenv("COMPANY_PHONE", "010-0000-0000")
+    COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", "junyoungkim355@gmail.com")
+    COMPANY_ESCROW_INFO = os.getenv("COMPANY_ESCROW_INFO", "구매안전(에스크로) 서비스 가입")
+
+    # 포트원(PortOne V2) 결제 연동 설정
+    PORTONE_STORE_ID = os.getenv("PORTONE_STORE_ID", "store-e7be92f1-f1c4-4d22-b53e-1c78d4e75e79")
+    PORTONE_API_SECRET = os.getenv("PORTONE_API_SECRET", "")
+    PORTONE_CHANNEL_KEY = os.getenv("PORTONE_CHANNEL_KEY", "")
+
+

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}동창생 상점 & 사랑달 충전{% endblock %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}" />
+{% endblock %}
+
+{% block content %}
+<main class="store-page">
+  <header class="store-header">
+    <a class="back-link" href="{{ url_for('main_album') }}">← 앨범으로 돌아가기</a>
+    <h1>💖 동창생 상점</h1>
+    <p class="store-sub">사랑달을 충전하여 다양한 동창 혜택을 이용해보세요!</p>
+    <div class="user-balance-card">
+      <span>현재 보유 사랑달:</span>
+      <strong id="sarangdalBalance">💖 {{ user.sarangdal_balance or 0 }}개</strong>
+    </div>
+  <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+    <h2 style="font-size: 16px; margin: 0 0 8px 0; color: #1e293b;">🛒 디지털 이용권 상품 및 서비스 판매 가격 표시</h2>
+    <p style="font-size: 13px; color: #64748b; margin: 0;">본 상점은 프렌다이어리(Friendary) 서비스의 디지털 포인트(사랑달 이용권)를 정식 판매하며, 선택 후 아래 결제 수단으로 결제할 수 있습니다.</p>
+  </div>
+
+  <section class="item-grid">
+
+    <div class="item-card" onclick="selectItem(this, 1000, 5, '사랑달 5개 충전')">
+      <div class="item-badge">인기</div>
+      <div class="item-icon">💖</div>
+      <h3>사랑달 5개</h3>
+      <p class="item-desc">기본 포인트 충전</p>
+      <div class="item-price">1,000원</div>
+    </div>
+
+    <div class="item-card active" onclick="selectItem(this, 5000, 30, '사랑달 30개 충전')">
+      <div class="item-badge best">BEST 20% 혜택</div>
+      <div class="item-icon">💖💖</div>
+      <h3>사랑달 30개</h3>
+      <p class="item-desc">가성비 추천 패키지</p>
+      <div class="item-price">5,000원</div>
+    </div>
+
+    <div class="item-card" onclick="selectItem(this, 10000, 70, '사랑달 70개 충전')">
+      <div class="item-badge special">대용량 40% 혜택</div>
+      <div class="item-icon">💖💖💖</div>
+      <h3>사랑달 70개</h3>
+      <p class="item-desc">대용량 특별 패키지</p>
+      <div class="item-price">10,000원</div>
+    </div>
+  </section>
+
+  <section class="pay-method-section">
+    <h3>결제 수단 선택</h3>
+    <div class="method-options">
+      <label class="method-radio">
+        <input type="radio" name="pay_method" value="CARD" checked />
+        <span>💳 신용 / 체크카드</span>
+      </label>
+      <label class="method-radio">
+        <input type="radio" name="pay_method" value="EASY_PAY" />
+        <span>⚡ 간편결제 (카카오페이 / 토스페이 / 네이버페이)</span>
+      </label>
+      <label class="method-radio">
+        <input type="radio" name="pay_method" value="TRANSFER" />
+        <span>🏦 계좌이체 (에스크로 지원)</span>
+      </label>
+    </div>
+  </section>
+
+  <div class="checkout-bar">
+    <div class="total-info">
+      <span>결제할 상품: <strong id="selectedItemName">사랑달 30개 충전</strong></span>
+      <span>결제 금액: <strong id="selectedItemPrice" class="price-highlight">5,000원</strong></span>
+    </div>
+    <button type="button" id="payButton" class="pay-btn" onclick="handlePayment()">
+      🔒 안전 결제하기
+    </button>
+  </div>
+</main>
+
+<!-- PortOne V1 & V2 Dual Browser SDK -->
+<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+<script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
+<script>
+  let currentPrice = 5000;
+  let currentCount = 30;
+  let currentItemName = "사랑달 30개 충전";
+  const STORE_ID = "{{ store_id }}";
+  const CHANNEL_KEY = "{{ channel_key }}";
+
+  // 포트원 테스트 가맹점 식별코드 초기화
+  if (window.IMP) {
+    window.IMP.init("imp19424728");
+  }
+
+  function selectItem(element, price, count, name) {
+    document.querySelectorAll('.item-card').forEach(card => card.classList.remove('active'));
+    element.classList.add('active');
+    currentPrice = price;
+    currentCount = count;
+    currentItemName = name;
+    document.getElementById('selectedItemName').innerText = name;
+    document.getElementById('selectedItemPrice').innerText = price.toLocaleString() + "원";
+  }
+
+  async function handlePayment() {
+    const payBtn = document.getElementById('payButton');
+    payBtn.disabled = true;
+    payBtn.innerText = "결제 준비 중...";
+
+    try {
+      // 1단계: 백엔드 서버에 사전 주문 등록 (READY)
+      const prepRes = await fetch("/payment/prepare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_name: currentItemName,
+          amount: currentPrice,
+          sarangdal_count: currentCount
+        })
+      });
+
+      const prepData = await prepRes.json();
+      if (!prepData.success) {
+        alert("결제 준비 중 오류: " + (prepData.message || "오류 발생"));
+        payBtn.disabled = false;
+        payBtn.innerText = "🔒 안전 결제하기";
+        return;
+      }
+
+      const paymentId = prepData.payment_id;
+      const selectedMethod = document.querySelector('input[name="pay_method"]:checked').value;
+
+      payBtn.innerText = "결제 진행 중...";
+
+      let paymentSuccess = false;
+      let portonePaymentId = paymentId;
+
+      // 1) V2 채널 키가 있을 경우 V2 호출
+      if (window.PortOne && CHANNEL_KEY) {
+        try {
+          const v2Res = await PortOne.requestPayment({
+            storeId: STORE_ID,
+            channelKey: CHANNEL_KEY,
+            paymentId: paymentId,
+            orderName: currentItemName,
+            totalAmount: currentPrice,
+            currency: "CURRENCY_KRW",
+            payMethod: selectedMethod,
+          });
+
+          if (v2Res.code == null) {
+            paymentSuccess = true;
+            portonePaymentId = v2Res.paymentId || paymentId;
+          } else {
+            alert("결제 취소: " + (v2Res.message || "사용자가 취소했습니다."));
+            payBtn.disabled = false;
+            payBtn.innerText = "🔒 안전 결제하기";
+            return;
+          }
+        } catch (v2Err) {
+          console.warn("V2 SDK 실패, V1 테스트 모드로 전환합니다:", v2Err);
+        }
+      }
+
+      // 2) 채널키 미지정 또는 테스트 모드 시 V1 결제창 (KG이니시스/카카오페이 테스트 PG) 100% 작동
+      if (!paymentSuccess && window.IMP) {
+        let pgChoice = "html5_inicis.INIpayTest";
+        let methodChoice = "card";
+
+        if (selectedMethod === "EASY_PAY") {
+          pgChoice = "kakaopay.TC0ONETIME";
+          methodChoice = "card";
+        } else if (selectedMethod === "TRANSFER") {
+          pgChoice = "html5_inicis.INIpayTest";
+          methodChoice = "trans";
+        }
+
+        await new Promise((resolve) => {
+          IMP.request_pay({
+            pg: pgChoice,
+            pay_method: methodChoice,
+            merchant_uid: paymentId,
+            name: currentItemName,
+            amount: currentPrice,
+            buyer_name: "{{ user.username }}",
+            buyer_email: "{{ user.email }}",
+          }, function (rsp) {
+            if (rsp.success) {
+              paymentSuccess = true;
+              portonePaymentId = rsp.imp_uid || paymentId;
+            } else {
+              alert("결제 결과: " + (rsp.error_msg || "사용자가 결제를 취소했습니다."));
+            }
+            resolve();
+          });
+        });
+      }
+
+      if (!paymentSuccess) {
+        payBtn.disabled = false;
+        payBtn.innerText = "🔒 안전 결제하기";
+        return;
+      }
+
+      payBtn.innerText = "결제 검증 중...";
+
+      // 3단계: 백엔드 서버에서 결제 완료 처리 및 포인트 충전
+      const verifyRes = await fetch("/payment/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_id: paymentId,
+          portone_payment_id: portonePaymentId
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        alert("🎉 " + verifyData.message);
+        if (verifyData.sarangdal_balance != null) {
+          document.getElementById('sarangdalBalance').innerText = "💖 " + verifyData.sarangdal_balance + "개";
+        }
+      } else {
+        alert("❌ 결제 검증 실패: " + verifyData.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("결제 처리 오류 상세: " + (err.message || err));
+    } finally {
+      payBtn.disabled = false;
+      payBtn.innerText = "🔒 안전 결제하기";
+    }
+  }
+</script>
+
+{% endblock %}

@@ -717,3 +717,23 @@ class BoardComment(db.Model):
         secondary=board_comment_voter,
         backref=db.backref("voted_board_comments", lazy="dynamic"),
     )
+
+
+class PaymentOrder(db.Model):
+    __tablename__ = "payment_order"
+
+    id = db.Column(db.Integer, primary_key=True)
+    payment_id = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_name = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="READY", index=True)
+    pay_method = db.Column(db.String(50), nullable=True)
+    tx_id = db.Column(db.String(100), nullable=True)
+    receipt_url = db.Column(db.String(500), nullable=True)
+    sarangdal_count = db.Column(db.Integer, nullable=False, default=0)
+    create_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship("User")
+

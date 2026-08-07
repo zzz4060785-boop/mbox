@@ -27,8 +27,9 @@
     <!-- 모든 페이지에 적용되는 모바일 공통 CSS -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/base.css', v='20260806-lightbox-3') }}"
+      href="{{ url_for('static', filename='css/base.css', v='20260807-footer-fix99') }}"
     />
+
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/notifications.css') }}"
@@ -60,6 +61,9 @@
         {% endfor %}
       </div>
       {% endif %} {% endwith %} {% endif %} {% block content %} {% endblock %}
+      {% block footer %}
+        {% include "footer.html" %}
+      {% endblock %}
     </div>
 
     {% if session.get("user_id") %}

@@ -171,7 +171,18 @@ def create_app():
             "current_language": language,
             "tr": lambda message: translate(message, language),
             "translation_catalog": get_catalog(language),
+            "biz_info": {
+                "name": app.config.get("COMPANY_NAME"),
+                "owner": app.config.get("COMPANY_OWNER"),
+                "biz_no": app.config.get("COMPANY_BIZ_NO"),
+                "mail_order_no": app.config.get("COMPANY_MAIL_ORDER_NO"),
+                "address": app.config.get("COMPANY_ADDRESS"),
+                "phone": app.config.get("COMPANY_PHONE"),
+                "email": app.config.get("COMPANY_EMAIL"),
+                "escrow": app.config.get("COMPANY_ESCROW_INFO"),
+            },
         }
+
 
     @app.get("/language/<language>")
     def set_language(language):
@@ -263,6 +274,10 @@ def create_app():
         )
 
     from pybo import models
+
+
+
+
     from pybo.models import (
         AiImageUsage,
         AlbumComment,
@@ -615,8 +630,11 @@ def create_app():
         return response
 
     from pybo.views.album_views import bp as album_bp
+    from pybo.views.payment_views import bp as payment_bp
 
     app.register_blueprint(album_bp)
+    app.register_blueprint(payment_bp)
+
 
     @app.route("/", methods=["GET", "POST"])
     def main():
