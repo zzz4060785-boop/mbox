@@ -104,6 +104,23 @@ chown -R appuser:www-data "$APP_PATH/pybo"
 chown -R appuser:appuser "$APP_PATH/migrations" "$APP_PATH/deploy" "$APP_PATH/scripts"
 chown appuser:appuser "$APP_PATH/config.py" "$APP_PATH/wsgi.py" "$APP_PATH/requirements.txt"
 
+# 업로드 디렉터리 생성 및 권한 설정
+mkdir -p "$APP_PATH/pybo/static/uploads"
+chown appuser:www-data "$APP_PATH/pybo/static/uploads"
+chmod 775 "$APP_PATH/pybo/static/uploads"
+mkdir -p "$APP_PATH/instance/uploads"
+if find "$APP_PATH/pybo/static/uploads" -maxdepth 1 -type f -print -quit | grep -q .; then
+    mv "$APP_PATH/pybo/static/uploads"/* "$APP_PATH/instance/uploads"/
+fi
+chown -R appuser:www-data "$APP_PATH/instance"
+chmod 750 "$APP_PATH/instance" "$APP_PATH/instance/uploads"
+
+# nginx 최대 업로드 크기 설정 (미설정 시)
+if ! grep -q 'client_max_body_size' /etc/nginx/sites-enabled/friendary 2>/dev/null; then
+    sed -i '/server_name/a \    client_max_body_size 10M;' /etc/nginx/sites-enabled/friendary
+    nginx -t && systemctl reload nginx || true
+fi
+
 install -o root -g root -m 644 \
     "$APP_PATH/deploy/cafe24/friendary-db-backup.service" \
     /etc/systemd/system/friendary-db-backup.service
@@ -125,8 +142,11 @@ chown appuser:appuser "$APP_PATH/db-backups"
 runuser -u appuser -- env "$DATABASE_ASSIGNMENT" \
     "$APP_PATH/.venv/bin/python" scripts/backup_postgres.py
 
-runuser -u appuser -- env "$DATABASE_ASSIGNMENT" \
-    "$APP_PATH/.venv/bin/flask" --app wsgi:app db upgrade
+runuser -u appuser -- /bin/sh -c \
+    'set -a; . /etc/friendary/env; set +a; exec /opt/friendary/.venv/bin/flask --app wsgi:app db upgrade'
+
+runuser -u appuser -- /bin/sh -c \
+    'set -a; . /etc/friendary/env; set +a; exec /opt/friendary/.venv/bin/flask --app wsgi:app encrypt-stored-credentials'
 
 systemctl restart friendary
 systemctl is-active --quiet friendary

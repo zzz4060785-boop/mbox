@@ -56,10 +56,17 @@ async function openSarangdalStatusModal() {
 
         <div style="font-size: 0.72rem; color: #666; text-align: center; line-height: 1.4; background: rgba(255, 255, 255, 0.7); padding: 8px; border-radius: 10px;">
           💡 <strong>자동 지급 규칙</strong>: 매달 1일마다 1개씩 자동 충전됩니다.<br>
-          (최근 지급 월: ${data.last_month})
+          (최근 지급 월: ${escapeHtml(data.last_month)})
         </div>
       </div>
     `;
+    modalBody.firstElementChild?.insertAdjacentHTML(
+      "beforeend",
+      `<div class="sarangdal-policy-note">
+        매월 사랑달 1개를 무료로 지급합니다.<br>
+        사용하지 않은 사랑달과 구매한 사랑달은 소멸되지 않고 계속 누적됩니다.
+      </div>`,
+    );
   } catch (error) {
     modalBody.innerHTML = `
       <div style="text-align:center; padding: 20px; color:#d33;">

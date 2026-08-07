@@ -3,18 +3,16 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 %}main-album-container{% endblock %} {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album.css', v='20260807-top-fix35') }}"
+  href="{{ url_for('static', filename='css/main_album.css', v='20260807-star-v12') }}"
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album_right.css', v='20260807-top-fix35') }}"
+  href="{{ url_for('static', filename='css/main_album_right.css', v='20260807-star-v12') }}"
 />
-
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-top-fix35') }}"
+  href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-star-v12') }}"
 />
-
 {% endblock %} {% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
@@ -454,32 +452,10 @@ block body_class %}main-album-body{% endblock %} {% block container_class
       </button>
     </div>
   </div>
-
-  <!-- 학교 탈퇴 및 연관 앨범/데이터 삭제 커스텀 확인 모달 -->
-  <div class="profile-popup" id="schoolLeaveConfirmModal" style="display: none;">
-    <div class="popup-box school-manager-box" style="text-align: center;">
-      <h3 style="color: #e53e3e; margin-bottom: 12px; font-size: 18px;">⚠️ 학교 탈퇴 및 데이터 삭제</h3>
-      <p id="schoolLeaveConfirmText" style="font-size: 13px; color: #4a5568; line-height: 1.6; margin-bottom: 20px;">
-        이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.
-      </p>
-      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-        <button type="button" onclick="closeSchoolLeaveConfirmModal()" class="btn-close" style="background: #edf2f7; color: #4a5568; margin: 0; width: 45%;">
-          취소
-        </button>
-        <button type="button" onclick="executeLeaveRegisteredSchool()" class="btn-close" style="background: #e53e3e; color: #ffffff; margin: 0; width: 45%;">
-          삭제 진행
-        </button>
-      </div>
-    </div>
-  </div>
-  {% include "footer.html" %}
 </div>
-{% endblock %}
-
-{% block footer %}{% endblock %}
- {% block script %}
+{% endblock %} {% block script %}
 <script
-  src="{{ url_for('static', filename='js/main_album.js', v='20260807-school-fix2') }}"
+  src="{{ url_for('static', filename='js/main_album.js') }}"
   data-user-album-url="{{ url_for('user_album') }}"
   data-current-user-id="{{ current_user.id }}"
   data-current-username="{{ current_user.username }}"

@@ -599,10 +599,10 @@
         </div>
       </div>
     </main>
-<script id="photoRegistryData" type="application/json">
+<script nonce="{{ csp_nonce() }}" id="photoRegistryData" type="application/json">
   {{ photo_registry | tojson }}
 </script>
-<script id="facesData" type="application/json">
+<script nonce="{{ csp_nonce() }}" id="facesData" type="application/json">
   {{ faces_data | tojson }}
 </script>
 {% endblock %}

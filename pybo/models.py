@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pybo import db
 
@@ -74,6 +74,7 @@ class User(db.Model):
     )
     # 임원 권한과 마지막 활동일은 자동 선출·6개월 미접속 해제에 사용합니다.
     is_executive = db.Column(db.Boolean, nullable=False, default=False)
+    session_version = db.Column(db.Integer, nullable=False, default=1)
     last_login_at = db.Column(db.DateTime, nullable=True)
     last_active_at = db.Column(db.DateTime, nullable=True, index=True)
     executive_elected_at = db.Column(db.DateTime, nullable=True)
@@ -136,6 +137,50 @@ class GmailCredential(db.Model):
         nullable=False,
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
+    )
+
+
+class SecurityRateLimit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key_hash = db.Column(db.String(64), nullable=False)
+    window_start = db.Column(db.BigInteger, nullable=False)
+    count = db.Column(db.Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        db.UniqueConstraint("key_hash", "window_start", name="uq_security_rate_limit_window"),
+        db.Index("ix_security_rate_limit_window_start", "window_start"),
+    )
+
+
+class VerificationChallenge(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    purpose = db.Column(db.String(30), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=True)
+    code_hash = db.Column(db.String(255), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+    consumed_at = db.Column(db.DateTime, nullable=True)
+    create_date = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+    )
+
+    user = db.relationship("User")
+
+
+class SecurityAuditEvent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True, index=True)
+    event_type = db.Column(db.String(60), nullable=False, index=True)
+    ip_hash = db.Column(db.String(64), nullable=False, index=True)
+    details = db.Column(db.Text, nullable=False, default="{}")
+    create_date = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        index=True,
     )
 
 
@@ -436,6 +481,79 @@ class DirectMessage(db.Model):
     )
     sender = db.relationship("User", foreign_keys=[sender_id])
     receiver = db.relationship("User", foreign_keys=[receiver_id])
+
+
+class ClassroomRoom(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    create_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    owner = db.relationship("User")
+    participants = db.relationship(
+        "ClassroomParticipant",
+        back_populates="room",
+        cascade="all, delete-orphan",
+        order_by="ClassroomParticipant.slot_number",
+    )
+    messages = db.relationship(
+        "ClassroomMessage",
+        back_populates="room",
+        cascade="all, delete-orphan",
+    )
+
+
+class ClassroomParticipant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(
+        db.Integer,
+        db.ForeignKey("classroom_room.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    slot_number = db.Column(db.Integer, nullable=False)
+    invited_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    joined_at = db.Column(db.DateTime, nullable=True)
+    last_seen_at = db.Column(db.DateTime, nullable=True)
+    room = db.relationship("ClassroomRoom", back_populates="participants")
+    user = db.relationship("User")
+
+    __table_args__ = (
+        db.UniqueConstraint("room_id", "user_id", name="uq_classroom_room_user"),
+        db.UniqueConstraint("room_id", "slot_number", name="uq_classroom_room_slot"),
+        db.CheckConstraint("slot_number >= 1 AND slot_number <= 8", name="ck_classroom_slot_range"),
+    )
+
+
+class ClassroomMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(
+        db.Integer,
+        db.ForeignKey("classroom_room.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    sender_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    content = db.Column(db.String(200), nullable=False)
+    create_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    room = db.relationship("ClassroomRoom", back_populates="messages")
+    sender = db.relationship("User")
 
 
 # ─────────────────────────────────────────────────────────────

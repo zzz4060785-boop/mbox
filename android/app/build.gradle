@@ -68,8 +68,8 @@ android {
         applicationId "com.junyoung.friendary"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 13
-        versionName "1.1.0"
+        versionCode 14
+        versionName "1.1.1"
 
         resValue "string", "appName", twaManifest.name
         resValue "string", "launcherName", twaManifest.launcherName
@@ -131,7 +131,8 @@ android {
     }
 
     lintOptions {
-        checkReleaseBuilds false
+        checkReleaseBuilds true
+        abortOnError true
     }
 }
 

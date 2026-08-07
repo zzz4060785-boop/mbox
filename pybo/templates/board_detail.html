@@ -50,7 +50,8 @@
     {% endfor %}
     <div class="detail-actions">
       {% if can_participate %}
-      <form method="post" action="{{ url_for('board_vote', post_id=post.id) }}">
+      <form method="post" action="{{ url_for('board_vote', post_id=post.id) }}"
+            data-confirm-message="상대방에게 사랑별 1개를 지급할까요?">
         <button type="submit">💗 사랑별 {{ post.voters|length }}</button>
       </form>
       {% else %}
@@ -83,7 +84,8 @@
       <p>{{ comment.content|hashtags }}</p>
       <div class="comment-actions">
         {% if can_participate %}
-        <form method="post" action="{{ url_for('comment_vote', comment_id=comment.id) }}">
+        <form method="post" action="{{ url_for('comment_vote', comment_id=comment.id) }}"
+              data-confirm-message="상대방에게 사랑별 1개를 지급할까요?">
           <button type="submit">💗 사랑별 {{ comment.voters|length }}</button>
         </form>
         {% endif %}

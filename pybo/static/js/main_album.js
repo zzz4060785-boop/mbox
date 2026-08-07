@@ -26,10 +26,19 @@ function renderTaggedText(value) {
 }
 
 async function api(url, options = {}) {
-  const response = await fetch(url, options);
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (networkError) {
+    throw new Error("서버와 연결할 수 없습니다. 네트워크를 확인해 주세요.");
+  }
   const data = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(data.message || "요청을 처리하지 못했습니다.");
+  if (!response.ok) {
+    if (response.status === 413) {
+      throw new Error("파일 크기가 너무 큽니다. 10MB 이하의 파일만 올릴 수 있습니다.");
+    }
+    throw new Error(data.message || `요청을 처리하지 못했습니다. (${response.status})`);
+  }
   return data;
 }
 
@@ -279,6 +288,11 @@ async function loadAiImageQuota() {
   if (!quota || !button) return;
   try {
     const data = await api("/api/album/ai-image/status");
+    if (!data.available) {
+      quota.textContent = "AI 변형 서비스가 아직 서버에 설정되지 않았습니다.";
+      button.disabled = true;
+      return;
+    }
     quota.textContent = `이번 달 AI 변환: ${data.user_remaining}/${data.user_limit}회 사용 가능`;
     button.dataset.userLimit = String(data.user_limit);
     button.disabled = data.user_remaining < 1 || data.global_remaining < 1;
@@ -503,6 +517,10 @@ async function deletePhoto(photoId) {
 }
 
 async function toggleLike(photoId, button) {
+  const approved = await window.friendaryConfirm(
+    "상대방에게 사랑달 1개를 지급할까요?",
+  );
+  if (!approved) return;
   button.disabled = true;
   try {
     const data = await api(`/api/album/photos/${photoId}/like`, {
@@ -830,9 +848,18 @@ function confirmConnectionMove(userId, clickedElement) {
 
   deleteButton.hidden = !friendshipId;
 
-  chatButton.onclick = () => {
+  chatButton.onclick = async () => {
     closeConnectionChoice();
-    window.location.href = `/my-home?chat_user=${userId}`;
+    try {
+      const data = await api("/api/social/classroom/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_id: userId }),
+      });
+      window.location.href = data.room_url;
+    } catch (error) {
+      alert(error.message);
+    }
   };
   inviteButton.onclick = async () => {
     closeConnectionChoice();
@@ -1007,7 +1034,7 @@ async function openSchoolManager() {
   list.innerHTML = '<p class="empty-msg">등록 학교를 불러오는 중입니다…</p>';
   try {
     const data = await api("/api/my-schools");
-    limit.textContent = `학교는 최대 ${data.limit}개 · 이번 달 삭제 가능 ${data.leave_remaining}회 (매달 1일 초기화)`;
+    limit.textContent = `학교는 최대 ${data.limit}개 · 이번 달 삭제 가능 ${data.leave_remaining}회`;
     list.innerHTML = data.schools.length
       ? data.schools
           .map(
@@ -1035,41 +1062,11 @@ function closeSchoolManager() {
   document.getElementById("schoolManagerModal").style.display = "none";
 }
 
-let pendingLeaveMembershipId = null;
-let pendingLeaveSchoolName = "";
-
-function leaveRegisteredSchool(membershipId, schoolName) {
-  pendingLeaveMembershipId = membershipId;
-  pendingLeaveSchoolName = schoolName;
-
-  const textElem = document.getElementById("schoolLeaveConfirmText");
-  if (textElem) {
-    textElem.innerHTML = `<strong>[${escapeHtml(schoolName)}]</strong>에서 탈퇴할까요?<br><br>` +
-      "이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.";
-  }
-
-  const modal = document.getElementById("schoolLeaveConfirmModal");
-  if (modal) {
-    modal.style.display = "block";
-  } else {
-    if (confirm(`${schoolName}에서 탈퇴할까요?\n\n이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.`)) {
-      executeLeaveRegisteredSchool();
-    }
-  }
-}
-
-function closeSchoolLeaveConfirmModal() {
-  const modal = document.getElementById("schoolLeaveConfirmModal");
-  if (modal) modal.style.display = "none";
-  pendingLeaveMembershipId = null;
-  pendingLeaveSchoolName = "";
-}
-
-async function executeLeaveRegisteredSchool() {
-  if (!pendingLeaveMembershipId) return;
-  const membershipId = pendingLeaveMembershipId;
-  closeSchoolLeaveConfirmModal();
-
+async function leaveRegisteredSchool(membershipId, schoolName) {
+  const warning =
+    `${schoolName}에서 탈퇴할까요?\n\n` +
+    "이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.";
+  if (!confirm(warning)) return;
   try {
     const data = await api(`/api/my-schools/${membershipId}`, {
       method: "DELETE",

@@ -7,20 +7,12 @@
 }
 
 .school-find-page h1 {
-  padding-top: 55px;
+  padding-top: 20px;
   color: #c707f7;
   font-size: 38px;
   font-weight: bold;
   letter-spacing: 1px;
   text-align: center;
-}
-
-body .notification-center {
-  top: 45px;
-}
-
-body .logout-form {
-  top: 47px;
 }
 
 .school-find-page hr {

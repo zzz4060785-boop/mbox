@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Friendary 시작하기</title>
 
 <style>
@@ -114,6 +115,7 @@ body{
     background:#664234;
 }
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_layout.css', v='20260808-2') }}">
 
 </head>
 
@@ -152,6 +154,7 @@ Friendary에서 사용할 닉네임을 설정해주세요.
 {% endwith %}
 
 <form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
 <label class="social-nickname-label">
 닉네임

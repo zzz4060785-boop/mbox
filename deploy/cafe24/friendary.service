@@ -7,6 +7,10 @@ Type=notify
 User=appuser
 WorkingDirectory=/opt/friendary
 EnvironmentFile=/etc/friendary/env
+Environment=APP_ENV=production
+Environment=SESSION_COOKIE_SECURE=true
+Environment=BEHIND_PROXY=true
+Environment=PREFERRED_URL_SCHEME=https
 ExecStart=/opt/friendary/.venv/bin/gunicorn \
     --workers 5 \
     --threads 2 \

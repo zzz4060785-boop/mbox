@@ -16,6 +16,9 @@
       <span>현재 보유 사랑달:</span>
       <strong id="sarangdalBalance">💖 {{ user.sarangdal_balance or 0 }}개</strong>
     </div>
+    <p class="sarangdal-store-policy">
+      매월 사랑달 1개가 무료 지급되며, 미사용분과 구매분은 소멸 없이 계속 누적됩니다.
+    </p>
   <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
     <h2 style="font-size: 16px; margin: 0 0 8px 0; color: #1e293b;">🛒 디지털 이용권 상품 및 서비스 판매 가격 표시</h2>
     <p style="font-size: 13px; color: #64748b; margin: 0;">본 상점은 프렌다이어리(Friendary) 서비스의 디지털 포인트(사랑달 이용권)를 정식 판매하며, 선택 후 아래 결제 수단으로 결제할 수 있습니다.</p>
@@ -80,7 +83,7 @@
 <!-- PortOne V1 & V2 Dual Browser SDK -->
 <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
-<script>
+<script nonce="{{ csp_nonce() }}">
   let currentPrice = 5000;
   let currentCount = 30;
   let currentItemName = "사랑달 30개 충전";
