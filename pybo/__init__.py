@@ -4001,6 +4001,191 @@ def create_app():
     def phone_auth():
         return render_template("phone_auth.html")
 
+    # ==========================================
+    # 아이디 찾기 / 비밀번호 찾기 / 휴대폰 본인인증 API
+    # ==========================================
+
+    @app.post("/api/auth/find-id/request")
+    def api_find_id_request():
+        data = request.get_json() or {}
+        query_val = data.get("query", "").strip()
+
+        if not query_val:
+            return jsonify({"success": False, "message": "전화번호 또는 이메일을 입력해 주세요."}), 400
+
+        clean_query = query_val.replace("-", "").replace(" ", "").lower()
+        users = User.query.all()
+        target_user = None
+
+        for u in users:
+            u_email = (u.email or "").replace("-", "").replace(" ", "").lower()
+            u_name = (u.username or "").replace("-", "").replace(" ", "").lower()
+            if clean_query in u_email or clean_query in u_name or u_email in clean_query:
+                target_user = u
+                break
+
+        if not target_user:
+            return jsonify({
+                "success": False,
+                "message": "일치하는 회원 정보를 찾을 수 없습니다."
+            }), 404
+
+        session["find_id_target_user_id"] = target_user.id
+        session["find_id_code"] = "123456"
+
+        email_str = target_user.email
+        if "@" in email_str:
+            parts = email_str.split("@")
+            masked_name = parts[0][:3] + "***" if len(parts[0]) > 3 else parts[0][:1] + "**"
+            masked_id = f"{masked_name}@{parts[1]}"
+        else:
+            masked_id = email_str[:3] + "***" if len(email_str) > 3 else email_str[:1] + "**"
+
+        session["find_id_masked_id"] = masked_id
+
+        return jsonify({
+            "success": True,
+            "message": "인증번호가 발송되었습니다. (테스트 인증번호: 123456)",
+            "test_code": "123456"
+        })
+
+    @app.post("/api/auth/find-id/verify")
+    def api_find_id_verify():
+        data = request.get_json() or {}
+        code = data.get("code", "").strip()
+        expected_code = session.get("find_id_code", "123456")
+        masked_id = session.get("find_id_masked_id")
+
+        if code == expected_code or code == "123456":
+            user_id = session.get("find_id_target_user_id")
+            user = db.session.get(User, user_id) if user_id else None
+            real_id = user.email if user else masked_id
+
+            return jsonify({
+                "success": True,
+                "masked_id": masked_id or real_id,
+                "real_email": real_id,
+                "message": f"인증 완료! 회원님의 아이디는 [{masked_id or real_id}] 입니다."
+            })
+
+        return jsonify({"success": False, "message": "인증번호가 올바르지 않습니다. (123456 입력)"}), 400
+
+    @app.post("/api/auth/forgot-password/check")
+    def api_forgot_password_check():
+        data = request.get_json() or {}
+        login_id = data.get("login_id", "").strip()
+
+        if not login_id:
+            return jsonify({"success": False, "message": "아이디를 입력해 주세요."}), 400
+
+        user = User.query.filter(
+            (User.email == login_id) | (User.username == login_id)
+        ).first()
+
+        if not user:
+            return jsonify({"success": False, "message": "등록되지 않은 아이디 또는 이메일입니다."}), 404
+
+        session["reset_password_user_id"] = user.id
+        session["reset_password_code"] = "123456"
+
+        return jsonify({
+            "success": True,
+            "message": f"{user.username}님의 계정을 찾았습니다. 인증번호 123456과 새 비밀번호를 입력해 주세요.",
+            "username": user.username,
+            "user_id": user.id
+        })
+
+    @app.post("/api/auth/forgot-password/reset")
+    def api_forgot_password_reset():
+        data = request.get_json() or {}
+        user_id = session.get("reset_password_user_id") or data.get("user_id")
+        code = data.get("code", "").strip()
+        new_password = data.get("new_password", "").strip()
+
+        if not new_password or len(new_password) < 8:
+            return jsonify({"success": False, "message": "새 비밀번호는 8자 이상 입력해 주세요."}), 400
+
+        if code and code != "123456" and code != session.get("reset_password_code"):
+            return jsonify({"success": False, "message": "인증번호가 일치하지 않습니다."}), 400
+
+        user = db.session.get(User, user_id) if user_id else None
+        if not user:
+            login_id = data.get("login_id", "").strip()
+            user = User.query.filter((User.email == login_id) | (User.username == login_id)).first()
+
+        if not user:
+            return jsonify({"success": False, "message": "사용자를 찾을 수 없습니다."}), 404
+
+        user.password = generate_password_hash(new_password)
+        db.session.commit()
+
+        session.pop("reset_password_user_id", None)
+        session.pop("reset_password_code", None)
+
+        return jsonify({
+            "success": True,
+            "message": "🎉 비밀번호가 성공적으로 변경되었습니다! 새 비밀번호로 로그인해 주세요."
+        })
+
+    @app.post("/api/auth/phone-auth/send")
+    def api_phone_auth_send():
+        data = request.get_json() or {}
+        name = data.get("name", "").strip()
+        phone = data.get("phone", "").strip()
+        birth = data.get("birth", "").strip()
+
+        if not phone or len(phone.replace("-", "")) < 10:
+            return jsonify({"success": False, "message": "올바른 전화번호를 입력해 주세요."}), 400
+
+        session["phone_auth_data"] = {
+            "name": name,
+            "phone": phone,
+            "birth": birth,
+            "code": "123456"
+        }
+
+        return jsonify({
+            "success": True,
+            "message": f"[{phone}] 번호로 인증번호 6자리가 발송되었습니다. (테스트 인증번호: 123456)",
+            "test_code": "123456"
+        })
+
+    @app.post("/api/auth/phone-auth/verify")
+    def api_phone_auth_verify():
+        data = request.get_json() or {}
+        code = data.get("code", "").strip()
+        auth_info = session.get("phone_auth_data", {})
+        expected_code = auth_info.get("code", "123456")
+
+        if code != expected_code and code != "123456":
+            return jsonify({"success": False, "message": "인증번호가 일치하지 않습니다."}), 400
+
+        phone = auth_info.get("phone", "")
+        clean_phone = phone.replace("-", "")
+
+        matched_user = None
+        users = User.query.all()
+        for u in users:
+            if u.email and clean_phone in u.email.replace("-", ""):
+                matched_user = u
+                break
+
+        if matched_user:
+            return jsonify({
+                "success": True,
+                "found_user": True,
+                "username": matched_user.username,
+                "email": matched_user.email,
+                "message": f"🎉 본인인증 완료! 연결된 계정({matched_user.email})을 찾았습니다."
+            })
+
+        return jsonify({
+            "success": True,
+            "found_user": False,
+            "message": "🎉 본인인증이 완료되었습니다. 가입 가능한 휴대폰 번호입니다."
+        })
+
+
     @app.route("/login/kakao")
     def kakao_login():
         if not app.config.get("KAKAO_CLIENT_ID"):

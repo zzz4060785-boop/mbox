@@ -138,6 +138,22 @@
           required
         />
       </div>
+
+      <div class="input-row" id="authCodeRow" style="display: none; margin-top: 10px;">
+        <div class="input-top">
+          <label class="input-label" for="smsCodeInput">인증번호 6자리</label>
+          <span id="smsTimerText" style="color: #6366f1; font-weight: bold; font-size: 13px;">03:00</span>
+        </div>
+        <input
+          type="text"
+          id="smsCodeInput"
+          class="auth-input"
+          placeholder="인증번호 6자리 입력 (테스트: 123456)"
+          inputmode="numeric"
+          maxlength="6"
+        />
+      </div>
+
     </div>
 
     <p class="form-message" id="phoneAuthMessage" aria-live="polite"></p>
