@@ -103,7 +103,7 @@
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker.register(
-            "{{ url_for('static', filename='js/service-worker.js') }}",
+            "{{ url_for('static', filename='js/service-worker.js', v='20260808-6') }}",
           );
         });
       }

@@ -2,6 +2,7 @@ package com.junyoung.friendary;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
@@ -18,6 +19,7 @@ import androidx.core.view.WindowCompat;
 
 public class LauncherActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
+    private static final int CACHE_SCHEMA_VERSION = 2;
     private WebView mWebView;
     private ValueCallback<Uri[]> mFileChooserCallback;
 
@@ -34,6 +36,14 @@ public class LauncherActivity extends Activity {
 
         mWebView = new WebView(this);
         setContentView(mWebView);
+
+        // Clear the HTTP cache once after an app upgrade that changes the web
+        // shell. Cookies and login sessions are intentionally preserved.
+        SharedPreferences cachePreferences = getSharedPreferences("friendary_webview", MODE_PRIVATE);
+        if (cachePreferences.getInt("cache_schema", 0) < CACHE_SCHEMA_VERSION) {
+            mWebView.clearCache(true);
+            cachePreferences.edit().putInt("cache_schema", CACHE_SCHEMA_VERSION).apply();
+        }
 
         boolean isDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         if (isDebuggable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {

@@ -189,6 +189,10 @@ def create_app():
             )
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
+        elif request.path.endswith("/static/js/service-worker.js"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
     @app.context_processor
