@@ -671,11 +671,15 @@ def create_app():
             saved_login_id=request.cookies.get("friendary_login_id", ""),
         )
 
-    @app.get("/privacy")
+    @app.route("/privacy")
+    @app.route("/privacy-policy")
+    @app.route("/privacy_policy")
     def privacy_policy():
         return render_template("privacy_policy.html")
 
-    @app.get("/terms")
+    @app.route("/terms")
+    @app.route("/terms-of-service")
+    @app.route("/terms_of_service")
     def terms_of_service():
         return render_template("terms_of_service.html")
 
@@ -3989,6 +3993,8 @@ def create_app():
         flash("공지사항이 수정되었습니다." if notice else "공지사항이 등록되었습니다.")
         return redirect(url_for("notice_board"))
 
+
+
     @app.route("/forgot-password")
     def forgot_password():
         return render_template("forgot.html")
@@ -4000,6 +4006,9 @@ def create_app():
     @app.route("/phone-auth")
     def phone_auth():
         return render_template("phone_auth.html")
+
+
+
 
     # ==========================================
     # 아이디 찾기 / 비밀번호 찾기 / 휴대폰 본인인증 API

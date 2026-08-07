@@ -73,6 +73,7 @@ try {
     Invoke-CheckedCommand "scp.exe" @(
         "-i", $SshKey,
         "-o", "BatchMode=yes",
+        "-o", "StrictHostKeyChecking=accept-new",
         $LocalArchive,
         "${Server}:$RemoteArchive"
     )
@@ -142,6 +143,7 @@ echo "Cafe24 service is active. Backup: $BACKUP_DIR/friendary-$STAMP.tar.gz"
     Invoke-CheckedCommand "ssh.exe" @(
         "-i", $SshKey,
         "-o", "BatchMode=yes",
+        "-o", "StrictHostKeyChecking=accept-new",
         $Server,
         $RemoteCommand
     )
