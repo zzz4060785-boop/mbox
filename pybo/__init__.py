@@ -611,6 +611,18 @@ def create_app():
         assetlinks_dir = os.path.join(app.static_folder, ".well-known")
         return send_from_directory(assetlinks_dir, "assetlinks.json", mimetype="application/json")
 
+    @app.get("/service-worker.js")
+    def service_worker():
+        response = send_from_directory(
+            os.path.join(app.static_folder, "js"),
+            "service-worker.js",
+            mimetype="application/javascript",
+        )
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
     @app.get("/manifest.webmanifest")
     def webmanifest():
         return send_from_directory(app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
