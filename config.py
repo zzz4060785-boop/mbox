@@ -103,15 +103,15 @@ class Config:
     ]
 
     # 전자상거래 통신판매업 사업자 정보 (웹사이트 하단 필수 표기사항)
-    COMPANY_NAME = os.getenv("COMPANY_NAME", "프렌다이어리 (Friendary)")
-
-    COMPANY_OWNER = os.getenv("COMPANY_OWNER", "대표자명")
-    COMPANY_BIZ_NO = os.getenv("COMPANY_BIZ_NO", "000-00-00000")
-    COMPANY_MAIL_ORDER_NO = os.getenv("COMPANY_MAIL_ORDER_NO", "통신판매업 신고 준비중")
-    COMPANY_ADDRESS = os.getenv("COMPANY_ADDRESS", "사업장 소재지 입력 필요")
-    COMPANY_PHONE = os.getenv("COMPANY_PHONE", "010-0000-0000")
+    COMPANY_NAME = os.getenv("COMPANY_NAME", "프렌다이어리(Friendary)")
+    COMPANY_OWNER = os.getenv("COMPANY_OWNER", "김준영")
+    COMPANY_BIZ_NO = os.getenv("COMPANY_BIZ_NO", "828-09-03413")
+    COMPANY_MAIL_ORDER_NO = os.getenv("COMPANY_MAIL_ORDER_NO", "제 2026-서울관악-1508 호")
+    COMPANY_ADDRESS = os.getenv("COMPANY_ADDRESS", "서울시 관악구 신림로 7나길 21")
+    COMPANY_PHONE = os.getenv("COMPANY_PHONE", "010-9785-0785")
     COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", "junyoungkim355@gmail.com")
-    COMPANY_ESCROW_INFO = os.getenv("COMPANY_ESCROW_INFO", "구매안전(에스크로) 서비스 가입")
+    COMPANY_ESCROW_INFO = os.getenv("COMPANY_ESCROW_INFO", "포트원")
+
 
     # 포트원(PortOne V2) 결제 연동 설정
     PORTONE_STORE_ID = os.getenv("PORTONE_STORE_ID", "store-e7be92f1-f1c4-4d22-b53e-1c78d4e75e79")
