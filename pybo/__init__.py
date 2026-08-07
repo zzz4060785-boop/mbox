@@ -721,7 +721,7 @@ def create_app():
                                 "svcType": "api",
                                 "svcCode": "SCHOOL",
                                 "contentType": "json",
-                                "gubun": "univ_gubun",
+                                "gubun": "univ_list",
                                 "searchSchulNm": keyword,
                             }
                         )
