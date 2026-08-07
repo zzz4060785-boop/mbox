@@ -142,11 +142,15 @@ chown appuser:appuser "$APP_PATH/db-backups"
 runuser -u appuser -- env "$DATABASE_ASSIGNMENT" \
     "$APP_PATH/.venv/bin/python" scripts/backup_postgres.py
 
-runuser -u appuser -- /bin/sh -c \
-    'set -a; . /etc/friendary/env; set +a; exec /opt/friendary/.venv/bin/flask --app wsgi:app db upgrade'
-
-runuser -u appuser -- /bin/sh -c \
-    'set -a; . /etc/friendary/env; set +a; exec /opt/friendary/.venv/bin/flask --app wsgi:app encrypt-stored-credentials'
+# The production env file is intentionally root-readable only. Load it as root,
+# then preserve the resulting process environment while dropping privileges.
+set -a
+. /etc/friendary/env
+set +a
+runuser -u appuser --preserve-environment -- \
+    /opt/friendary/.venv/bin/flask --app wsgi:app db upgrade
+runuser -u appuser --preserve-environment -- \
+    /opt/friendary/.venv/bin/flask --app wsgi:app encrypt-stored-credentials
 
 systemctl restart friendary
 systemctl is-active --quiet friendary
