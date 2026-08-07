@@ -224,11 +224,11 @@ img[data-photo-lightbox],
 }
 
 
-/* 앨범 메인 페이지(.album-page)는 모든 요소가 absolute 배치이므로 푸터도 absolute로 맨 하단 790px(모바일 780px)에 강제 배치합니다 */
+/* 앨범 메인 페이지(.album-page)는 모든 요소가 absolute 배치이므로 푸터도 absolute로 맨 하단 838px(모바일 825px)에 강제 배치합니다 */
 .album-page > .app-footer,
 .album-page .app-footer {
   position: absolute;
-  top: 790px;
+  top: 838px;
   left: 0;
   width: 100%;
   box-sizing: border-box;
@@ -239,7 +239,7 @@ img[data-photo-lightbox],
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
   .album-page > .app-footer,
   .album-page .app-footer {
-    top: 780px !important;
+    top: 825px !important;
   }
 }
 

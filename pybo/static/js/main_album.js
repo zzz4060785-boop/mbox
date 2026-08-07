@@ -1007,7 +1007,7 @@ async function openSchoolManager() {
   list.innerHTML = '<p class="empty-msg">등록 학교를 불러오는 중입니다…</p>';
   try {
     const data = await api("/api/my-schools");
-    limit.textContent = `학교는 최대 ${data.limit}개 · 이번 달 삭제 가능 ${data.leave_remaining}회`;
+    limit.textContent = `학교는 최대 ${data.limit}개 · 이번 달 삭제 가능 ${data.leave_remaining}회 (매달 1일 초기화)`;
     list.innerHTML = data.schools.length
       ? data.schools
           .map(
@@ -1035,11 +1035,41 @@ function closeSchoolManager() {
   document.getElementById("schoolManagerModal").style.display = "none";
 }
 
-async function leaveRegisteredSchool(membershipId, schoolName) {
-  const warning =
-    `${schoolName}에서 탈퇴할까요?\n\n` +
-    "이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.";
-  if (!confirm(warning)) return;
+let pendingLeaveMembershipId = null;
+let pendingLeaveSchoolName = "";
+
+function leaveRegisteredSchool(membershipId, schoolName) {
+  pendingLeaveMembershipId = membershipId;
+  pendingLeaveSchoolName = schoolName;
+
+  const textElem = document.getElementById("schoolLeaveConfirmText");
+  if (textElem) {
+    textElem.innerHTML = `<strong>[${escapeHtml(schoolName)}]</strong>에서 탈퇴할까요?<br><br>` +
+      "이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.";
+  }
+
+  const modal = document.getElementById("schoolLeaveConfirmModal");
+  if (modal) {
+    modal.style.display = "block";
+  } else {
+    if (confirm(`${schoolName}에서 탈퇴할까요?\n\n이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.`)) {
+      executeLeaveRegisteredSchool();
+    }
+  }
+}
+
+function closeSchoolLeaveConfirmModal() {
+  const modal = document.getElementById("schoolLeaveConfirmModal");
+  if (modal) modal.style.display = "none";
+  pendingLeaveMembershipId = null;
+  pendingLeaveSchoolName = "";
+}
+
+async function executeLeaveRegisteredSchool() {
+  if (!pendingLeaveMembershipId) return;
+  const membershipId = pendingLeaveMembershipId;
+  closeSchoolLeaveConfirmModal();
+
   try {
     const data = await api(`/api/my-schools/${membershipId}`, {
       method: "DELETE",

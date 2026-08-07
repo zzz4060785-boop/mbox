@@ -996,7 +996,7 @@ def create_app():
             >= MAX_USER_SCHOOLS
         ):
             return {
-                "error": f"학교는 최대 {MAX_USER_SCHOOLS}개까지 등록할 수 있습니다."
+                "error": f"학교는 최대 {MAX_USER_SCHOOLS}개까지만 등록할 수 있어 더 이상 추가할 수 없습니다."
             }, 400
         if not membership:
             membership = UserSchool(
@@ -1035,7 +1035,7 @@ def create_app():
     @login_required
     def my_schools():
         user_id = session["user_id"]
-        month_key = datetime.utcnow().strftime("%Y-%m")
+        month_key = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m")
         memberships = UserSchool.query.filter_by(user_id=user_id).order_by(
             UserSchool.is_primary.desc(), UserSchool.create_date
         ).all()
@@ -1056,7 +1056,7 @@ def create_app():
             ],
             limit=MAX_USER_SCHOOLS,
             leave_used=used,
-            leave_remaining=max(3 - used, 0),
+            leave_remaining=max(2 - used, 0),
         )
 
     def _remove_uploaded_file(file_url):
@@ -1073,12 +1073,12 @@ def create_app():
         membership = db.get_or_404(UserSchool, membership_id)
         if membership.user_id != session["user_id"]:
             return jsonify(message="본인의 등록 학교만 삭제할 수 있습니다."), 403
-        month_key = datetime.utcnow().strftime("%Y-%m")
+        month_key = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m")
         used = SchoolLeaveLog.query.filter_by(
             user_id=membership.user_id, month_key=month_key
         ).count()
-        if used >= 3:
-            return jsonify(message="학교 삭제는 한 달에 최대 3회까지만 가능합니다."), 429
+        if used >= 2:
+            return jsonify(message="학교 삭제는 한 달에 최대 2회까지만 가능합니다."), 429
 
         user_id = membership.user_id
         school_name = membership.school_name
@@ -1150,13 +1150,13 @@ def create_app():
                 user.school_major = None
         db.session.commit()
         return jsonify(
-            message=f"{school_name}에서 탈퇴했으며 해당 학교 작성 자료를 삭제했습니다.",
+            message=f"{school_name}에서 탈퇴했으며 해당 학교 작성 자료와 앨범이 모두 삭제되었습니다.",
             redirect_url=(
                 url_for("main_album", school=remaining.school_name)
                 if remaining
                 else url_for("school_find")
             ),
-            leave_remaining=max(2 - used, 0),
+            leave_remaining=max(2 - (used + 1), 0),
         )
 
     @app.route("/main-album")

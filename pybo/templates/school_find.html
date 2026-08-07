@@ -2,7 +2,7 @@
 stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/school_find.css') }}"
+  href="{{ url_for('static', filename='css/school_find.css', v='20260807-top-fix55') }}"
 />
 {% endblock %} {% block content %}
 <main class="school-find-page">
@@ -171,7 +171,7 @@ stylesheet %}
 </main>
 {% endblock %} {% block script %}
 <script
-  src="{{ url_for('static', filename='js/school_find.js') }}"
+  src="{{ url_for('static', filename='js/school_find.js', v='20260807-school-limit-fix') }}"
   data-album-url="{{ url_for('main_album') }}"
   data-save-school-url="{{ url_for('save_school_selection') }}"
   data-school-search-url="{{ url_for('search_schools') }}"
