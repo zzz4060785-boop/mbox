@@ -8,6 +8,7 @@ __pycache__/
 android/signing-credentials.txt
 android/*.apk
 android/*.aab
+/Friendary-*.aab
 pybo/static/Friendary_app.apk
 pybo/static/uploads/
 instance/uploads/
