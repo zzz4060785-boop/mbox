@@ -1,12 +1,20 @@
 .admin-dashboard-body {
+  height: auto !important;
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: radial-gradient(circle at 12% 8%, rgba(124, 58, 237, 0.14), transparent 34%), #f4f6fb;
 }
 
 .mobile-wrap.admin-dashboard-shell {
   max-width: 1180px;
+  height: auto !important;
   min-height: 100vh;
-  overflow: visible;
+  min-height: 100dvh;
+  overflow: visible !important;
   background: transparent;
   box-shadow: none;
 }
@@ -87,7 +95,12 @@
 .admin-secondary-button { padding: 9px 13px; }
 button:disabled { cursor: wait; opacity: 0.55; }
 
-.admin-table-wrap { overflow-x: auto; }
+.admin-table-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
+}
 .admin-table-wrap table { width: 100%; min-width: 680px; border-collapse: collapse; }
 .admin-table-wrap th,
 .admin-table-wrap td { padding: 15px 24px; border-bottom: 1px solid #eef1f5; text-align: left; }
@@ -156,4 +169,5 @@ button:disabled { cursor: wait; opacity: 0.55; }
   .admin-panel-heading, .admin-table-wrap th, .admin-table-wrap td { padding-right: 16px; padding-left: 16px; }
   .admin-inline-reply { grid-template-columns: 1fr; }
   .admin-inline-reply .admin-primary-button { justify-self: end; }
+  .admin-dashboard { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
 }
