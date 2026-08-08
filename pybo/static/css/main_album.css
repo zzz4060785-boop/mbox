@@ -1,4 +1,4 @@
-.main-album-body * {
+.album-page * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -63,8 +63,7 @@ body.main-album-body {
   }
 
   .album-page {
-    height: calc(100vh + 350px);
-    height: calc(100dvh + 350px);
+    height: auto;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: visible;
