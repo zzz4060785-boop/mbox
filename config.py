@@ -41,6 +41,12 @@ DATABASE_URI = _database_uri()
 
 
 class Config:
+    APP_ENV = os.getenv("APP_ENV", "development").lower()
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "").strip() or os.path.join(BASE_DIR, "instance", "uploads")
+    DAILY_UPLOAD_LIMIT = int(os.getenv("DAILY_UPLOAD_LIMIT", "30"))
+    CLAMAV_HOST = os.getenv("CLAMAV_HOST", "").strip()
+    CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
+    UPLOAD_SCAN_REQUIRED = os.getenv("UPLOAD_SCAN_REQUIRED", "").lower() in {"1", "true", "yes"}
     SQLALCHEMY_DATABASE_URI = DATABASE_URI
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -58,6 +64,10 @@ class Config:
     TEMPLATES_AUTO_RELOAD = True
     SEND_FILE_MAX_AGE_DEFAULT = 0
     SECRET_KEY = os.getenv("SECRET_KEY", "development-secret-key")
+    # Local UI development only; demo identity checks are unsafe on a public server.
+    AUTH_TEST_MODE = os.getenv("AUTH_TEST_MODE", "").lower() in {
+        "1", "true", "yes"
+    }
     # 게시글/공지 이미지 업로드 요청은 최대 10MB까지만 허용합니다.
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
     SESSION_COOKIE_HTTPONLY = True
@@ -68,12 +78,17 @@ class Config:
     PREFERRED_URL_SCHEME = os.getenv("PREFERRED_URL_SCHEME", "http")
     # Keep signed-in users logged in unless they opt out or explicitly log out.
     # Flask refreshes this rolling lifetime on active permanent sessions.
-    PERMANENT_SESSION_LIFETIME = timedelta(days=365)
+    PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SESSION_REFRESH_EACH_REQUEST = True
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-    GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID")
-    GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET")
+    # Cafe24 historically stores this OAuth client under GOOGLE_* while the
+    # Gmail sender integration uses GMAIL_*. Accept both names so deployments
+    # do not lose the client configuration during token refresh.
+    GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
+    GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET") or os.getenv(
+        "GOOGLE_CLIENT_SECRET"
+    )
     GMAIL_REDIRECT_URI = os.getenv(
         "GMAIL_REDIRECT_URI",
         "http://127.0.0.1:5000/google/gmail/callback",
@@ -98,7 +113,7 @@ class Config:
     # 여러 명이면 실행 환경에서 EXECUTIVE_USER_IDS=1,3,7 형태로 지정하세요.
     EXECUTIVE_USER_IDS = [
         int(user_id)
-        for user_id in os.getenv("EXECUTIVE_USER_IDS", "1").split(",")
+        for user_id in os.getenv("EXECUTIVE_USER_IDS", "").split(",")
         if user_id.strip().isdigit()
     ]
 
@@ -117,5 +132,34 @@ class Config:
     PORTONE_STORE_ID = os.getenv("PORTONE_STORE_ID", "store-e7be92f1-f1c4-4d22-b53e-1c78d4e75e79")
     PORTONE_API_SECRET = os.getenv("PORTONE_API_SECRET", "")
     PORTONE_CHANNEL_KEY = os.getenv("PORTONE_CHANNEL_KEY", "")
+    PAYMENT_ENABLED = os.getenv("PAYMENT_ENABLED", "").lower() in {"1", "true", "yes"}
+    _GOOGLE_PLAY_SERVICE_ACCOUNT_DEFAULT = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "secrets",
+        "google-play-service-account.json",
+    )
+    GOOGLE_PLAY_BILLING_ENABLED = (
+        os.getenv("GOOGLE_PLAY_BILLING_ENABLED", "").lower() in {"1", "true", "yes"}
+        or os.path.isfile(_GOOGLE_PLAY_SERVICE_ACCOUNT_DEFAULT)
+    )
+    GOOGLE_PLAY_PACKAGE_NAME = os.getenv("GOOGLE_PLAY_PACKAGE_NAME", "com.junyoung.friendary")
+    GOOGLE_PLAY_SERVICE_ACCOUNT_FILE = os.getenv(
+        "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE",
+        _GOOGLE_PLAY_SERVICE_ACCOUNT_DEFAULT,
+    )
+    SMTP_HOST = os.getenv("SMTP_HOST", "")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "")
+    SMS_API_URL = os.getenv("SMS_API_URL", "")
+    SMS_API_TOKEN = os.getenv("SMS_API_TOKEN", "")
+    TOKEN_ENCRYPTION_KEY = os.getenv("TOKEN_ENCRYPTION_KEY", "")
+    INCIDENT_EVENT_FILE = os.getenv(
+        "INCIDENT_EVENT_FILE", "/var/lib/friendary-monitor/events.jsonl"
+    )
+    IP_BLOCKING_ENABLED = os.getenv("IP_BLOCKING_ENABLED", "true").lower() in {
+        "1", "true", "yes"
+    }
 
 

@@ -16,6 +16,29 @@
         flex-direction: column;
       }
 
+      .mobile-wrap.graduation-container > .notification-center {
+        display: none;
+      }
+
+      .graduation-back {
+        width: 44px;
+        height: 44px;
+        position: absolute;
+        top: calc(14px + env(safe-area-inset-top, 0px));
+        left: 14px;
+        z-index: 1200;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #357abd;
+        font-size: 24px;
+        font-weight: 800;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      }
+
       /* 앨범 구역 섹션 (구역별 세로 간격 띄우기) */
       .album-section {
         width: 100%;
@@ -266,7 +289,7 @@
       /* ─── 임원 전용 사진 변경 컨트롤 패널 ─── */
       .executive-control-panel {
         position: fixed;
-        bottom: 15px;
+        bottom: calc(82px + env(safe-area-inset-bottom, 0px));
         left: 50%;
         transform: translateX(-50%);
         z-index: 9999;
@@ -284,6 +307,7 @@
         backdrop-filter: blur(8px); /* 배경 살짝 블러처리 (세련된 느낌) */
         border: 1px solid rgba(255, 255, 255, 0.1);
         min-width: 280px;
+        max-width: calc(100vw - 28px);
       }
 
       .executive-control-panel p {

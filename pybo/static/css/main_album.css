@@ -1,4 +1,4 @@
-* {
+.album-page * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -9,14 +9,6 @@
 body.main-album-body {
   height: 100vh;
   overflow: hidden;
-}
-
-body.main-album-body .notification-center {
-  top: 45px;
-}
-
-body.main-album-body .logout-form {
-  top: 47px;
 }
 
 .mobile-wrap.main-album-container {
@@ -32,7 +24,6 @@ body.main-album-body .logout-form {
   overflow-y: auto;
   background: #cbf1f1;
   font-family: "Helvetica Neue", Arial, sans-serif;
-  padding-top: 15px;
 }
 
 /*
@@ -42,37 +33,101 @@ body.main-album-body .logout-form {
  * height for the absolutely positioned bottom navigation.
  */
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  :root {
+    --main-album-mobile-top-offset: 22px;
+  }
+
   html {
-    height: auto;
-    min-height: 100%;
+    height: 100%;
   }
 
   body.main-album-body {
-    height: auto;
-    min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .mobile-wrap.main-album-container {
-    height: auto;
-    min-height: calc(100vh + 550px);
-    min-height: calc(100dvh + 550px);
-    overflow: visible;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+    scrollbar-color: rgba(47, 128, 237, 0.72) rgba(255, 255, 255, 0.28);
+    scrollbar-width: thin;
   }
 
   .album-page {
     height: auto;
-    min-height: calc(100vh + 550px);
-    min-height: calc(100dvh + 550px);
+    min-height: 0;
     overflow-x: hidden;
     overflow-y: visible;
   }
 
+  .album-page > h1 {
+    margin-top: calc(15px + var(--main-album-mobile-top-offset));
+    position: relative;
+    z-index: 15;
+    transform: translateY(95px);
+    pointer-events: none;
+  }
 
+  .side-nav,
+  .nav-right {
+    top: calc(150px + var(--main-album-mobile-top-offset));
+  }
+
+  .online-friends-panel,
   .star-sidebar-box {
-    top: 567px !important;
+    top: calc(600px + var(--main-album-mobile-top-offset)) !important;
+  }
+
+  .mobile-wrap.main-album-container::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .mobile-wrap.main-album-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .mobile-wrap.main-album-container::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(47, 128, 237, 0.72);
+  }
+
+  .main-album-scroll-track {
+    position: fixed;
+    top: 76px;
+    right: max(3px, calc((100vw - 430px) / 2 + 3px));
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: 6px;
+    z-index: 1100;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+  }
+
+  .main-album-scroll-track[hidden] {
+    display: none;
+  }
+
+  .main-album-scroll-thumb {
+    width: 100%;
+    min-height: 34px;
+    border-radius: inherit;
+    background: #2f80ed;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  }
+
+  /* The album uses absolute-positioned panels and a synthetic content
+     height. Pull the shared legal footer up to meet the bottom menu. */
+  .mobile-wrap.main-album-container > .app-footer {
+    margin-top: -50px;
   }
 }
 
@@ -82,19 +137,19 @@ body.main-album-body .logout-form {
   overflow-y: hidden;
 }
 
-h1 {
+.album-page > h1 {
   text-align: center;
   font-size: 18px;
   font-weight: bold;
   color: #b005db;
-  margin-top: 50px;
+  margin-top: 15px;
   letter-spacing: 0.5px;
 }
 
 .side-nav,
 .nav-right {
   position: absolute;
-  top: 105px;
+  top: 150px;
   width: min(180px, calc((100% - 30px) / 2));
   min-height: 380px;
   padding-top: 15px;
@@ -117,7 +172,7 @@ h1 {
   width: min(180px, calc((100% - 30px) / 2));
   min-height: 138px;
   position: absolute;
-  top: 530px;
+  top: 600px;
   left: 12px;
   z-index: 10;
   padding: 12px;
@@ -131,7 +186,7 @@ h1 {
   width: min(180px, calc((100% - 30px) / 2));
   min-height: 138px;
   position: absolute;
-  top: 567px;
+  top: 600px;
   right: 12px;
   z-index: 10;
   padding: 8px 4px;
@@ -277,9 +332,46 @@ h1 {
   font-weight: bold;
 }
 
+.friend-list-scroll-area {
+  max-height: 220px;
+  margin: 8px 0 14px;
+  padding-right: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #cfb8e8 #f7f2fb;
+  scrollbar-width: thin;
+}
+
+.friend-list-scroll-area::-webkit-scrollbar {
+  width: 5px;
+}
+
+.friend-list-scroll-area::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: #f7f2fb;
+}
+
+.friend-list-scroll-area::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cfb8e8;
+}
+
+#friendListModal .friend-list-container {
+  max-height: none;
+  overflow: visible;
+}
+
 #profilePopup .popup-box {
-  max-height: calc(100vh - 20px);
-  margin-top: 10px;
+  max-height: calc(
+    100vh - 52px - env(safe-area-inset-top, 0px) -
+      env(safe-area-inset-bottom, 0px)
+  );
+  max-height: calc(
+    100dvh - 52px - env(safe-area-inset-top, 0px) -
+      env(safe-area-inset-bottom, 0px)
+  );
+  margin-top: calc(32px + env(safe-area-inset-top, 0px));
   overflow-y: auto;
 }
 
@@ -337,7 +429,8 @@ h1 {
   inset: 0;
   width: 100%;
   height: 100%;
-  padding: 18px;
+  padding: calc(40px + env(safe-area-inset-top, 0px)) 18px
+    calc(72px + env(safe-area-inset-bottom, 0px));
   z-index: 500;
   overflow-y: auto;
   background: #e0f2f5;
@@ -1277,6 +1370,62 @@ body.photo-lightbox-open {
 .connection-choice-box button.danger {
   border-color: #ffd0d0;
   color: #d33;
+}
+
+.summon-status-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 31000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+.summon-status-modal[hidden] {
+  display: none;
+}
+
+.summon-status-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.summon-status-box {
+  position: relative;
+  width: min(350px, 100%);
+  padding: 30px 24px 22px;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+  text-align: center;
+}
+
+.summon-status-icon {
+  font-size: 42px;
+}
+.summon-status-box h3 {
+  margin-top: 13px;
+  color: #172033;
+  font-size: 21px;
+}
+.summon-status-box p {
+  margin-top: 9px;
+  color: #7b8495;
+  font-size: 13px;
+}
+.summon-status-box button {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  border: 0;
+  border-radius: 13px;
+  background: #6d28d9;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .connection-section {

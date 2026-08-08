@@ -314,6 +314,9 @@
 button.danger { color: #c0392b; }
 .comments { margin-top: 14px; }
 .comments h2 { margin-bottom: 12px; font-size: 1.05rem; }
+.comment-form {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
 .comment { padding: 12px 0; border-bottom: 1px solid #eee; }
 .comment time { margin-left: 6px; color: #999; font-size: .72rem; }
 .comment p { margin-top: 7px; line-height: 1.5; white-space: pre-wrap; }

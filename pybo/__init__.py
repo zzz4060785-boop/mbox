@@ -1,5 +1,6 @@
 from flask import (
     Flask,
+    current_app,
     jsonify,
     render_template,
     request,
@@ -20,11 +21,12 @@ from markupsafe import Markup, escape
 from pathlib import Path
 from email.message import EmailMessage
 import base64
+import hashlib
 import json
 import os
 import re
 import secrets
-from sqlalchemy import func, inspect, or_, text
+from sqlalchemy import func, or_, text
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
@@ -35,6 +37,11 @@ from werkzeug.utils import secure_filename
 
 from config import Config
 from pybo.i18n import SUPPORTED_LANGUAGES, get_catalog, translate
+from pybo.security import init_security, rate_limit, record_unknown_login_attempt
+from pybo.uploads import is_safe_upload
+from pybo.notifications import send_email_code, send_sms_code
+from pybo.crypto import decrypt_secret, encrypt_secret
+from pybo.audit import audit_event
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -91,6 +98,8 @@ def _classify_uploaded_media(uploaded_file):
     mimetype = uploaded_file.mimetype or ""
     if not mimetype.startswith(f"{media_type}/"):
         return None, None, "파일 확장자와 실제 미디어 형식이 일치하지 않습니다."
+    if not is_safe_upload(uploaded_file, extension, current_app.config):
+        return None, None, "미디어 파일 내용이 올바르지 않습니다."
     return extension, media_type, None
 
 
@@ -102,12 +111,12 @@ def _save_notice_media(app, uploaded_file):
     raw_name = Path(uploaded_file.filename or "").name
     original_name = secure_filename(raw_name) or f"media.{extension}"
 
-    upload_directory = Path(app.static_folder) / "uploads"
+    upload_directory = Path(app.config["UPLOAD_FOLDER"])
     upload_directory.mkdir(parents=True, exist_ok=True)
     saved_name = f"notice_{uuid4().hex}.{extension}"
     uploaded_file.save(upload_directory / saved_name)
     return (
-        url_for("static", filename=f"uploads/{saved_name}"),
+        url_for("uploaded_media", filename=saved_name),
         media_type,
         original_name,
         None,
@@ -118,7 +127,7 @@ def _delete_notice_image(app, image_url):
     """공지에서 제거된 이미지만 uploads 폴더 안에서 안전하게 삭제합니다."""
     if not image_url or "/uploads/" not in image_url:
         return
-    upload_directory = (Path(app.static_folder) / "uploads").resolve()
+    upload_directory = Path(app.config["UPLOAD_FOLDER"]).resolve()
     image_path = (upload_directory / Path(image_url).name).resolve()
     if image_path.parent == upload_directory and image_path.name.startswith("notice_"):
         image_path.unlink(missing_ok=True)
@@ -138,6 +147,13 @@ def login_required(view):
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    if app.config["APP_ENV"] == "production" and app.config["SECRET_KEY"] == "development-secret-key":
+        raise RuntimeError("Production requires a strong SECRET_KEY environment variable.")
+    if app.config.get("PAYMENT_ENABLED") and not all(
+        app.config.get(key) for key in ("PORTONE_STORE_ID", "PORTONE_CHANNEL_KEY", "PORTONE_API_SECRET")
+    ):
+        raise RuntimeError("Enabled payments require all PortOne credentials.")
+    init_security(app)
     if os.getenv("BEHIND_PROXY", "").lower() in {"1", "true", "yes"}:
         app.wsgi_app = ProxyFix(
             app.wsgi_app,
@@ -172,6 +188,10 @@ def create_app():
             response.headers["Cache-Control"] = (
                 "no-cache, must-revalidate"
             )
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        elif request.path.endswith("/static/js/service-worker.js"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
         return response
@@ -223,6 +243,16 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     oauth.init_app(app)
+
+    @app.get("/healthz")
+    def healthz():
+        """Report whether both the web process and its database are available."""
+        try:
+            db.session.execute(text("SELECT 1"))
+        except Exception:
+            app.logger.exception("Health check database probe failed")
+            return jsonify(status="unhealthy"), 503
+        return jsonify(status="ok"), 200
 
     if app.config.get("GOOGLE_CLIENT_ID") and app.config.get(
         "GOOGLE_CLIENT_SECRET"
@@ -298,6 +328,9 @@ def create_app():
         BoardNotice,
         BoardPost,
         BoardPostMeta,
+        ClassroomMessage,
+        ClassroomParticipant,
+        ClassroomRoom,
         DirectMessage,
         ExecutiveApplication,
         Friendship,
@@ -309,13 +342,107 @@ def create_app():
         RecommendationPost,
         RecommendationReaction,
         SchoolLeaveLog,
+        SecurityRateLimit,
         User,
         UserAlbumComment,
         UserAlbumDislike,
         UserAlbumLike,
         UserAlbumPhoto,
         UserSchool,
+        VerificationChallenge,
     )
+
+    def establish_login_session(user, permanent=True):
+        session.clear()
+        session["user_id"] = user.id
+        session["session_version"] = user.session_version
+        session.permanent = permanent
+        audit_event("login_success", user_id=user.id)
+
+    @app.before_request
+    def validate_login_session_version():
+        user_id = session.get("user_id")
+        if not user_id:
+            return None
+        user = db.session.get(User, user_id)
+        if not user or session.get("session_version") != user.session_version:
+            session.clear()
+            if request.path.startswith("/api/"):
+                return jsonify(success=False, message="로그인 세션이 만료되었습니다."), 401
+        return None
+
+    @app.before_request
+    def enforce_daily_upload_limit():
+        user_id = session.get("user_id")
+        if not user_id or request.method not in {"POST", "PUT", "PATCH"} or not request.files:
+            return None
+        window_start = int(datetime.now(timezone.utc).timestamp()) // 86400 * 86400
+        key_hash = hashlib.sha256(f"upload-user:{user_id}".encode()).hexdigest()
+        record = SecurityRateLimit.query.filter_by(
+            key_hash=key_hash, window_start=window_start
+        ).with_for_update().first()
+        if record is None:
+            record = SecurityRateLimit(key_hash=key_hash, window_start=window_start, count=0)
+            db.session.add(record)
+        if record.count >= app.config["DAILY_UPLOAD_LIMIT"]:
+            db.session.rollback()
+            audit_event("upload_limit_exceeded", user_id=user_id)
+            return jsonify(message="하루 업로드 한도를 초과했습니다."), 429
+        record.count += 1
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return jsonify(message="업로드 요청을 다시 시도해 주세요."), 409
+        return None
+
+    def create_verification_challenge(purpose, code, user=None):
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        VerificationChallenge.query.filter(
+            or_(
+                VerificationChallenge.expires_at < now,
+                VerificationChallenge.consumed_at.isnot(None),
+            )
+        ).delete(synchronize_session=False)
+        token = secrets.token_urlsafe(32)
+        challenge = VerificationChallenge(
+            token=token,
+            purpose=purpose,
+            user_id=user.id if user else None,
+            code_hash=generate_password_hash(code),
+            expires_at=now + timedelta(minutes=10),
+        )
+        db.session.add(challenge)
+        db.session.commit()
+        session[f"verification_{purpose}"] = token
+        return challenge
+
+    def verify_challenge(purpose, code, consume=True):
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        token = session.get(f"verification_{purpose}")
+        if not token:
+            return None
+        challenge = VerificationChallenge.query.filter_by(
+            token=token, purpose=purpose
+        ).with_for_update().first()
+        if (
+            not challenge
+            or challenge.consumed_at is not None
+            or challenge.expires_at < now
+            or challenge.attempts >= 5
+        ):
+            session.pop(f"verification_{purpose}", None)
+            db.session.rollback()
+            return None
+        challenge.attempts += 1
+        if not check_password_hash(challenge.code_hash, code):
+            db.session.commit()
+            return None
+        if consume:
+            challenge.consumed_at = now
+            session.pop(f"verification_{purpose}", None)
+        db.session.commit()
+        return challenge
 
     def add_notification(user_id, kind, title, message, target_url, actor_id=None):
         """자기 자신을 제외한 대상 사용자에게 읽지 않은 알림을 추가합니다."""
@@ -363,236 +490,6 @@ def create_app():
                     target_url,
                     actor.id,
                 )
-
-    with app.app_context():
-        db.create_all()
-
-        # 기존 User 테이블에 빠진 칼럼을 추가합니다.
-        user_columns = {
-            column["name"]
-            for column in inspect(db.engine).get_columns("user")
-        }
-
-        school_columns = {
-            "school_name": "VARCHAR(120)",
-            "school_type": "VARCHAR(30)",
-            "school_year": "VARCHAR(4)",
-            "school_major": "VARCHAR(100)",
-            "age": "INTEGER",
-            "gender": "VARCHAR(20)",
-            "nationality": "VARCHAR(80)",
-            "hobby": "VARCHAR(200)",
-            "profile_image_url": "VARCHAR(255)",
-            "tag_permission": (
-                "VARCHAR(20) NOT NULL DEFAULT 'friends'"
-            ),
-            "allow_album_comments": (
-                "BOOLEAN NOT NULL DEFAULT 1"
-            ),
-            "allow_connection_discovery": (
-                "BOOLEAN NOT NULL DEFAULT 1"
-            ),
-            "allow_messages": (
-                "BOOLEAN NOT NULL DEFAULT 1"
-            ),
-            "is_profile_public": (
-                "BOOLEAN NOT NULL DEFAULT 1"
-            ),
-            "allow_friend_search": (
-                "BOOLEAN NOT NULL DEFAULT 1"
-            ),
-            "is_executive": (
-                "BOOLEAN NOT NULL DEFAULT 0"
-            ),
-            "last_login_at": "DATETIME",
-            "last_active_at": "DATETIME",
-            "executive_elected_at": "DATETIME",
-            "sarangdal_balance": "INTEGER NOT NULL DEFAULT 1",
-            "last_sarangdal_month": "VARCHAR(7)",
-        }
-
-        for column_name, column_type in school_columns.items():
-            if column_name not in user_columns:
-                db.session.execute(
-                    text(
-                        f'ALTER TABLE "user" '
-                        f"ADD COLUMN {column_name} {column_type}"
-                    )
-                )
-
-        # 기존 게시글 테이블에 빠진 칼럼을 추가합니다.
-        post_columns = {
-            column["name"]
-            for column in inspect(db.engine).get_columns(
-                "board_post"
-            )
-        }
-
-        if "user_id" not in post_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_post "
-                    "ADD COLUMN user_id INTEGER"
-                )
-            )
-
-        if "modify_date" not in post_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_post "
-                    "ADD COLUMN modify_date DATETIME"
-                )
-            )
-
-        # 기존 공지사항 테이블에 필요한 칼럼을 추가합니다.
-        notice_columns = {
-            column["name"]
-            for column in inspect(db.engine).get_columns(
-                "board_notice"
-            )
-        }
-
-        if "school_name" not in notice_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_notice "
-                    "ADD COLUMN school_name VARCHAR(120)"
-                )
-            )
-
-        if "image_url" not in notice_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_notice "
-                    "ADD COLUMN image_url VARCHAR(255)"
-                )
-            )
-
-        if "modify_date" not in notice_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_notice "
-                    "ADD COLUMN modify_date DATETIME"
-                )
-            )
-
-        if "media_type" not in notice_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_notice "
-                    "ADD COLUMN media_type "
-                    "VARCHAR(20) NOT NULL DEFAULT 'image'"
-                )
-            )
-
-        if "original_name" not in notice_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_notice "
-                    "ADD COLUMN original_name VARCHAR(255)"
-                )
-            )
-
-        # 기존 첨부파일 테이블에 미디어 종류 칼럼을 추가합니다.
-        attachment_columns = {
-            column["name"]
-            for column in inspect(db.engine).get_columns(
-                "board_attachment"
-            )
-        }
-
-        if "media_type" not in attachment_columns:
-            db.session.execute(
-                text(
-                    "ALTER TABLE board_attachment "
-                    "ADD COLUMN media_type "
-                    "VARCHAR(20) NOT NULL DEFAULT 'image'"
-                )
-            )
-
-        # 각 작성 자료에 작성 당시 학교명을 저장할 칼럼을 추가합니다.
-        school_data_tables = (
-            "board_post",
-            "board_comment",
-            "recommendation_post",
-            "recommendation_comment",
-            "user_album_photo",
-            "user_album_comment",
-        )
-
-        for table_name in school_data_tables:
-            table_columns = {
-                column["name"]
-                for column in inspect(db.engine).get_columns(
-                    table_name
-                )
-            }
-
-            if "school_name" not in table_columns:
-                db.session.execute(
-                    text(
-                        f'ALTER TABLE "{table_name}" '
-                        "ADD COLUMN school_name VARCHAR(120)"
-                    )
-                )
-
-        # 기존 단일 학교 사용자를 UserSchool 테이블로 자동 이관합니다.
-        existing_users = User.query.filter(
-            User.school_name.isnot(None)
-        ).all()
-
-        for existing_user in existing_users:
-            existing_membership = UserSchool.query.filter_by(
-                user_id=existing_user.id,
-                school_name=existing_user.school_name,
-            ).first()
-
-            if not existing_membership:
-                db.session.add(
-                    UserSchool(
-                        user_id=existing_user.id,
-                        school_name=existing_user.school_name,
-                        school_type=(
-                            existing_user.school_type
-                            or "school"
-                        ),
-                        school_year=(
-                            existing_user.school_year
-                            or "0000"
-                        ),
-                        school_major=(
-                            existing_user.school_major
-                        ),
-                        is_primary=True,
-                    )
-                )
-
-        # 기존 앨범 댓글 테이블에 답글 부모 칼럼을 추가합니다.
-        album_comment_columns = {
-            column["name"]
-            for column in inspect(db.engine).get_columns(
-                "user_album_comment"
-            )
-        }
-
-        # 모든 유저의 사랑달 기본값(1개 이상) 및 최근 지급월을 보장합니다.
-        current_month = datetime.utcnow().strftime("%Y-%m")
-        db.session.execute(
-            text(
-                'UPDATE "user" SET sarangdal_balance = 1 WHERE sarangdal_balance IS NULL OR sarangdal_balance = 0'
-            )
-        )
-        db.session.execute(
-            text(
-                f'UPDATE "user" SET last_sarangdal_month = \'{current_month}\' WHERE last_sarangdal_month IS NULL OR last_sarangdal_month = \'\''
-            )
-        )
-        db.session.commit()
-        try:
-            from pybo.executive_election import check_and_run_annual_election
-            check_and_run_annual_election()
-        except Exception as e:
-            app.logger.warning(f"Annual executive election check skipped: {e}")
 
     def get_login_destination_url(user):
         if user:
@@ -650,6 +547,7 @@ def create_app():
 
 
     @app.route("/", methods=["GET", "POST"])
+    @rate_limit(limit=30, window=300, scope="login-main")
     def main():
         if request.method == "GET" and session.get("user_id"):
             return login_destination(
@@ -678,14 +576,15 @@ def create_app():
             ).first()
 
             if not user or not check_password_hash(user.password, password):
+                if user is None:
+                    record_unknown_login_attempt()
+                audit_event("login_failure", {"login_hash": secrets.token_hex(8)})
                 if is_ajax:
                     return jsonify(success=False, message="아이디 또는 비밀번호를 확인해 주세요."), 400
                 flash("아이디 또는 비밀번호를 확인해 주세요.")
                 return redirect(url_for("main"), code=303)
 
-            session.clear()
-            session["user_id"] = user.id
-            session.permanent = should_remember
+            establish_login_session(user, permanent=should_remember)
 
             dest_url = get_login_destination_url(user)
             if is_ajax:
@@ -725,11 +624,36 @@ def create_app():
         assetlinks_dir = os.path.join(app.static_folder, ".well-known")
         return send_from_directory(assetlinks_dir, "assetlinks.json", mimetype="application/json")
 
+    @app.get("/service-worker.js")
+    def service_worker():
+        response = send_from_directory(
+            os.path.join(app.static_folder, "js"),
+            "service-worker.js",
+            mimetype="application/javascript",
+        )
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
     @app.get("/manifest.webmanifest")
     def webmanifest():
         return send_from_directory(app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
 
+    @app.get("/media/<path:filename>")
+    @login_required
+    def uploaded_media(filename):
+        safe_name = secure_filename(Path(filename).name)
+        if not safe_name or safe_name != filename:
+            return "Not found", 404
+        response = send_from_directory(app.config["UPLOAD_FOLDER"], safe_name)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
+        response.headers["Cache-Control"] = "private, max-age=3600"
+        return response
+
     @app.route("/login2", methods=["GET", "POST"])
+    @rate_limit(limit=30, window=300, scope="login-secondary")
     def login2():
         if request.method == "GET" and session.get("user_id"):
             return login_destination(
@@ -758,14 +682,15 @@ def create_app():
             ).first()
 
             if not user or not check_password_hash(user.password, password):
+                if user is None:
+                    record_unknown_login_attempt()
+                audit_event("login_failure", {"login_hash": secrets.token_hex(8)})
                 if is_ajax:
                     return jsonify(success=False, message="아이디 또는 비밀번호를 확인해 주세요."), 400
                 flash("아이디 또는 비밀번호를 확인해 주세요.")
                 return redirect(url_for("login2"), code=303)
 
-            session.clear()
-            session["user_id"] = user.id
-            session.permanent = should_remember
+            establish_login_session(user, permanent=should_remember)
 
             dest_url = get_login_destination_url(user)
             if is_ajax:
@@ -827,7 +752,7 @@ def create_app():
                                 "svcType": "api",
                                 "svcCode": "SCHOOL",
                                 "contentType": "json",
-                                "gubun": "univ_gubun",
+                                "gubun": "univ_list",
                                 "searchSchulNm": keyword,
                             }
                         )
@@ -1062,10 +987,14 @@ def create_app():
     def _remove_uploaded_file(file_url):
         if not file_url:
             return
-        upload_directory = (Path(app.static_folder) / "uploads").resolve()
-        file_path = (upload_directory / Path(file_url).name).resolve()
-        if file_path.parent == upload_directory:
-            file_path.unlink(missing_ok=True)
+        for directory in (
+            Path(app.config["UPLOAD_FOLDER"]),
+            Path(app.static_folder) / "uploads",  # legacy files
+        ):
+            upload_directory = directory.resolve()
+            file_path = (upload_directory / Path(file_url).name).resolve()
+            if file_path.parent == upload_directory:
+                file_path.unlink(missing_ok=True)
 
     @app.delete("/api/my-schools/<int:membership_id>")
     @login_required
@@ -1175,6 +1104,20 @@ def create_app():
     @login_required
     def my_home():
         user = db.session.get(User, session["user_id"])
+        if not request.args.get("room"):
+            active_participant = (
+                ClassroomParticipant.query
+                .join(ClassroomRoom, ClassroomRoom.id == ClassroomParticipant.room_id)
+                .filter(
+                    ClassroomParticipant.user_id == user.id,
+                    ClassroomParticipant.joined_at.isnot(None),
+                    ClassroomRoom.is_active.is_(True),
+                )
+                .order_by(ClassroomRoom.updated_at.desc(), ClassroomRoom.id.desc())
+                .first()
+            )
+            if active_participant:
+                return redirect(url_for("my_home", room=active_participant.room_id))
         return render_template("my_home.html", current_user=user)
 
     @app.route("/game-zone")
@@ -1231,8 +1174,190 @@ def create_app():
             and (
                 user.is_executive
                 or user.id in app.config.get("EXECUTIVE_USER_IDS", [])
+                or user.email.lower()
+                == app.config["GMAIL_ADMIN_EMAIL"].lower()
             )
         )
+
+    def is_site_admin(user):
+        """Return whether a user may access site-wide administration data."""
+        if not user:
+            return False
+        admin_email = app.config.get("GMAIL_ADMIN_EMAIL", "").strip().lower()
+        executive_ids = set(app.config.get("EXECUTIVE_USER_IDS", []))
+        return bool(
+            (admin_email and user.email.lower() == admin_email)
+            or user.id in executive_ids
+        )
+
+    def require_site_admin():
+        user_id = session.get("user_id")
+        if not user_id:
+            return None
+        user = db.session.get(User, user_id)
+        return user if is_site_admin(user) else None
+
+    @app.context_processor
+    def inject_site_admin_access():
+        return {"can_view_admin_dashboard": bool(require_site_admin())}
+
+    @app.get("/admin/online-users")
+    @login_required
+    def admin_online_users():
+        if not require_site_admin():
+            return "Forbidden", 403
+        return render_template("admin_online_users.html")
+
+    @app.get("/api/admin/online-users")
+    @login_required
+    def api_admin_online_users():
+        if not require_site_admin():
+            return jsonify(success=False, message="관리자만 확인할 수 있습니다."), 403
+
+        now = datetime.utcnow()
+        online_since = now - timedelta(minutes=5)
+        online_users = (
+            User.query.filter(User.last_active_at >= online_since)
+            .order_by(User.last_active_at.desc(), User.id.asc())
+            .all()
+        )
+        today_start = datetime(now.year, now.month, now.day)
+        return jsonify(
+            success=True,
+            generated_at=now.isoformat(timespec="seconds") + "Z",
+            online_count=len(online_users),
+            total_users=User.query.count(),
+            logged_in_today=User.query.filter(
+                User.last_login_at >= today_start
+            ).count(),
+            users=[
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "school_name": user.school_name or "미등록",
+                    "last_active_at": user.last_active_at.isoformat(
+                        timespec="seconds"
+                    )
+                    + "Z",
+                }
+                for user in online_users
+            ],
+        )
+
+    @app.post("/api/admin/messages/broadcast")
+    @login_required
+    @rate_limit(limit=5, window=3600, scope="admin-broadcast")
+    def admin_message_broadcast():
+        admin = require_site_admin()
+        if not admin:
+            return jsonify(success=False, message="관리자만 발송할 수 있습니다."), 403
+        data = request.get_json(silent=True) or {}
+        content = str(data.get("content", "")).strip()
+        if not content:
+            return jsonify(success=False, message="보낼 내용을 입력해 주세요."), 400
+        if len(content) > 1000:
+            return jsonify(success=False, message="쪽지는 1000자 이하로 입력해 주세요."), 400
+
+        recipients = User.query.filter(User.id != admin.id).all()
+        for recipient in recipients:
+            message = DirectMessage(
+                sender_id=admin.id,
+                receiver_id=recipient.id,
+                content=content,
+            )
+            db.session.add(message)
+            db.session.flush()
+            add_notification(
+                recipient.id,
+                "admin_broadcast",
+                "관리자 공지 쪽지",
+                f"{admin.username} 관리자가 전체 쪽지를 보냈습니다.",
+                url_for("main_album", open="messages", message=message.id),
+                admin.id,
+            )
+        db.session.commit()
+        audit_event(
+            "admin_message_broadcast",
+            {"recipient_count": len(recipients)},
+            user_id=admin.id,
+        )
+        return jsonify(
+            success=True,
+            sent_count=len(recipients),
+            message=f"전체 회원 {len(recipients)}명에게 쪽지를 보냈습니다.",
+        ), 201
+
+    @app.get("/api/admin/messages/replies")
+    @login_required
+    def admin_message_replies():
+        admin = require_site_admin()
+        if not admin:
+            return jsonify(success=False, message="관리자만 확인할 수 있습니다."), 403
+        messages = (
+            DirectMessage.query.filter(
+                DirectMessage.receiver_id == admin.id,
+                DirectMessage.sender_id != admin.id,
+            )
+            .order_by(DirectMessage.create_date.desc())
+            .limit(100)
+            .all()
+        )
+        unread_count = sum(not message.is_read for message in messages)
+        return jsonify(
+            success=True,
+            unread_count=unread_count,
+            messages=[
+                {
+                    "id": message.id,
+                    "sender_id": message.sender_id,
+                    "sender": message.sender.username,
+                    "sender_email": message.sender.email,
+                    "content": message.content,
+                    "is_read": message.is_read,
+                    "created_at": message.create_date.isoformat(
+                        timespec="seconds"
+                    )
+                    + "Z",
+                }
+                for message in messages
+            ],
+        )
+
+    @app.post("/api/admin/messages/reply")
+    @login_required
+    @rate_limit(limit=30, window=3600, scope="admin-reply")
+    def admin_message_reply():
+        admin = require_site_admin()
+        if not admin:
+            return jsonify(success=False, message="관리자만 답장할 수 있습니다."), 403
+        data = request.get_json(silent=True) or {}
+        receiver = db.session.get(User, data.get("receiver_id"))
+        content = str(data.get("content", "")).strip()
+        if not receiver or receiver.id == admin.id:
+            return jsonify(success=False, message="답장할 회원을 확인해 주세요."), 400
+        if not content:
+            return jsonify(success=False, message="답장 내용을 입력해 주세요."), 400
+        if len(content) > 1000:
+            return jsonify(success=False, message="쪽지는 1000자 이하로 입력해 주세요."), 400
+
+        message = DirectMessage(
+            sender_id=admin.id,
+            receiver_id=receiver.id,
+            content=content,
+        )
+        db.session.add(message)
+        db.session.flush()
+        add_notification(
+            receiver.id,
+            "admin_reply",
+            "관리자 답장",
+            f"{admin.username} 관리자가 답장을 보냈습니다.",
+            url_for("main_album", open="messages", message=message.id),
+            admin.id,
+        )
+        db.session.commit()
+        return jsonify(success=True, message="답장을 보냈습니다."), 201
 
     @app.get("/contact-admin")
     @login_required
@@ -1260,6 +1385,11 @@ def create_app():
         if client is None:
             flash("Gmail OAuth 환경변수를 확인해 주세요.")
             return redirect(url_for("contact_admin"))
+        # Drop abandoned OAuth attempts before starting a fresh consent flow.
+        for key in list(session):
+            if key.startswith("_state_gmail_sender_"):
+                session.pop(key, None)
+        session.permanent = True
         return client.authorize_redirect(
             app.config["GMAIL_REDIRECT_URI"],
             access_type="offline",
@@ -1303,12 +1433,12 @@ def create_app():
             email=admin_email
         ).first()
         if credential:
-            credential.refresh_token = refresh_token
+            credential.refresh_token = encrypt_secret(app.config, refresh_token)
         else:
             db.session.add(
                 GmailCredential(
                     email=admin_email,
-                    refresh_token=refresh_token,
+                    refresh_token=encrypt_secret(app.config, refresh_token),
                 )
             )
         db.session.commit()
@@ -1337,7 +1467,7 @@ def create_app():
                 {
                     "client_id": app.config["GMAIL_CLIENT_ID"],
                     "client_secret": app.config["GMAIL_CLIENT_SECRET"],
-                    "refresh_token": credential.refresh_token,
+                    "refresh_token": decrypt_secret(app.config, credential.refresh_token),
                     "grant_type": "refresh_token",
                 }
             ).encode("utf-8"),
@@ -1372,8 +1502,24 @@ def create_app():
             )
             with urlopen(send_request, timeout=15):
                 pass
-        except (HTTPError, URLError, KeyError, ValueError):
-            return jsonify(message="Gmail 전송에 실패했습니다."), 502
+        except HTTPError as error:
+            try:
+                error_data = json.loads(error.read().decode("utf-8"))
+                reason = str(
+                    error_data.get("error", {}).get("status")
+                    or error_data.get("error")
+                )[:80]
+            except (ValueError, AttributeError, UnicodeDecodeError):
+                reason = "http_error"
+            app.logger.warning(
+                "Gmail send failed: status=%s reason=%s",
+                error.code,
+                reason,
+            )
+            return jsonify(message="Gmail 인증 또는 전송에 실패했습니다."), 502
+        except (URLError, KeyError, ValueError) as error:
+            app.logger.warning("Gmail send failed: %s", type(error).__name__)
+            return jsonify(message="Gmail 전송 서버에 연결하지 못했습니다."), 502
 
         return jsonify(message="관리자에게 이메일을 보냈습니다.")
 
@@ -1527,7 +1673,7 @@ def create_app():
             username=user.username,
         )
 
-    def _get_or_grant_user_sarangdal(user):
+    def _get_or_grant_user_sarangdal(user, persist=True):
         """
         모든 유저에게 기본 1개를 제공하고, 매달 1일마다 1개씩 누적 자동 충전합니다.
         """
@@ -1540,24 +1686,28 @@ def create_app():
             if (user.sarangdal_balance or 0) < 1:
                 user.sarangdal_balance = 1
             user.last_sarangdal_month = current_month
-            try:
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            if persist:
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
         elif last_month != current_month:
             user.sarangdal_balance = (user.sarangdal_balance or 0) + 1
             user.last_sarangdal_month = current_month
-            try:
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+            if persist:
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
 
         return user.sarangdal_balance or 0
 
     @app.get("/api/sarangdal/status")
     @login_required
     def user_sarangdal_status():
-        user = db.session.get(User, session["user_id"])
+        # Serialize the monthly grant so simultaneous status/feed requests can
+        # never issue the same month's free allowance twice.
+        user = User.query.filter_by(id=session["user_id"]).with_for_update().first()
         if not user:
             return jsonify(error="로그인이 필요합니다."), 401
         balance = _get_or_grant_user_sarangdal(user)
@@ -1578,6 +1728,8 @@ def create_app():
             total_given=total_given,
             total_received=total_received,
             last_month=user.last_sarangdal_month or datetime.utcnow().strftime("%Y-%m"),
+            monthly_free_allowance=1,
+            purchased_balance_carries_over=True,
         )
 
     @app.get("/api/album/feed")
@@ -1654,16 +1806,18 @@ def create_app():
             return jsonify(message="JPG, PNG, WEBP, GIF 이미지만 올릴 수 있습니다."), 400
         if not (image.mimetype or "").startswith("image/"):
             return jsonify(message="이미지 파일만 올릴 수 있습니다."), 400
+        if not is_safe_upload(image, extension, app.config):
+            return jsonify(message="이미지 파일 내용이 올바르지 않습니다."), 400
         if len(caption) > 300:
             return jsonify(message="사진 설명은 300자 이하로 입력해 주세요."), 400
 
-        upload_directory = Path(app.static_folder) / "uploads"
+        upload_directory = Path(app.config["UPLOAD_FOLDER"])
         upload_directory.mkdir(parents=True, exist_ok=True)
         saved_name = f"user_album_{uuid4().hex}.{extension}"
         image.save(upload_directory / saved_name)
         photo = UserAlbumPhoto(
             user_id=session["user_id"],
-            image_url=url_for("static", filename=f"uploads/{saved_name}"),
+            image_url=url_for("uploaded_media", filename=saved_name),
             caption=caption,
             school_name=(
                 request.form.get("school", "").strip()
@@ -1701,6 +1855,7 @@ def create_app():
     def ai_image_status():
         month_key = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m")
         user_limit, global_limit = _ai_image_limits()
+        api_configured = bool(os.getenv("STABILITY_API_KEY", "").strip())
         user_used = AiImageUsage.query.filter_by(
             user_id=session["user_id"], month_key=month_key, status="success"
         ).count()
@@ -1708,10 +1863,11 @@ def create_app():
             month_key=month_key, status="success"
         ).count()
         return jsonify(
+            available=api_configured,
             user_limit=user_limit,
-            user_remaining=max(user_limit - user_used, 0),
+            user_remaining=max(user_limit - user_used, 0) if api_configured else 0,
             global_limit=global_limit,
-            global_remaining=max(global_limit - global_used, 0),
+            global_remaining=max(global_limit - global_used, 0) if api_configured else 0,
         )
 
     @app.post("/api/album/ai-image")
@@ -1752,6 +1908,8 @@ def create_app():
             return jsonify(message="AI 변환은 JPG, PNG, WEBP 사진만 지원합니다."), 400
         if not (image.mimetype or "").startswith("image/"):
             return jsonify(message="이미지 파일만 AI 변환할 수 있습니다."), 400
+        if not is_safe_upload(image, extension, app.config):
+            return jsonify(message="이미지 파일 내용이 올바르지 않습니다."), 400
         if len(caption) > 300:
             return jsonify(message="사진 설명은 300자 이하로 입력해 주세요."), 400
 
@@ -1825,7 +1983,7 @@ def create_app():
                     message = "AI 사진 변환에 실패했습니다. 잠시 후 다시 시도해 주세요."
                 raise RuntimeError(message)
 
-            upload_directory = Path(app.static_folder) / "uploads"
+            upload_directory = Path(app.config["UPLOAD_FOLDER"])
             upload_directory.mkdir(parents=True, exist_ok=True)
             saved_name = f"user_album_ai_{uuid4().hex}.webp"
             saved_path = upload_directory / saved_name
@@ -1833,7 +1991,7 @@ def create_app():
 
             photo = UserAlbumPhoto(
                 user_id=session["user_id"],
-                image_url=url_for("static", filename=f"uploads/{saved_name}"),
+                image_url=url_for("uploaded_media", filename=saved_name),
                 caption=caption,
                 school_name=(
                     request.form.get("school", "").strip()
@@ -1868,7 +2026,7 @@ def create_app():
         db.session.commit()
 
         # uploads 폴더의 개인 앨범 파일만 지우도록 경로와 접두사를 확인합니다.
-        upload_directory = (Path(app.static_folder) / "uploads").resolve()
+        upload_directory = Path(app.config["UPLOAD_FOLDER"]).resolve()
         image_path = (upload_directory / Path(image_url).name).resolve()
         if (
             image_path.parent == upload_directory
@@ -1885,8 +2043,8 @@ def create_app():
         if photo.user_id != session["user_id"] and not photo.user.is_profile_public:
             return jsonify(message="비공개 사진에는 반응할 수 없습니다."), 403
 
-        user = db.session.get(User, session["user_id"])
-        balance = _get_or_grant_user_sarangdal(user)
+        user = User.query.filter_by(id=session["user_id"]).with_for_update().one()
+        balance = _get_or_grant_user_sarangdal(user, persist=False)
 
         if balance < 1:
             return (
@@ -1928,6 +2086,8 @@ def create_app():
             return jsonify(message="비공개 사진에는 반응할 수 없습니다."), 403
 
         user_id = session["user_id"]
+        # Serialize the monthly allowance check for this user.
+        User.query.filter_by(id=user_id).with_for_update().one()
         existing = UserAlbumDislike.query.filter_by(
             photo_id=photo_id,
             user_id=user_id,
@@ -2084,8 +2244,10 @@ def create_app():
             return jsonify(message="JPG, PNG, WEBP, GIF 이미지만 사용할 수 있습니다."), 400
         if not (image.mimetype or "").startswith("image/"):
             return jsonify(message="이미지 파일만 사용할 수 있습니다."), 400
+        if not is_safe_upload(image, extension, app.config):
+            return jsonify(message="이미지 파일 내용이 올바르지 않습니다."), 400
 
-        upload_directory = Path(app.static_folder) / "uploads"
+        upload_directory = Path(app.config["UPLOAD_FOLDER"])
         upload_directory.mkdir(parents=True, exist_ok=True)
         saved_name = f"profile_{session['user_id']}_{uuid4().hex}.{extension}"
         image.save(upload_directory / saved_name)
@@ -2093,7 +2255,7 @@ def create_app():
         user = db.session.get(User, session["user_id"])
         previous_url = user.profile_image_url
         user.profile_image_url = url_for(
-            "static", filename=f"uploads/{saved_name}"
+            "uploaded_media", filename=saved_name
         )
         db.session.commit()
 
@@ -2107,6 +2269,41 @@ def create_app():
                 previous_path.unlink(missing_ok=True)
         return jsonify(
             message="대표사진이 등록되었습니다.",
+            profile_image_url=user.profile_image_url,
+        )
+
+    @app.post("/api/social/avatar")
+    @login_required
+    def social_avatar_select():
+        """로그인한 사용자가 서비스에서 제공하는 기본 아바타를 선택합니다."""
+        payload = request.get_json(silent=True) or {}
+        avatar_key = str(payload.get("avatar") or "").strip().lower()
+        avatar_files = {
+            "male": "images/avatar_male.png",
+            "female": "images/avatar_female.png",
+        }
+        avatar_file = avatar_files.get(avatar_key)
+        if not avatar_file:
+            return jsonify(message="선택할 수 없는 아바타입니다."), 400
+
+        user = db.session.get(User, session["user_id"])
+        previous_url = user.profile_image_url
+        user.profile_image_url = url_for("static", filename=avatar_file)
+        db.session.commit()
+
+        # 직접 올렸던 대표사진을 기본 아바타로 교체한 경우에만 기존 파일을 정리합니다.
+        if previous_url:
+            upload_directory = Path(app.config["UPLOAD_FOLDER"])
+            previous_path = (upload_directory / Path(previous_url).name).resolve()
+            if (
+                previous_path.parent == upload_directory.resolve()
+                and previous_path.name.startswith(f"profile_{user.id}_")
+            ):
+                previous_path.unlink(missing_ok=True)
+
+        return jsonify(
+            message="아바타가 저장되었습니다.",
+            avatar=avatar_key,
             profile_image_url=user.profile_image_url,
         )
 
@@ -2463,12 +2660,13 @@ def create_app():
             content=content,
         )
         db.session.add(message)
+        db.session.flush()
         add_notification(
             receiver.id,
             "direct_message",
             "새 쪽지",
             f"{sender.username}님이 새 쪽지를 보냈습니다.",
-            url_for("main_album", open="messages"),
+            url_for("main_album", open="messages", message=message.id),
             sender.id,
         )
         db.session.commit()
@@ -2534,6 +2732,192 @@ def create_app():
             ],
         )
 
+    def _classroom_participant(room_id, user_id):
+        return ClassroomParticipant.query.filter_by(
+            room_id=room_id, user_id=user_id
+        ).first()
+
+    def _classroom_friend_allowed(first_id, second_id):
+        friendship = _friendship_between(first_id, second_id)
+        return bool(friendship and friendship.status == "accepted")
+
+    def _classroom_payload(room, current_user_id):
+        people = []
+        for item in room.participants:
+            people.append({
+                "user_id": item.user_id,
+                "username": item.user.username,
+                "slot": item.slot_number,
+                "avatar_url": item.user.profile_image_url or url_for(
+                    "static",
+                    filename="images/avatar_female.png" if item.user.gender == "female" else "images/avatar_male.png",
+                ),
+                "joined": item.joined_at is not None,
+                "is_me": item.user_id == current_user_id,
+                "is_owner": item.user_id == room.owner_id,
+            })
+        return {
+            "id": room.id,
+            "owner_id": room.owner_id,
+            "is_owner": room.owner_id == current_user_id,
+            "capacity": 8,
+            "participants": people,
+        }
+
+    def _get_or_create_owned_classroom(owner_id):
+        room = ClassroomRoom.query.filter_by(owner_id=owner_id, is_active=True).first()
+        if room:
+            return room
+        now = datetime.utcnow()
+        room = ClassroomRoom(owner_id=owner_id, updated_at=now)
+        db.session.add(room)
+        db.session.flush()
+        db.session.add(ClassroomParticipant(
+            room_id=room.id,
+            user_id=owner_id,
+            slot_number=1,
+            joined_at=now,
+            last_seen_at=now,
+        ))
+        db.session.flush()
+        return room
+
+    def _invite_to_classroom(room, target):
+        if not _classroom_friend_allowed(room.owner_id, target.id):
+            return None, "수락된 1촌만 교실에 초대할 수 있습니다."
+        existing = _classroom_participant(room.id, target.id)
+        if existing:
+            return existing, None
+        used_slots = {item.slot_number for item in room.participants}
+        free_slot = next((slot for slot in range(2, 9) if slot not in used_slots), None)
+        if free_slot is None:
+            return None, "교실은 방장을 포함해 최대 8명까지 입장할 수 있습니다."
+        participant = ClassroomParticipant(
+            room_id=room.id,
+            user_id=target.id,
+            slot_number=free_slot,
+        )
+        db.session.add(participant)
+        return participant, None
+
+    @app.post("/api/social/classroom/start")
+    @login_required
+    def classroom_start():
+        target_id = (request.get_json(silent=True) or {}).get("target_id")
+        target = db.session.get(User, target_id) if target_id else None
+        current_id = session["user_id"]
+        if not target or target.id == current_id:
+            return jsonify(message="대화할 1촌을 확인해 주세요."), 400
+        room = _get_or_create_owned_classroom(current_id)
+        _, error = _invite_to_classroom(room, target)
+        if error:
+            db.session.rollback()
+            return jsonify(message=error), 409
+        room.updated_at = datetime.utcnow()
+        add_notification(
+            target.id, "classroom_invite", "교실 대화 초대",
+            f"{db.session.get(User, current_id).username}님이 교실 대화에 초대했습니다.",
+            url_for("my_home", room=room.id), current_id,
+        )
+        db.session.commit()
+        return jsonify(room_id=room.id, room_url=url_for("my_home", room=room.id))
+
+    @app.post("/api/social/classroom/<int:room_id>/invite")
+    @login_required
+    def classroom_room_invite(room_id):
+        room = ClassroomRoom.query.filter_by(id=room_id, is_active=True).with_for_update().first_or_404()
+        if room.owner_id != session["user_id"]:
+            return jsonify(message="방장만 1촌을 초대할 수 있습니다."), 403
+        target_id = (request.get_json(silent=True) or {}).get("target_id")
+        target = db.session.get(User, target_id) if target_id else None
+        if not target or target.id == room.owner_id:
+            return jsonify(message="초대할 1촌을 확인해 주세요."), 400
+        _, error = _invite_to_classroom(room, target)
+        if error:
+            db.session.rollback()
+            return jsonify(message=error), 409
+        room.updated_at = datetime.utcnow()
+        add_notification(
+            target.id, "classroom_invite", "교실 소환 초대",
+            f"{room.owner.username}님이 교실로 초대했습니다.",
+            url_for("my_home", room=room.id), room.owner_id,
+        )
+        db.session.commit()
+        return jsonify(message=f"{target.username}님을 교실로 초대했습니다.", room_id=room.id)
+
+    @app.post("/api/social/classroom/<int:room_id>/join")
+    @login_required
+    def classroom_join(room_id):
+        room = ClassroomRoom.query.filter_by(id=room_id, is_active=True).first_or_404()
+        participant = _classroom_participant(room.id, session["user_id"])
+        if not participant:
+            return jsonify(message="이 교실에 초대받지 않았습니다."), 403
+        now = datetime.utcnow()
+        participant.joined_at = participant.joined_at or now
+        participant.last_seen_at = now
+        db.session.commit()
+        return jsonify(room=_classroom_payload(room, session["user_id"]))
+
+    @app.get("/api/social/classroom/<int:room_id>")
+    @login_required
+    def classroom_state(room_id):
+        room = ClassroomRoom.query.filter_by(id=room_id, is_active=True).first_or_404()
+        participant = _classroom_participant(room.id, session["user_id"])
+        if not participant or not participant.joined_at:
+            return jsonify(message="교실 참가자만 상태를 볼 수 있습니다."), 403
+        participant.last_seen_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify(room=_classroom_payload(room, session["user_id"]))
+
+    @app.get("/api/social/classroom/<int:room_id>/messages")
+    @login_required
+    def classroom_message_list(room_id):
+        participant = _classroom_participant(room_id, session["user_id"])
+        if not participant or not participant.joined_at:
+            return jsonify(message="교실 참가자만 대화를 볼 수 있습니다."), 403
+        after_id = max(request.args.get("after", 0, type=int), 0)
+        messages = ClassroomMessage.query.filter(
+            ClassroomMessage.room_id == room_id,
+            ClassroomMessage.id > after_id,
+        ).order_by(ClassroomMessage.id.asc()).limit(100).all()
+        return jsonify(messages=[{
+            "id": item.id,
+            "sender_id": item.sender_id,
+            "content": item.content,
+            "created_at": item.create_date.strftime("%H:%M"),
+        } for item in messages])
+
+    @app.post("/api/social/classroom/<int:room_id>/messages")
+    @login_required
+    def classroom_message_create(room_id):
+        participant = _classroom_participant(room_id, session["user_id"])
+        if not participant or not participant.joined_at:
+            return jsonify(message="교실 참가자만 대화할 수 있습니다."), 403
+        content = str((request.get_json(silent=True) or {}).get("content", "")).strip()
+        if not content:
+            return jsonify(message="대화 내용을 입력해 주세요."), 400
+        if len(content) > 200:
+            return jsonify(message="교실 대화는 200자 이하로 입력해 주세요."), 400
+        message = ClassroomMessage(room_id=room_id, sender_id=session["user_id"], content=content)
+        participant.last_seen_at = datetime.utcnow()
+        db.session.add(message)
+        db.session.commit()
+        return jsonify(message_id=message.id), 201
+
+    @app.post("/api/social/classroom/<int:room_id>/leave")
+    @login_required
+    def classroom_leave(room_id):
+        room = ClassroomRoom.query.filter_by(id=room_id, is_active=True).first_or_404()
+        participant = _classroom_participant(room.id, session["user_id"])
+        if not participant:
+            return jsonify(message="교실 참가자가 아닙니다."), 404
+        if room.owner_id == session["user_id"]:
+            room.is_active = False
+        else:
+            db.session.delete(participant)
+        db.session.commit()
+        return jsonify(message="교실에서 나왔습니다.")
+
     @app.post("/api/social/classroom/invite")
     @login_required
     def classroom_invite():
@@ -2544,6 +2928,41 @@ def create_app():
             return jsonify(message="소환할 1촌을 확인해 주세요."), 400
 
         current_user = db.session.get(User, session["user_id"])
+        if not _classroom_friend_allowed(current_user.id, target_user.id):
+            return jsonify(message="수락된 1촌만 교실에 초대할 수 있습니다."), 403
+        online_since = datetime.utcnow() - timedelta(seconds=90)
+        if (
+            target_user.last_active_at is None
+            or target_user.last_active_at < online_since
+        ):
+            return jsonify(
+                code="TARGET_OFFLINE",
+                message="현재 접속 중이 아닙니다.",
+            ), 409
+        room = _get_or_create_owned_classroom(current_user.id)
+        _, error = _invite_to_classroom(room, target_user)
+        if error:
+            db.session.rollback()
+            return jsonify(message=error), 409
+        room.updated_at = datetime.utcnow()
+        target_url = url_for("my_home", room=room.id)
+        add_notification(
+            target_user.id,
+            "classroom_invite",
+            "내 교실로 초대",
+            f"{current_user.username}님이 내 교실로 불렀습니다. 지금 입장해 주세요!",
+            target_url,
+            current_user.id,
+        )
+        db.session.commit()
+        return jsonify(
+            message=f"{target_user.username}님을 교실로 초대했습니다.",
+            room_id=room.id,
+            room_url=target_url,
+        )
+
+        # Legacy implementation retained below for migration readability; the
+        # secured shared-room return above is the only reachable path.
         target_url = url_for("my_home", chat_user=current_user.id)
 
         add_notification(
@@ -2701,11 +3120,20 @@ def create_app():
         ):
             user.is_executive = False
             user.executive_elected_at = None
+        should_commit = False
+        if user and (
+            user.last_active_at is None
+            or user.last_active_at < now - timedelta(seconds=30)
+        ):
+            user.last_active_at = now
+            should_commit = True
         if user and (
             user.last_login_at is None
             or user.last_login_at < now - timedelta(hours=12)
         ):
             user.last_login_at = now
+            should_commit = True
+        if should_commit:
             db.session.commit()
 
     @app.route("/board")
@@ -3020,7 +3448,7 @@ def create_app():
     def _delete_recommendation_file(file_url):
         if not file_url:
             return
-        upload_directory = (Path(app.static_folder) / "uploads").resolve()
+        upload_directory = Path(app.config["UPLOAD_FOLDER"]).resolve()
         file_path = (upload_directory / Path(file_url).name).resolve()
         if (
             file_path.parent == upload_directory
@@ -3093,6 +3521,8 @@ def create_app():
                 and not mimetype.startswith("audio/")
             ):
                 return None, "파일 확장자와 실제 미디어 형식이 일치하지 않습니다."
+            if not is_safe_upload(uploaded, extension, app.config):
+                return None, "미디어 파일 내용이 올바르지 않습니다."
             original_name = secure_filename(raw_name) or f"media.{extension}"
             validated.append(
                 (uploaded, extension, media_type, original_name)
@@ -3262,7 +3692,7 @@ def create_app():
         )
         db.session.add(post)
         db.session.flush()
-        upload_directory = Path(app.static_folder) / "uploads"
+        upload_directory = Path(app.config["UPLOAD_FOLDER"])
         upload_directory.mkdir(parents=True, exist_ok=True)
         for uploaded, extension, media_type, original_name in uploads:
             saved_name = f"recommendation_{uuid4().hex}.{extension}"
@@ -3271,7 +3701,7 @@ def create_app():
                 RecommendationMedia(
                     post_id=post.id,
                     file_url=url_for(
-                        "static", filename=f"uploads/{saved_name}"
+                        "uploaded_media", filename=saved_name
                     ),
                     media_type=media_type,
                     original_name=original_name,
@@ -3331,7 +3761,7 @@ def create_app():
         removed_urls = [media.file_url for media in removable]
         for media in removable:
             db.session.delete(media)
-        upload_directory = Path(app.static_folder) / "uploads"
+        upload_directory = Path(app.config["UPLOAD_FOLDER"])
         upload_directory.mkdir(parents=True, exist_ok=True)
         for uploaded, extension, media_type, original_name in uploads:
             saved_name = f"recommendation_{uuid4().hex}.{extension}"
@@ -3340,7 +3770,7 @@ def create_app():
                 RecommendationMedia(
                     post_id=post.id,
                     file_url=url_for(
-                        "static", filename=f"uploads/{saved_name}"
+                        "uploaded_media", filename=saved_name
                     ),
                     media_type=media_type,
                     original_name=original_name,
@@ -3619,7 +4049,7 @@ def create_app():
             )
         )
 
-        upload_directory = Path(app.static_folder) / "uploads"
+        upload_directory = Path(app.config["UPLOAD_FOLDER"])
         upload_directory.mkdir(parents=True, exist_ok=True)
 
         for field_name in ("file1", "file2"):
@@ -3649,10 +4079,7 @@ def create_app():
             db.session.add(
                 BoardAttachment(
                     post_id=post.id,
-                    file_url=url_for(
-                        "static",
-                        filename=f"uploads/{saved_name}",
-                    ),
+                    file_url=url_for("uploaded_media", filename=saved_name),
                     original_name=original_name,
                     media_type=media_type,
                 )
@@ -3847,6 +4274,77 @@ def create_app():
     @login_required
     def notifications_list():
         user_id = session["user_id"]
+        user = db.session.get(User, user_id)
+        registered_schools = {
+            row.school_name
+            for row in UserSchool.query.filter_by(user_id=user_id).all()
+            if row.school_name
+        }
+        if user and user.school_name:
+            registered_schools.add(user.school_name)
+
+        # Reconcile recent DB activity so notifications created before the
+        # notification worker was deployed are also visible. Exact post URLs
+        # and message timestamps prevent repeated polling from duplicating rows.
+        added_from_database = False
+        if registered_schools:
+            recent_posts = (
+                BoardPost.query.filter(
+                    BoardPost.school_name.in_(registered_schools),
+                    BoardPost.user_id != user_id,
+                )
+                .order_by(BoardPost.create_date.desc(), BoardPost.id.desc())
+                .limit(20)
+                .all()
+            )
+            for post in recent_posts:
+                target_url = url_for("board_view", post_id=post.id)
+                exists = Notification.query.filter_by(
+                    user_id=user_id,
+                    kind="new_post",
+                    target_url=target_url,
+                ).first()
+                if exists:
+                    continue
+                add_notification(
+                    user_id,
+                    "new_post",
+                    "새 학교 게시글",
+                    f"{post.author}님이 '{post.title}' 글을 올렸습니다.",
+                    target_url,
+                    post.user_id,
+                )
+                added_from_database = True
+
+        unread_messages = (
+            DirectMessage.query.filter_by(receiver_id=user_id, is_read=False)
+            .order_by(DirectMessage.create_date.desc(), DirectMessage.id.desc())
+            .limit(20)
+            .all()
+        )
+        for message in unread_messages:
+            exists = Notification.query.filter(
+                Notification.user_id == user_id,
+                Notification.kind == "direct_message",
+                Notification.actor_id == message.sender_id,
+                Notification.create_date >= message.create_date,
+            ).first()
+            if exists:
+                continue
+            sender_name = message.sender.display_name if message.sender else "1촌 친구"
+            add_notification(
+                user_id,
+                "direct_message",
+                "새 쪽지",
+                f"{sender_name}님이 새 쪽지를 보냈습니다.",
+                url_for("main_album", open="messages", message=message.id),
+                message.sender_id,
+            )
+            added_from_database = True
+
+        if added_from_database:
+            db.session.commit()
+
         notifications = (
             Notification.query.filter_by(user_id=user_id)
             .order_by(Notification.create_date.desc(), Notification.id.desc())
@@ -3857,7 +4355,7 @@ def create_app():
             user_id=user_id,
             is_read=False,
         ).count()
-        return jsonify(
+        response = jsonify(
             unread_count=unread_count,
             notifications=[
                 {
@@ -3872,6 +4370,8 @@ def create_app():
                 for item in notifications
             ],
         )
+        response.headers["Cache-Control"] = "private, no-store, max-age=0"
+        return response
 
     @app.post("/api/notifications/<int:notification_id>/read")
     @login_required
@@ -4076,7 +4576,11 @@ def create_app():
     # ==========================================
 
     @app.post("/api/auth/find-id/request")
+    @rate_limit(limit=5, window=300, scope="find-id")
     def api_find_id_request():
+        session.pop("verification_find_id", None)
+        if not app.config.get("AUTH_TEST_MODE") and not app.config.get("SMTP_HOST"):
+            return jsonify({"success": False, "message": "본인인증 서비스가 아직 연결되지 않았습니다."}), 503
         data = request.get_json() or {}
         query_val = data.get("query", "").strip()
 
@@ -4084,24 +4588,25 @@ def create_app():
             return jsonify({"success": False, "message": "전화번호 또는 이메일을 입력해 주세요."}), 400
 
         clean_query = query_val.replace("-", "").replace(" ", "").lower()
-        users = User.query.all()
-        target_user = None
-
-        for u in users:
-            u_email = (u.email or "").replace("-", "").replace(" ", "").lower()
-            u_name = (u.username or "").replace("-", "").replace(" ", "").lower()
-            if clean_query in u_email or clean_query in u_name or u_email in clean_query:
-                target_user = u
-                break
+        target_user = User.query.filter(
+            or_(func.lower(User.email) == clean_query, func.lower(User.username) == clean_query)
+        ).first()
 
         if not target_user:
+            # Do not disclose whether an account exists.
             return jsonify({
-                "success": False,
-                "message": "일치하는 회원 정보를 찾을 수 없습니다."
-            }), 404
+                "success": True,
+                "message": "입력한 정보와 일치하는 계정이 있으면 인증번호가 발송됩니다.",
+            })
 
-        session["find_id_target_user_id"] = target_user.id
-        session["find_id_code"] = "123456"
+        code = "123456" if app.config.get("AUTH_TEST_MODE") else f"{secrets.randbelow(1000000):06d}"
+        if not app.config.get("AUTH_TEST_MODE"):
+            try:
+                send_email_code(app.config, target_user.email, "아이디 찾기", code)
+            except Exception:
+                app.logger.exception("Failed to deliver find-id code")
+                return jsonify({"success": False, "message": "인증메일 발송에 실패했습니다."}), 502
+        create_verification_challenge("find_id", code, target_user)
 
         email_str = target_user.email
         if "@" in email_str:
@@ -4111,25 +4616,27 @@ def create_app():
         else:
             masked_id = email_str[:3] + "***" if len(email_str) > 3 else email_str[:1] + "**"
 
-        session["find_id_masked_id"] = masked_id
-
-        return jsonify({
+        response = {
             "success": True,
-            "message": "인증번호가 발송되었습니다. (테스트 인증번호: 123456)",
-            "test_code": "123456"
-        })
+            "message": "입력한 정보와 일치하는 계정이 있으면 인증번호가 발송됩니다.",
+        }
+        if app.config.get("AUTH_TEST_MODE"):
+            response.update(message="인증번호가 발송되었습니다. (테스트 인증번호: 123456)", test_code="123456")
+        return jsonify(response)
 
     @app.post("/api/auth/find-id/verify")
+    @rate_limit(limit=10, window=300, scope="find-id-verify")
     def api_find_id_verify():
+        if not app.config.get("AUTH_TEST_MODE") and not app.config.get("SMTP_HOST"):
+            return jsonify({"success": False, "message": "본인인증 서비스가 비활성화되어 있습니다."}), 503
         data = request.get_json() or {}
         code = data.get("code", "").strip()
-        expected_code = session.get("find_id_code", "123456")
-        masked_id = session.get("find_id_masked_id")
-
-        if code == expected_code or code == "123456":
-            user_id = session.get("find_id_target_user_id")
-            user = db.session.get(User, user_id) if user_id else None
-            real_id = user.email if user else masked_id
+        challenge = verify_challenge("find_id", code)
+        if challenge and challenge.user:
+            real_id = challenge.user.email
+            parts = real_id.split("@", 1)
+            masked_name = parts[0][:3] + "***" if len(parts[0]) > 3 else parts[0][:1] + "**"
+            masked_id = f"{masked_name}@{parts[1]}" if len(parts) == 2 else masked_name
 
             return jsonify({
                 "success": True,
@@ -4138,10 +4645,14 @@ def create_app():
                 "message": f"인증 완료! 회원님의 아이디는 [{masked_id or real_id}] 입니다."
             })
 
-        return jsonify({"success": False, "message": "인증번호가 올바르지 않습니다. (123456 입력)"}), 400
+        return jsonify({"success": False, "message": "인증번호가 올바르지 않거나 만료되었습니다."}), 400
 
     @app.post("/api/auth/forgot-password/check")
+    @rate_limit(limit=5, window=300, scope="password-reset")
     def api_forgot_password_check():
+        session.pop("verification_password_reset", None)
+        if not app.config.get("AUTH_TEST_MODE") and not app.config.get("SMTP_HOST"):
+            return jsonify({"success": False, "message": "비밀번호 재설정 인증 서비스가 아직 연결되지 않았습니다."}), 503
         data = request.get_json() or {}
         login_id = data.get("login_id", "").strip()
 
@@ -4153,44 +4664,55 @@ def create_app():
         ).first()
 
         if not user:
-            return jsonify({"success": False, "message": "등록되지 않은 아이디 또는 이메일입니다."}), 404
+            # Match the success response shape and timing closely enough to prevent enumeration.
+            secrets.token_bytes(32)
+            return jsonify({
+                "success": True,
+                "message": "입력한 정보와 일치하는 계정이 있으면 인증번호가 발송됩니다.",
+            })
 
-        session["reset_password_user_id"] = user.id
-        session["reset_password_code"] = "123456"
+        code = "123456" if app.config.get("AUTH_TEST_MODE") else f"{secrets.randbelow(1000000):06d}"
+        if not app.config.get("AUTH_TEST_MODE"):
+            try:
+                send_email_code(app.config, user.email, "비밀번호 재설정", code)
+            except Exception:
+                app.logger.exception("Failed to deliver password reset code")
+                return jsonify({"success": False, "message": "인증메일 발송에 실패했습니다."}), 502
+        create_verification_challenge("password_reset", code, user)
 
-        return jsonify({
+        response = {
             "success": True,
-            "message": f"{user.username}님의 계정을 찾았습니다. 인증번호 123456과 새 비밀번호를 입력해 주세요.",
-            "username": user.username,
-            "user_id": user.id
-        })
+            "message": "입력한 정보와 일치하는 계정이 있으면 인증번호가 발송됩니다.",
+        }
+        if app.config.get("AUTH_TEST_MODE"):
+            response["message"] = f"{user.username}님의 계정을 찾았습니다. 테스트 인증번호 123456을 입력해 주세요."
+            response["test_code"] = "123456"
+        return jsonify(response)
 
     @app.post("/api/auth/forgot-password/reset")
+    @rate_limit(limit=10, window=300, scope="password-reset-verify")
     def api_forgot_password_reset():
+        if not app.config.get("AUTH_TEST_MODE") and not app.config.get("SMTP_HOST"):
+            return jsonify({"success": False, "message": "비밀번호 재설정 서비스가 비활성화되어 있습니다."}), 503
         data = request.get_json() or {}
-        user_id = session.get("reset_password_user_id") or data.get("user_id")
         code = data.get("code", "").strip()
         new_password = data.get("new_password", "").strip()
 
         if not new_password or len(new_password) < 8:
             return jsonify({"success": False, "message": "새 비밀번호는 8자 이상 입력해 주세요."}), 400
 
-        if code and code != "123456" and code != session.get("reset_password_code"):
+        challenge = verify_challenge("password_reset", code)
+        if not challenge:
             return jsonify({"success": False, "message": "인증번호가 일치하지 않습니다."}), 400
 
-        user = db.session.get(User, user_id) if user_id else None
-        if not user:
-            login_id = data.get("login_id", "").strip()
-            user = User.query.filter((User.email == login_id) | (User.username == login_id)).first()
-
+        user = challenge.user
         if not user:
             return jsonify({"success": False, "message": "사용자를 찾을 수 없습니다."}), 404
 
         user.password = generate_password_hash(new_password)
+        user.session_version += 1
         db.session.commit()
-
-        session.pop("reset_password_user_id", None)
-        session.pop("reset_password_code", None)
+        audit_event("password_reset", user_id=user.id)
 
         return jsonify({
             "success": True,
@@ -4198,7 +4720,11 @@ def create_app():
         })
 
     @app.post("/api/auth/phone-auth/send")
+    @rate_limit(limit=5, window=300, scope="phone-auth")
     def api_phone_auth_send():
+        session.pop("verification_phone", None)
+        if not app.config.get("AUTH_TEST_MODE") and not app.config.get("SMS_API_URL"):
+            return jsonify({"success": False, "message": "휴대폰 인증 서비스가 아직 연결되지 않았습니다."}), 503
         data = request.get_json() or {}
         name = data.get("name", "").strip()
         phone = data.get("phone", "").strip()
@@ -4207,52 +4733,38 @@ def create_app():
         if not phone or len(phone.replace("-", "")) < 10:
             return jsonify({"success": False, "message": "올바른 전화번호를 입력해 주세요."}), 400
 
-        session["phone_auth_data"] = {
-            "name": name,
-            "phone": phone,
-            "birth": birth,
-            "code": "123456"
-        }
+        code = "123456" if app.config.get("AUTH_TEST_MODE") else f"{secrets.randbelow(1000000):06d}"
+        if not app.config.get("AUTH_TEST_MODE"):
+            try:
+                send_sms_code(app.config, phone, code)
+            except Exception:
+                app.logger.exception("Failed to deliver phone verification code")
+                return jsonify({"success": False, "message": "인증문자 발송에 실패했습니다."}), 502
+        create_verification_challenge("phone", code)
 
-        return jsonify({
+        response = {
             "success": True,
-            "message": f"[{phone}] 번호로 인증번호 6자리가 발송되었습니다. (테스트 인증번호: 123456)",
-            "test_code": "123456"
-        })
+            "message": f"[{phone}] 번호로 인증번호가 발송되었습니다.",
+        }
+        if app.config.get("AUTH_TEST_MODE"):
+            response.update(message=f"[{phone}] 테스트 인증번호는 123456입니다.", test_code="123456")
+        return jsonify(response)
 
     @app.post("/api/auth/phone-auth/verify")
+    @rate_limit(limit=10, window=300, scope="phone-auth-verify")
     def api_phone_auth_verify():
+        if not app.config.get("AUTH_TEST_MODE") and not app.config.get("SMS_API_URL"):
+            return jsonify({"success": False, "message": "휴대폰 인증 서비스가 비활성화되어 있습니다."}), 503
         data = request.get_json() or {}
         code = data.get("code", "").strip()
-        auth_info = session.get("phone_auth_data", {})
-        expected_code = auth_info.get("code", "123456")
-
-        if code != expected_code and code != "123456":
+        if not verify_challenge("phone", code):
             return jsonify({"success": False, "message": "인증번호가 일치하지 않습니다."}), 400
 
-        phone = auth_info.get("phone", "")
-        clean_phone = phone.replace("-", "")
-
-        matched_user = None
-        users = User.query.all()
-        for u in users:
-            if u.email and clean_phone in u.email.replace("-", ""):
-                matched_user = u
-                break
-
-        if matched_user:
-            return jsonify({
-                "success": True,
-                "found_user": True,
-                "username": matched_user.username,
-                "email": matched_user.email,
-                "message": f"🎉 본인인증 완료! 연결된 계정({matched_user.email})을 찾았습니다."
-            })
-
+        session["phone_verified"] = True
+        session["phone_verified_at"] = datetime.now(timezone.utc).timestamp()
         return jsonify({
             "success": True,
-            "found_user": False,
-            "message": "🎉 본인인증이 완료되었습니다. 가입 가능한 휴대폰 번호입니다."
+            "message": "본인인증이 완료되었습니다."
         })
 
 
@@ -4284,6 +4796,13 @@ def create_app():
         kakao_account = profile.get("kakao_account") or {}
         profile_info = kakao_account.get("profile") or {}
         email = str(kakao_account.get("email", "")).strip().lower()
+        email_verified = bool(
+            kakao_account.get("is_email_valid")
+            and kakao_account.get("is_email_verified")
+        )
+        if not email_verified:
+            # An unverified provider address must never be used to attach an existing account.
+            email = ""
 
         if not subject:
             flash("카카오 사용자 정보를 확인할 수 없습니다.")
@@ -4297,7 +4816,7 @@ def create_app():
         if oauth_account:
             user = db.session.get(User, oauth_account.user_id)
         else:
-            user = User.query.filter_by(email=email).first() if email else None
+            user = User.query.filter_by(email=email).first() if email_verified and email else None
 
             if not user:
                 base_username = (
@@ -4340,9 +4859,7 @@ def create_app():
             flash("연결된 사용자 정보를 찾을 수 없습니다.")
             return redirect(url_for("main"))
 
-        session.clear()
-        session["user_id"] = user.id
-        session.permanent = True
+        establish_login_session(user)
 
         return login_destination(user)
 
@@ -4389,26 +4906,30 @@ def create_app():
         if oauth_account:
             user = db.session.get(User, oauth_account.user_id)
         else:
+            # Naver does not return a portable email_verified claim. Never silently
+            # attach an existing local account based on this address alone.
             user = User.query.filter_by(email=email).first()
+            if user:
+                flash("같은 이메일 계정이 있습니다. 먼저 기존 방식으로 로그인해 계정을 연결해 주세요.")
+                return redirect(url_for("main"))
 
-            if not user:
-                base_username = (
-                    str(profile.get("name", "")).strip()
-                    or str(profile.get("nickname", "")).strip()
-                    or email.split("@", 1)[0]
-                    or "naver_user"
-                )
-                username = base_username[:50]
+            base_username = (
+                str(profile.get("name", "")).strip()
+                or str(profile.get("nickname", "")).strip()
+                or email.split("@", 1)[0]
+                or "naver_user"
+            )
+            username = base_username[:50]
 
-                user = User(
-                    username=username,
-                    email=email,
-                    password=generate_password_hash(
-                        secrets.token_urlsafe(32)
-                    ),
-                )
-                db.session.add(user)
-                db.session.flush()
+            user = User(
+                username=username,
+                email=email,
+                password=generate_password_hash(
+                    secrets.token_urlsafe(32)
+                ),
+            )
+            db.session.add(user)
+            db.session.flush()
 
             db.session.add(
                 OAuthAccount(
@@ -4423,9 +4944,7 @@ def create_app():
             flash("연결된 사용자 정보를 찾을 수 없습니다.")
             return redirect(url_for("main"))
 
-        session.clear()
-        session["user_id"] = user.id
-        session.permanent = True
+        establish_login_session(user)
 
         return login_destination(user)
 
@@ -4478,9 +4997,7 @@ def create_app():
                 flash("연결된 사용자 정보를 찾을 수 없습니다.")
                 return redirect(url_for("main"))
 
-            session.clear()
-            session["user_id"] = user.id
-            session.permanent = True
+            establish_login_session(user)
 
             return login_destination(user)
 
@@ -4497,9 +5014,7 @@ def create_app():
             )
             db.session.commit()
 
-            session.clear()
-            session["user_id"] = existing_user.id
-            session.permanent = True
+            establish_login_session(existing_user)
 
             return login_destination(existing_user)
 
@@ -4575,8 +5090,7 @@ def create_app():
                 flash("연결된 사용자 정보를 찾을 수 없습니다.")
                 return redirect(url_for("main"))
 
-            session["user_id"] = user.id
-            session.permanent = True
+            establish_login_session(user)
 
             return login_destination(user)
 
@@ -4601,9 +5115,7 @@ def create_app():
 
         db.session.commit()
 
-        session.clear()
-        session["user_id"] = user.id
-        session.permanent = True
+        establish_login_session(user)
 
         flash(f"{username}님, 가입을 환영합니다.")
 
@@ -4617,6 +5129,7 @@ def create_app():
         return redirect(url_for("main"))
 
     @app.route("/signup", methods=["POST"])
+    @rate_limit(limit=5, window=3600, scope="signup")
     def signup():
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -4640,7 +5153,7 @@ def create_app():
 
         # 이메일만 중복 가입을 차단합니다.
         if User.query.filter_by(email=email).first():
-            flash("이미 가입된 이메일입니다.")
+            flash("입력한 가입 정보를 사용할 수 없습니다.")
             return redirect(url_for("login2"))
 
         user = User(
@@ -4658,11 +5171,30 @@ def create_app():
             flash("회원가입 처리 중 오류가 발생했습니다.")
             return redirect(url_for("login2"))
 
-        session.clear()
-        session["user_id"] = user.id
-        session.permanent = True
+        establish_login_session(user)
 
         flash("회원가입과 로그인이 완료되었습니다.")
         return redirect(url_for("main_success"))
+
+    @app.cli.command("run-executive-election")
+    def run_executive_election_command():
+        """Run privilege-changing annual maintenance explicitly, never at web startup."""
+        from pybo.executive_election import check_and_run_annual_election
+
+        check_and_run_annual_election()
+        audit_event("executive_election_run")
+        print("Executive election maintenance completed.")
+
+    @app.cli.command("encrypt-stored-credentials")
+    def encrypt_stored_credentials_command():
+        """Encrypt legacy plaintext OAuth credentials in place."""
+        updated = 0
+        for credential in GmailCredential.query.all():
+            encrypted = encrypt_secret(app.config, credential.refresh_token)
+            if encrypted != credential.refresh_token:
+                credential.refresh_token = encrypted
+                updated += 1
+        db.session.commit()
+        print(f"Encrypted {updated} stored credential(s).")
 
     return app

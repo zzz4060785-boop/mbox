@@ -4,10 +4,13 @@
 나만의 교실
 {% endblock %}
 
+{% block body_class %}my-home-body{% endblock %}
+{% block container_class %}my-home-container{% endblock %}
+
 {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/my_home.css') }}"
+  href="{{ url_for('static', filename='css/my_home.css', v='20260808-scroll-v2') }}"
 />
 {% endblock %}
 
@@ -97,7 +100,7 @@
     <!-- 1:1 대화 및 말풍선 채팅 입력 상자 -->
     <div class="classroom-chat-bar" id="classroomChatBar">
       <div class="chat-header-info">
-        <span>💬 <strong>1:1 교실 대화</strong></span>
+        <span>💬 <strong>교실 대화 (최대 8명)</strong></span>
         <div style="display:flex;align-items:center;gap:8px;">
           <span id="chatTargetName" class="chat-target-name">대화 상대 선택 안 됨</span>
           <button type="button" id="classroomInviteModalBtn" class="classroom-invite-btn">📢 1촌 소환하기</button>
@@ -222,5 +225,6 @@
 {% endblock %}
 
 {% block script %}
-<script src="{{ url_for('static', filename='js/my_home.js') }}"></script>
+<script src="{{ url_for('static', filename='js/classroom.js', v='20260808-1') }}"></script>
+<script src="{{ url_for('static', filename='js/my_home.js', v='20260808-scroll-v3') }}"></script>
 {% endblock %}

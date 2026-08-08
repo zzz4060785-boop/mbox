@@ -15,53 +15,24 @@
 
   <section class="find-box">
     <h1 class="find-title">비밀번호 찾기</h1>
-    <p class="find-sub" id="forgotSub">아이디 또는 이메일을 입력해 주세요.</p>
+    <p class="find-sub">아이디를 입력해 주세요.</p>
 
     <form id="forgotForm" novalidate>
-      <div id="step1Box">
-        <label class="sr-only" for="forgotLoginId">아이디</label>
-        <input
-          type="text"
-          id="forgotLoginId"
-          name="login_id"
-          placeholder="아이디 또는 이메일"
-          class="find-input"
-          autocomplete="username"
-          required
-        />
-      </div>
-
-      <div id="step2Box" style="display: none; margin-top: 10px;">
-        <input
-          type="text"
-          id="authCodeInput"
-          placeholder="인증번호 6자리 (테스트: 123456)"
-          class="find-input"
-          inputmode="numeric"
-          maxlength="6"
-          style="margin-bottom: 10px;"
-        />
-        <input
-          type="password"
-          id="newPasswordInput"
-          placeholder="새 비밀번호 (8자 이상)"
-          class="find-input"
-          autocomplete="new-password"
-          style="margin-bottom: 10px;"
-        />
-        <input
-          type="password"
-          id="newPasswordConfirmInput"
-          placeholder="새 비밀번호 확인"
-          class="find-input"
-          autocomplete="new-password"
-        />
-      </div>
+      <label class="sr-only" for="forgotLoginId">아이디</label>
+      <input
+        type="text"
+        id="forgotLoginId"
+        name="login_id"
+        placeholder="아이디"
+        class="find-input"
+        autocomplete="username"
+        required
+      />
 
       <p class="form-message" id="forgotMessage" aria-live="polite"></p>
 
       <div class="btn-wrap">
-        <button type="submit" class="next-btn" id="submitBtn">다음</button>
+        <button type="submit" class="next-btn">다음</button>
       </div>
     </form>
 

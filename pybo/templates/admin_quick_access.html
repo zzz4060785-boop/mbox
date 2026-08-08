@@ -1,0 +1,68 @@
+{% if can_view_admin_dashboard %}
+<aside class="admin-quick-access" aria-label="관리자 전용 메뉴">
+  <button
+    type="button"
+    id="adminQuickAccessButton"
+    data-url="{{ url_for('admin_online_users') }}"
+  >
+    <span class="admin-quick-access-icon" aria-hidden="true">🛡️</span>
+    <span>
+      <strong>관리자 현황판</strong>
+      <small>접속 · 전체 쪽지 · 답변</small>
+    </span>
+    <span class="admin-quick-access-arrow" aria-hidden="true">›</span>
+  </button>
+</aside>
+{% else %}
+<aside class="admin-quick-access avatar-quick-access" aria-label="아바타 메뉴">
+  <button type="button" id="avatarQuickAccessButton">
+    <span class="admin-quick-access-icon" aria-hidden="true">🧑‍🎨</span>
+    <span>
+      <strong>아바타 선택</strong>
+      <small>나만의 아바타 고르기</small>
+    </span>
+    <span class="admin-quick-access-arrow" aria-hidden="true">›</span>
+  </button>
+</aside>
+
+<div class="avatar-selector-modal" id="avatarSelectorModal" hidden>
+  <div class="avatar-selector-backdrop" data-avatar-close></div>
+  <section
+    class="avatar-selector-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="avatarSelectorTitle"
+  >
+    <header class="avatar-selector-header">
+      <div>
+        <span aria-hidden="true">✨</span>
+        <div>
+          <h2 id="avatarSelectorTitle">아바타 선택</h2>
+          <p>사용할 기본 아바타를 골라주세요.</p>
+        </div>
+      </div>
+      <button type="button" class="avatar-selector-close" data-avatar-close aria-label="닫기">×</button>
+    </header>
+
+    <div class="avatar-selector-grid">
+      <button type="button" class="avatar-choice" data-avatar-value="male">
+        <img src="{{ url_for('static', filename='images/avatar_male.png') }}" alt="남자 아바타" />
+        <strong>남자 아바타</strong>
+        <span>선택하기</span>
+      </button>
+      <button type="button" class="avatar-choice" data-avatar-value="female">
+        <img src="{{ url_for('static', filename='images/avatar_female.png') }}" alt="여자 아바타" />
+        <strong>여자 아바타</strong>
+        <span>선택하기</span>
+      </button>
+    </div>
+
+    <div class="avatar-future-space">
+      <strong>새로운 아바타 준비 공간</strong>
+      <p>추후 추가되는 아바타가 이곳에 넉넉하게 표시됩니다.</p>
+      <div aria-hidden="true"><span>＋</span><span>＋</span><span>＋</span><span>＋</span></div>
+    </div>
+    <p class="avatar-selector-status" id="avatarSelectorStatus" aria-live="polite"></p>
+  </section>
+</div>
+{% endif %}

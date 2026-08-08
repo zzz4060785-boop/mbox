@@ -133,23 +133,23 @@ img[data-photo-lightbox],
   background: rgba(255, 255, 255, 0.35);
 }
 
-/* App E-commerce Legal Footer (Light Gray Theme) */
+/* App e-commerce legal footer. It stays in normal document flow so pages
+   with their own mobile scroll container can still reach it. */
 .app-footer {
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   position: relative;
   z-index: 10;
+  padding: 20px 16px calc(35px + env(safe-area-inset-bottom, 0px));
+  overflow-wrap: break-word;
+  border-top: 1px solid #e2e8f0;
   background: #f1f5f9;
   color: #64748b;
-  padding: 20px 16px 35px;
   font-size: 11px;
   line-height: 1.6;
-  border-top: 1px solid #e2e8f0;
   word-break: keep-all;
-  overflow-wrap: break-word;
 }
-
 
 .footer-container {
   display: flex;
@@ -162,8 +162,8 @@ img[data-photo-lightbox],
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
   margin-bottom: 4px;
+  font-size: 12px;
 }
 
 .footer-link {
@@ -172,16 +172,18 @@ img[data-photo-lightbox],
 }
 
 .footer-link.bold {
-  font-weight: bold;
   color: #1e293b;
+  font-weight: bold;
 }
 
-.footer-link:hover {
-  text-decoration: underline;
+.footer-link:hover,
+.footer-link:focus-visible {
   color: #0f172a;
+  text-decoration: underline;
 }
 
-.footer-divider {
+.footer-divider,
+.biz-row .dot {
   color: #cbd5e1;
 }
 
@@ -207,10 +209,6 @@ img[data-photo-lightbox],
   text-decoration: underline;
 }
 
-.biz-row .dot {
-  color: #cbd5e1;
-}
-
 .escrow-badge {
   margin-top: 4px;
   padding-top: 6px;
@@ -222,27 +220,4 @@ img[data-photo-lightbox],
   margin-top: 4px;
   color: #94a3b8;
 }
-
-
-/* 앨범 메인 페이지(.album-page)는 모든 요소가 absolute 배치이므로 푸터도 absolute로 맨 하단 838px(모바일 825px)에 강제 배치합니다 */
-.album-page > .app-footer,
-.album-page .app-footer {
-  position: absolute;
-  top: 838px;
-  left: 0;
-  width: 100%;
-  box-sizing: border-box;
-  z-index: 10;
-  margin-top: 0;
-}
-
-@media (max-width: 768px), (hover: none) and (pointer: coarse) {
-  .album-page > .app-footer,
-  .album-page .app-footer {
-    top: 825px !important;
-  }
-}
-
-
-
 

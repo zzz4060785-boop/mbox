@@ -2,7 +2,7 @@
 block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main.css', v='20260807-top-fix55') }}"
+  href="{{ url_for('static', filename='css/main.css', v='20260802-pwa1') }}"
 />
 {% endblock %} {% block content %}
 <section class="top-banner">
@@ -113,9 +113,12 @@ block stylesheet %}
     </button>
   </div>
 
-
+  <nav class="legal-links" aria-label="서비스 정책">
+    <a href="{{ url_for('privacy_policy') }}">개인정보처리방침</a>
+    <a href="{{ url_for('terms_of_service') }}">이용약관</a>
+    <a href="{{ url_for('account_deletion') }}">계정 삭제 요청</a>
+  </nav>
 </section>
-
 {% endblock %} {% block script %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}

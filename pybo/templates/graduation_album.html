@@ -2,6 +2,8 @@
 
 {% block title %}졸업앨범{% endblock %}
 
+{% block container_class %}graduation-container{% endblock %}
+
 {% block stylesheet %}
 <link
   rel="stylesheet"
@@ -11,6 +13,11 @@
 
 {% block content %}
 <main class="graduation-page">
+      <a
+        class="graduation-back"
+        href="{{ url_for('album.album_cover') }}"
+        aria-label="앨범 표지로 돌아가기"
+      >&lt;</a>
       {% if is_executive %}
       <div class="executive-control-panel">
         <p>
@@ -599,10 +606,10 @@
         </div>
       </div>
     </main>
-<script id="photoRegistryData" type="application/json">
+<script nonce="{{ csp_nonce() }}" id="photoRegistryData" type="application/json">
   {{ photo_registry | tojson }}
 </script>
-<script id="facesData" type="application/json">
+<script nonce="{{ csp_nonce() }}" id="facesData" type="application/json">
   {{ faces_data | tojson }}
 </script>
 {% endblock %}
