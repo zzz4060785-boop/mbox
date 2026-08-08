@@ -268,8 +268,9 @@ body.main-album-body {
 }
 
 #profilePopup .popup-box {
-  max-height: calc(100vh - 20px);
-  margin-top: 10px;
+  max-height: calc(100vh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  margin-top: calc(32px + env(safe-area-inset-top, 0px));
   overflow-y: auto;
 }
 
