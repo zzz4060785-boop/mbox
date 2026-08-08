@@ -33,6 +33,10 @@ body.main-album-body {
  * height for the absolutely positioned bottom navigation.
  */
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  :root {
+    --main-album-mobile-top-offset: 22px;
+  }
+
   html {
     height: 100%;
   }
@@ -66,8 +70,21 @@ body.main-album-body {
     overflow-y: visible;
   }
 
+  .album-page > h1 {
+    margin-top: calc(15px + var(--main-album-mobile-top-offset));
+  }
+
+  .side-nav,
+  .nav-right {
+    top: calc(70px + var(--main-album-mobile-top-offset));
+  }
+
+  .online-friends-panel {
+    top: calc(495px + var(--main-album-mobile-top-offset));
+  }
+
   .star-sidebar-box {
-    top: 532px !important;
+    top: calc(532px + var(--main-album-mobile-top-offset)) !important;
   }
 
   .mobile-wrap.main-album-container::-webkit-scrollbar {
