@@ -1287,8 +1287,24 @@ def create_app():
             )
             with urlopen(send_request, timeout=15):
                 pass
-        except (HTTPError, URLError, KeyError, ValueError):
-            return jsonify(message="Gmail 전송에 실패했습니다."), 502
+        except HTTPError as error:
+            try:
+                error_data = json.loads(error.read().decode("utf-8"))
+                reason = str(
+                    error_data.get("error", {}).get("status")
+                    or error_data.get("error")
+                )[:80]
+            except (ValueError, AttributeError, UnicodeDecodeError):
+                reason = "http_error"
+            app.logger.warning(
+                "Gmail send failed: status=%s reason=%s",
+                error.code,
+                reason,
+            )
+            return jsonify(message="Gmail 인증 또는 전송에 실패했습니다."), 502
+        except (URLError, KeyError, ValueError) as error:
+            app.logger.warning("Gmail send failed: %s", type(error).__name__)
+            return jsonify(message="Gmail 전송 서버에 연결하지 못했습니다."), 502
 
         return jsonify(message="관리자에게 이메일을 보냈습니다.")
 

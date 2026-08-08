@@ -82,8 +82,13 @@ class Config:
     SESSION_REFRESH_EACH_REQUEST = True
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-    GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID")
-    GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET")
+    # Cafe24 historically stores this OAuth client under GOOGLE_* while the
+    # Gmail sender integration uses GMAIL_*. Accept both names so deployments
+    # do not lose the client configuration during token refresh.
+    GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
+    GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET") or os.getenv(
+        "GOOGLE_CLIENT_SECRET"
+    )
     GMAIL_REDIRECT_URI = os.getenv(
         "GMAIL_REDIRECT_URI",
         "http://127.0.0.1:5000/google/gmail/callback",
