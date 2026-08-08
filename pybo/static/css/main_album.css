@@ -34,7 +34,7 @@ body.main-album-body {
  */
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
   :root {
-    --main-album-mobile-top-offset: 52px;
+    --main-album-mobile-top-offset: 22px;
   }
 
   html {
@@ -71,10 +71,6 @@ body.main-album-body {
 
   .album-page > h1 {
     margin-top: calc(15px + var(--main-album-mobile-top-offset));
-  }
-
-  .main-album-body .logout-form {
-    top: calc(42px + env(safe-area-inset-top, 0px));
   }
 
   .side-nav,
@@ -130,7 +126,7 @@ body.main-album-body {
   /* The album uses absolute-positioned panels and a synthetic content
      height. Pull the shared legal footer up to meet the bottom menu. */
   .mobile-wrap.main-album-container > .app-footer {
-    margin-top: -66px;
+    margin-top: -36px;
   }
 }
 
