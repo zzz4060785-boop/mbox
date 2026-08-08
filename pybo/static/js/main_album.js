@@ -105,9 +105,13 @@ function initializeMainAlbumScroller() {
 
   const updateIndicator = () => {
     const maximum = scroller.scrollHeight - scroller.clientHeight;
-    track.hidden = maximum <= 1;
-    if (maximum <= 1) return;
+    track.hidden = false;
     const trackHeight = track.clientHeight;
+    if (maximum <= 1) {
+      thumb.style.height = `${trackHeight}px`;
+      thumb.style.transform = "translateY(0)";
+      return;
+    }
     const thumbHeight = Math.max(
       34,
       Math.round(trackHeight * scroller.clientHeight / scroller.scrollHeight),

@@ -58,9 +58,9 @@ body.main-album-body {
   }
 
   .album-page {
-    height: auto;
-    min-height: calc(100vh + 350px);
-    min-height: calc(100dvh + 350px);
+    height: calc(100vh + 350px);
+    height: calc(100dvh + 350px);
+    min-height: 0;
     overflow-x: hidden;
     overflow-y: visible;
   }

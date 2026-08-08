@@ -77,9 +77,26 @@
 .notification-list {
   min-height: 0;
   flex: 1;
-  overflow-y: auto;
+  overflow-y: scroll;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-color: #2f80ed #edf3fb;
+  scrollbar-width: auto;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #edf3fb;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  border: 2px solid #edf3fb;
+  border-radius: 999px;
+  background: #2f80ed;
 }
 
 .notification-item {
