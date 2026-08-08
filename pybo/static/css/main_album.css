@@ -122,6 +122,12 @@ body.main-album-body {
     background: #2f80ed;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
   }
+
+  /* The album uses absolute-positioned panels and a synthetic content
+     height. Pull the shared legal footer up to meet the bottom menu. */
+  .mobile-wrap.main-album-container > .app-footer {
+    margin-top: -36px;
+  }
 }
 
 /* The feed has its own full-height scroller. Lock the page behind it while
