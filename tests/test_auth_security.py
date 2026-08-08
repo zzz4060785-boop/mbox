@@ -244,6 +244,10 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
             headers={"X-CSRF-Token": self.csrf},
         )
         self.assertEqual(online.status_code, 200)
+        room_id = online.get_json()["room_id"]
+        resume = self.client.get("/my-home")
+        self.assertEqual(resume.status_code, 302)
+        self.assertTrue(resume.headers["Location"].endswith(f"/my-home?room={room_id}"))
         with self.app.app_context():
             invitation = Notification.query.filter_by(
                 user_id=friend_id,

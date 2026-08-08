@@ -1090,6 +1090,20 @@ def create_app():
     @login_required
     def my_home():
         user = db.session.get(User, session["user_id"])
+        if not request.args.get("room"):
+            active_participant = (
+                ClassroomParticipant.query
+                .join(ClassroomRoom, ClassroomRoom.id == ClassroomParticipant.room_id)
+                .filter(
+                    ClassroomParticipant.user_id == user.id,
+                    ClassroomParticipant.joined_at.isnot(None),
+                    ClassroomRoom.is_active.is_(True),
+                )
+                .order_by(ClassroomRoom.updated_at.desc(), ClassroomRoom.id.desc())
+                .first()
+            )
+            if active_participant:
+                return redirect(url_for("my_home", room=active_participant.room_id))
         return render_template("my_home.html", current_user=user)
 
     @app.route("/game-zone")

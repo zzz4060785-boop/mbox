@@ -928,7 +928,7 @@ function confirmConnectionMove(userId, clickedElement) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target_id: userId }),
       });
-      alert(data.message);
+      window.location.href = data.room_url;
     } catch (error) {
       if (error.code === "TARGET_OFFLINE") {
         showSummonOfflineModal();
