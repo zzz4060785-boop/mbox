@@ -426,8 +426,71 @@ EXTRA_JAPANESE = {
     "현재 첨부": "現在の添付", "현재 학교명": "現在の学校", "후보 신청자 중 받은 사랑달·사랑별과 작성 댓글 활동이 높은 순으로 선출됩니다.": "候補者はリアクション数とコメント活動順に選出されます。",
 }
 
+DIALOG_ENGLISH = {
+    "모두 읽음": "Delete selected",
+    "아바타 선택": "Choose avatar",
+    "나만의 아바타 고르기": "Choose your avatar",
+    "사용할 기본 아바타를 골라주세요.": "Choose the default avatar you want to use.",
+    "남자 아바타": "Male avatar",
+    "여자 아바타": "Female avatar",
+    "선택하기": "Select",
+    "새로운 아바타 준비 공간": "Space for new avatars",
+    "추후 추가되는 아바타가 이곳에 넉넉하게 표시됩니다.": "New avatars will appear here as they are added.",
+    "아바타를 저장하는 중입니다...": "Saving your avatar...",
+    "아바타가 저장되었습니다.": "Your avatar has been saved.",
+    "선택할 수 없는 아바타입니다.": "This avatar cannot be selected.",
+    "메시지를 삭제할까요?": "Delete messages?",
+    "체크한 메시지": "All",
+    "개가 전부 삭제돼요. 체크하지 않은 메시지는 삭제되지 않아요.": " selected messages will be deleted. Unchecked messages will not be deleted.",
+    "삭제할 메시지를 먼저 체크해 주세요. 체크하지 않은 메시지는 삭제되지 않아요.": "Select the messages to delete first. Unchecked messages will not be deleted.",
+    "삭제하지 않은 메시지도 90일이 지나면 자동으로 삭제됩니다.": "Messages are automatically deleted after 90 days even if you do not delete them manually.",
+    "삭제할 메시지를 체크해 주세요.": "Select the messages to delete.",
+    "삭제할 메시지 정보가 올바르지 않습니다.": "The selected message information is invalid.",
+    "한 번에 최대 100개까지 삭제할 수 있습니다.": "You can delete up to 100 messages at once.",
+    "삭제 선택": "Select for deletion",
+    "삭제": "Delete",
+    "취소": "Cancel",
+    "알림이 없습니다.": "No notifications.",
+    "알림을 불러오지 못했습니다.": "Unable to load notifications.",
+    "관리자 현황판": "Administrator dashboard",
+    "접속 · 전체 쪽지 · 답변": "Online users · all messages · replies",
+}
+
+DIALOG_JAPANESE = {
+    "모두 읽음": "選択削除",
+    "아바타 선택": "アバター選択",
+    "나만의 아바타 고르기": "自分のアバターを選ぶ",
+    "사용할 기본 아바타를 골라주세요.": "使用する基本アバターを選んでください。",
+    "남자 아바타": "男性アバター",
+    "여자 아바타": "女性アバター",
+    "선택하기": "選択する",
+    "새로운 아바타 준비 공간": "新しいアバター用スペース",
+    "추후 추가되는 아바타가 이곳에 넉넉하게 표시됩니다.": "今後追加されるアバターがここに表示されます。",
+    "아바타를 저장하는 중입니다...": "アバターを保存しています…",
+    "아바타가 저장되었습니다.": "アバターを保存しました。",
+    "선택할 수 없는 아바타입니다.": "選択できないアバターです。",
+    "메시지를 삭제할까요?": "メッセージを削除しますか？",
+    "체크한 메시지": "選択した",
+    "개가 전부 삭제돼요. 체크하지 않은 메시지는 삭제되지 않아요.": "件のメッセージをすべて削除します。未選択のメッセージは削除されません。",
+    "삭제할 메시지를 먼저 체크해 주세요. 체크하지 않은 메시지는 삭제되지 않아요.": "削除するメッセージを選択してください。未選択のメッセージは削除されません。",
+    "삭제하지 않은 메시지도 90일이 지나면 자동으로 삭제됩니다.": "手動で削除しないメッセージも90日後に自動削除されます。",
+    "삭제할 메시지를 체크해 주세요.": "削除するメッセージを選択してください。",
+    "삭제할 메시지 정보가 올바르지 않습니다.": "選択したメッセージ情報が正しくありません。",
+    "한 번에 최대 100개까지 삭제할 수 있습니다.": "一度に最大100件まで削除できます。",
+    "삭제 선택": "削除対象を選択",
+    "삭제": "削除",
+    "취소": "キャンセル",
+    "알림이 없습니다.": "通知はありません。",
+    "알림을 불러오지 못했습니다.": "通知を読み込めませんでした。",
+    "관리자 현황판": "管理者ダッシュボード",
+    "접속 · 전체 쪽지 · 답변": "オンライン・全メッセージ・返信",
+}
+
+
 ENGLISH.update(EXTRA_ENGLISH)
+ENGLISH.update(DIALOG_ENGLISH)
 JAPANESE.update(EXTRA_JAPANESE)
+JAPANESE.update(DIALOG_JAPANESE)
 
 
 def translate(message, language):
