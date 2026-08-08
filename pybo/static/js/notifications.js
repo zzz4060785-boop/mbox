@@ -53,6 +53,56 @@ function renderNotifications() {
   });
 }
 
+function closeClassroomSummonModal() {
+  const modal = document.getElementById("classroomSummonModal");
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove("friendary-modal-open");
+}
+
+function showClassroomSummonModal(item) {
+  let modal = document.getElementById("classroomSummonModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "classroomSummonModal";
+    modal.className = "classroom-summon-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="classroom-summon-backdrop" data-summon-dismiss></div>
+      <section class="classroom-summon-box" role="dialog" aria-modal="true" aria-labelledby="classroomSummonTitle">
+        <div class="classroom-summon-icon" aria-hidden="true">📢</div>
+        <h2 id="classroomSummonTitle">내 교실로 초대</h2>
+        <p id="classroomSummonMessage"></p>
+        <div class="classroom-summon-actions">
+          <button type="button" class="classroom-summon-later" data-summon-dismiss>나중에</button>
+          <button type="button" class="classroom-summon-enter">교실 입장</button>
+        </div>
+      </section>`;
+    modal.querySelectorAll("[data-summon-dismiss]").forEach((element) => {
+      element.addEventListener("click", closeClassroomSummonModal);
+    });
+    document.body.appendChild(modal);
+  }
+
+  modal.querySelector("#classroomSummonMessage").textContent = item.message;
+  modal.querySelector(".classroom-summon-enter").onclick = () => openNotification(item);
+  modal.hidden = false;
+  document.body.classList.add("friendary-modal-open");
+  modal.querySelector(".classroom-summon-enter").focus();
+}
+
+function showNewestClassroomSummon() {
+  const invite = notificationState.items.find((item) =>
+    item.kind === "classroom_invite"
+    && !item.is_read
+    && sessionStorage.getItem(`classroom-summon-shown-${item.id}`) !== "1"
+  );
+  const existingModal = document.getElementById("classroomSummonModal");
+  if (!invite || (existingModal && !existingModal.hidden)) return;
+  sessionStorage.setItem(`classroom-summon-shown-${invite.id}`, "1");
+  showClassroomSummonModal(invite);
+}
+
 async function loadNotifications() {
   try {
     const data = await notificationRequest("/api/notifications");
@@ -60,6 +110,7 @@ async function loadNotifications() {
     notificationState.unreadCount = data.unread_count;
     updateNotificationBadge();
     renderNotifications();
+    showNewestClassroomSummon();
   } catch (_) {
     // 일시적인 알림 조회 실패가 다른 화면 기능을 막지 않게 합니다.
   }

@@ -244,6 +244,14 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
             headers={"X-CSRF-Token": self.csrf},
         )
         self.assertEqual(online.status_code, 200)
+        with self.app.app_context():
+            invitation = Notification.query.filter_by(
+                user_id=friend_id,
+                kind="classroom_invite",
+            ).one()
+            self.assertEqual(invitation.title, "내 교실로 초대")
+            self.assertIn("내 교실로 불렀습니다", invitation.message)
+            self.assertIn("/my-home", invitation.target_url)
 
     def test_monthly_sarangdal_is_added_once_to_existing_balance(self):
         with self.app.app_context():

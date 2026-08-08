@@ -2886,8 +2886,8 @@ def create_app():
         add_notification(
             target_user.id,
             "classroom_invite",
-            "교실 소환 초대",
-            f"{current_user.username}님이 교실로 초대했습니다.",
+            "내 교실로 초대",
+            f"{current_user.username}님이 내 교실로 불렀습니다. 지금 입장해 주세요!",
             target_url,
             current_user.id,
         )

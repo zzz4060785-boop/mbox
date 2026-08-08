@@ -32,7 +32,7 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/notifications.css') }}"
+      href="{{ url_for('static', filename='css/notifications.css', v='20260808-summon-modal-v1') }}"
     />
 
     <!-- 페이지별 CSS가 들어갈 자리 -->
@@ -71,7 +71,7 @@
     </div>
 
     {% if session.get("user_id") %}
-    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js', v='20260808-summon-modal-v1') }}"></script>
     {% endif %} {% block script %} {% endblock %}
     <script nonce="{{ csp_nonce() }}">
       // Apply CSRF protection centrally to all forms and same-origin fetch calls.
