@@ -127,8 +127,16 @@ install -o root -g root -m 644 \
 install -o root -g root -m 644 \
     "$APP_PATH/deploy/cafe24/friendary-db-backup.timer" \
     /etc/systemd/system/friendary-db-backup.timer
+install -o root -g root -m 644 \
+    "$APP_PATH/deploy/cafe24/friendary-monitor.service" \
+    /etc/systemd/system/friendary-monitor.service
+install -o root -g root -m 644 \
+    "$APP_PATH/deploy/cafe24/friendary-monitor.timer" \
+    /etc/systemd/system/friendary-monitor.timer
+install -d -o appuser -g appuser -m 750 /var/lib/friendary-monitor
 systemctl daemon-reload
 systemctl enable --now friendary-db-backup.timer
+systemctl enable --now friendary-monitor.timer
 
 cd "$APP_PATH"
 DATABASE_ASSIGNMENT="$(grep '^DATABASE_URL=' /etc/friendary/env | head -n 1)"

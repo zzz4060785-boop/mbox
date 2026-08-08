@@ -30,10 +30,12 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/base.css', v='20260808-footer-restore') }}"
     />
+    {% if session.get("user_id") and request.endpoint == "main_album" %}
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/notifications.css', v='20260808-summon-modal-v1') }}"
+      href="{{ url_for('static', filename='css/notifications.css', v='20260808-main-album-only-v1') }}"
     />
+    {% endif %}
 
     <!-- 페이지별 CSS가 들어갈 자리 -->
     {% block stylesheet %}{% endblock %}
@@ -51,7 +53,8 @@
       container_class 블록에서 지정합니다.
     -->
     <div class="mobile-wrap {% block container_class %}{% endblock %}">
-      {% if session.get("user_id") %} {% include "notifications.html" %}
+      {% block notification_center %}{% endblock %}
+      {% if session.get("user_id") %}
       <form class="logout-form" method="post" action="{{ url_for('logout') }}">
         <button class="logout-btn" type="submit">{{ tr('로그아웃') }}</button>
       </form>
@@ -70,8 +73,8 @@
       {% endblock %}
     </div>
 
-    {% if session.get("user_id") %}
-    <script src="{{ url_for('static', filename='js/notifications.js', v='20260808-summon-modal-v1') }}"></script>
+    {% if session.get("user_id") and request.endpoint == "main_album" %}
+    <script src="{{ url_for('static', filename='js/notifications.js', v='20260808-main-album-only-v1') }}"></script>
     {% endif %} {% block script %} {% endblock %}
     <script nonce="{{ csp_nonce() }}">
       // Apply CSRF protection centrally to all forms and same-origin fetch calls.

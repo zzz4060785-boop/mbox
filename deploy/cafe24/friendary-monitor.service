@@ -1,0 +1,17 @@
+[Unit]
+Description=Check Friendary web and database health
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/friendary
+EnvironmentFile=/etc/friendary/env
+Environment=MONITOR_URL=https://zzz8247.mycafe24.com/healthz
+Environment=MONITOR_STATE_FILE=/var/lib/friendary-monitor/state.json
+Environment=INCIDENT_EVENT_FILE=/var/lib/friendary-monitor/events.jsonl
+Environment=MONITOR_EMAIL_TO=junyoungkim355@gmail.com
+StateDirectory=friendary-monitor
+ExecStart=/opt/friendary/.venv/bin/python /opt/friendary/scripts/monitor_friendary.py

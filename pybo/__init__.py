@@ -26,7 +26,7 @@ import json
 import os
 import re
 import secrets
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
@@ -37,7 +37,7 @@ from werkzeug.utils import secure_filename
 
 from config import Config
 from pybo.i18n import SUPPORTED_LANGUAGES, get_catalog, translate
-from pybo.security import init_security, rate_limit
+from pybo.security import init_security, rate_limit, record_unknown_login_attempt
 from pybo.uploads import is_safe_upload
 from pybo.notifications import send_email_code, send_sms_code
 from pybo.crypto import decrypt_secret, encrypt_secret
@@ -243,6 +243,16 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     oauth.init_app(app)
+
+    @app.get("/healthz")
+    def healthz():
+        """Report whether both the web process and its database are available."""
+        try:
+            db.session.execute(text("SELECT 1"))
+        except Exception:
+            app.logger.exception("Health check database probe failed")
+            return jsonify(status="unhealthy"), 503
+        return jsonify(status="ok"), 200
 
     if app.config.get("GOOGLE_CLIENT_ID") and app.config.get(
         "GOOGLE_CLIENT_SECRET"
@@ -537,7 +547,7 @@ def create_app():
 
 
     @app.route("/", methods=["GET", "POST"])
-    @rate_limit(limit=10, window=300, scope="login-main")
+    @rate_limit(limit=30, window=300, scope="login-main")
     def main():
         if request.method == "GET" and session.get("user_id"):
             return login_destination(
@@ -566,6 +576,8 @@ def create_app():
             ).first()
 
             if not user or not check_password_hash(user.password, password):
+                if user is None:
+                    record_unknown_login_attempt()
                 audit_event("login_failure", {"login_hash": secrets.token_hex(8)})
                 if is_ajax:
                     return jsonify(success=False, message="아이디 또는 비밀번호를 확인해 주세요."), 400
@@ -641,7 +653,7 @@ def create_app():
         return response
 
     @app.route("/login2", methods=["GET", "POST"])
-    @rate_limit(limit=10, window=300, scope="login-secondary")
+    @rate_limit(limit=30, window=300, scope="login-secondary")
     def login2():
         if request.method == "GET" and session.get("user_id"):
             return login_destination(
@@ -670,6 +682,8 @@ def create_app():
             ).first()
 
             if not user or not check_password_hash(user.password, password):
+                if user is None:
+                    record_unknown_login_attempt()
                 audit_event("login_failure", {"login_hash": secrets.token_hex(8)})
                 if is_ajax:
                     return jsonify(success=False, message="아이디 또는 비밀번호를 확인해 주세요."), 400

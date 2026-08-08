@@ -2,13 +2,80 @@
 
 from functools import wraps
 import hashlib
+import hmac
+import json
+import os
 import secrets
 import time
+from datetime import datetime, timedelta
+from pathlib import Path
 
-from flask import abort, g, jsonify, request, session
+from flask import abort, current_app, g, jsonify, request, session
+from flask.signals import got_request_exception
 
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+def _incident_event(event_type, detail):
+    event_file = Path(current_app.config.get("INCIDENT_EVENT_FILE", "/var/lib/friendary-monitor/events.jsonl"))
+    event = {
+        "type": event_type,
+        "detail": detail,
+        "occurred_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+    try:
+        event_file.parent.mkdir(parents=True, exist_ok=True)
+        with event_file.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(event, ensure_ascii=False) + "\n")
+    except OSError:
+        current_app.logger.exception("Unable to write incident event")
+
+
+def _ip_hash(address):
+    secret = current_app.config["SECRET_KEY"].encode("utf-8")
+    return hmac.new(secret, address.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def record_unknown_login_attempt():
+    """Count nonexistent-account probes and permanently block their source at 20."""
+    from sqlalchemy.exc import IntegrityError
+    from pybo import db
+    from pybo.models import SecurityIPBlock
+
+    address = request.remote_addr or "unknown"
+    address_hash = _ip_hash(address)
+    now = datetime.utcnow()
+    window_start = now - timedelta(hours=24)
+    record = SecurityIPBlock.query.filter_by(ip_hash=address_hash).with_for_update().first()
+    if record is None:
+        record = SecurityIPBlock(
+            ip_hash=address_hash,
+            unknown_login_attempts=0,
+            window_started_at=now,
+            last_attempt_at=now,
+        )
+        db.session.add(record)
+    elif record.blocked_at is None and record.window_started_at < window_start:
+        record.unknown_login_attempts = 0
+        record.window_started_at = now
+
+    record.unknown_login_attempts += 1
+    record.last_attempt_at = now
+    count = record.unknown_login_attempts
+    if count >= 20 and record.blocked_at is None:
+        record.blocked_at = now
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return 0
+
+    if count == 10:
+        _incident_event("intrusion_warning", f"IP {address}에서 미가입 아이디 로그인 시도 10회")
+    elif count == 20:
+        _incident_event("ip_blocked", f"IP {address}에서 미가입 아이디 로그인 시도 20회; 사이트 접근 차단")
+    return count
 
 
 def csrf_token():
@@ -85,6 +152,24 @@ def init_security(app):
     @app.before_request
     def prepare_security_context():
         g.csp_nonce = secrets.token_urlsafe(18)
+
+        # The health probe must remain reachable so outages can still be diagnosed.
+        if request.path == "/healthz" or not current_app.config.get("IP_BLOCKING_ENABLED", False):
+            return None
+        from pybo.models import SecurityIPBlock
+        blocked = SecurityIPBlock.query.filter_by(
+            ip_hash=_ip_hash(request.remote_addr or "unknown")
+        ).filter(SecurityIPBlock.blocked_at.isnot(None)).first()
+        if blocked:
+            return jsonify(success=False, message="Access denied"), 403
+
+    def capture_unhandled_exception(sender, exception, **extra):
+        _incident_event(
+            "flask_error",
+            f"{type(exception).__name__} at {request.method} {request.path}",
+        )
+
+    got_request_exception.connect(capture_unhandled_exception, app, weak=False)
 
     app.before_request(_csrf_protect)
 

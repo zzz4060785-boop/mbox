@@ -21,7 +21,32 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   rel="stylesheet"
   href="{{ url_for('static', filename='css/admin_quick_access.css') }}"
 />
-{% endblock %} {% block content %}
+{% endblock %}
+{% block notification_center %}
+<div class="notification-center" id="notificationCenter">
+  <button
+    class="notification-toggle"
+    id="notificationToggle"
+    type="button"
+    aria-label="{{ tr('알림 열기') }}"
+    aria-expanded="false"
+    aria-controls="notificationPanel"
+  >
+    <span aria-hidden="true">🔔</span>
+    <span class="notification-badge" id="notificationBadge" hidden>0</span>
+  </button>
+  <section class="notification-panel" id="notificationPanel" hidden>
+    <header class="notification-header">
+      <strong>{{ tr('알림') }}</strong>
+      <button id="notificationReadAll" type="button">{{ tr('모두 읽음') }}</button>
+    </header>
+    <div class="notification-list" id="notificationList" aria-live="polite">
+      <p class="notification-empty">{{ tr('알림을 불러오는 중입니다.') }}</p>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
   <!-- 공지사항 팝업 시작 -->

@@ -152,6 +152,15 @@ class SecurityRateLimit(db.Model):
     )
 
 
+class SecurityIPBlock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ip_hash = db.Column(db.String(64), nullable=False, unique=True, index=True)
+    unknown_login_attempts = db.Column(db.Integer, nullable=False, default=0)
+    window_started_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    last_attempt_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    blocked_at = db.Column(db.DateTime, nullable=True, index=True)
+
+
 class VerificationChallenge(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(64), nullable=False, unique=True, index=True)

@@ -155,5 +155,11 @@ class Config:
     SMS_API_URL = os.getenv("SMS_API_URL", "")
     SMS_API_TOKEN = os.getenv("SMS_API_TOKEN", "")
     TOKEN_ENCRYPTION_KEY = os.getenv("TOKEN_ENCRYPTION_KEY", "")
+    INCIDENT_EVENT_FILE = os.getenv(
+        "INCIDENT_EVENT_FILE", "/var/lib/friendary-monitor/events.jsonl"
+    )
+    IP_BLOCKING_ENABLED = os.getenv("IP_BLOCKING_ENABLED", "true").lower() in {
+        "1", "true", "yes"
+    }
 
 

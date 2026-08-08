@@ -7,7 +7,6 @@
 <main class="recommend-page">
   <div class="recommend-top-row">
     <a class="recommend-back" href="{{ url_for('recommendation_detail', post_id=post.id) if post else url_for('recommendation_list') }}">← 돌아가기</a>
-    <div class="recommend-notification-slot" id="boardNotificationSlot"></div>
   </div>
   <form
     class="recommend-form"
