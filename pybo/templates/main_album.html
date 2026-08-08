@@ -459,7 +459,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 </div>
 {% endblock %} {% block script %}
 <script
-  src="{{ url_for('static', filename='js/main_album.js') }}"
+  src="{{ url_for('static', filename='js/main_album.js', v='20260808-scroll-v2') }}"
   data-user-album-url="{{ url_for('user_album') }}"
   data-current-user-id="{{ current_user.id }}"
   data-current-username="{{ current_user.username }}"

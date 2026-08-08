@@ -91,7 +91,70 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closePhotoLightbox();
 });
 
+function initializeMainAlbumScroller() {
+  const scroller = document.querySelector(".main-album-container");
+  if (!scroller || !window.matchMedia("(max-width: 768px)").matches) return;
+
+  const track = document.createElement("div");
+  track.className = "main-album-scroll-track";
+  track.setAttribute("aria-hidden", "true");
+  const thumb = document.createElement("div");
+  thumb.className = "main-album-scroll-thumb";
+  track.appendChild(thumb);
+  document.body.appendChild(track);
+
+  const updateIndicator = () => {
+    const maximum = scroller.scrollHeight - scroller.clientHeight;
+    track.hidden = maximum <= 1;
+    if (maximum <= 1) return;
+    const trackHeight = track.clientHeight;
+    const thumbHeight = Math.max(
+      34,
+      Math.round(trackHeight * scroller.clientHeight / scroller.scrollHeight),
+    );
+    const travel = Math.max(0, trackHeight - thumbHeight);
+    thumb.style.height = `${thumbHeight}px`;
+    thumb.style.transform = `translateY(${Math.round(travel * scroller.scrollTop / maximum)}px)`;
+  };
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let scrollStart = 0;
+  let handleTouch = false;
+
+  scroller.addEventListener("touchstart", (event) => {
+    const touch = event.touches[0];
+    handleTouch = Boolean(touch) && !event.target.closest(
+      ".profile-popup, .album-wrap, .photo-lightbox",
+    );
+    if (!handleTouch) return;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    scrollStart = scroller.scrollTop;
+  }, { passive: true, capture: true });
+
+  scroller.addEventListener("touchmove", (event) => {
+    if (!handleTouch || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    if (Math.abs(deltaY) < 5 || Math.abs(deltaY) <= Math.abs(deltaX)) return;
+    event.preventDefault();
+    scroller.scrollTop = scrollStart - deltaY;
+    updateIndicator();
+  }, { passive: false, capture: true });
+
+  scroller.addEventListener("touchend", () => { handleTouch = false; }, { passive: true });
+  scroller.addEventListener("touchcancel", () => { handleTouch = false; }, { passive: true });
+  scroller.addEventListener("scroll", updateIndicator, { passive: true });
+  window.addEventListener("resize", updateIndicator, { passive: true });
+  new ResizeObserver(updateIndicator).observe(scroller);
+  requestAnimationFrame(updateIndicator);
+  window.setTimeout(updateIndicator, 300);
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
+  initializeMainAlbumScroller();
   const schoolName = document.getElementById("school-name");
   if (schoolName) schoolName.textContent = userSchool;
 

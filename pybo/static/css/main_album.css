@@ -81,6 +81,30 @@ body.main-album-body {
     border-radius: 999px;
     background: rgba(47, 128, 237, 0.72);
   }
+
+  .main-album-scroll-track {
+    position: fixed;
+    top: 76px;
+    right: max(3px, calc((100vw - 430px) / 2 + 3px));
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: 6px;
+    z-index: 1100;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+  }
+
+  .main-album-scroll-track[hidden] {
+    display: none;
+  }
+
+  .main-album-scroll-thumb {
+    width: 100%;
+    min-height: 34px;
+    border-radius: inherit;
+    background: #2f80ed;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  }
 }
 
 /* The feed has its own full-height scroller. Lock the page behind it while
