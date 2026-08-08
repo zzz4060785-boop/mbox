@@ -1,3 +1,4 @@
+import io
 import re
 import tempfile
 import unittest
@@ -8,9 +9,11 @@ from werkzeug.security import generate_password_hash
 from config import Config
 from pybo import create_app, db
 from pybo.models import (
+    BoardAttachment,
     ClassroomParticipant,
     Friendship,
     User,
+    UserSchool,
     VerificationChallenge,
 )
 
@@ -20,14 +23,25 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         self.original_uri = Config.SQLALCHEMY_DATABASE_URI
         self.original_engine_options = Config.SQLALCHEMY_ENGINE_OPTIONS
+        self.original_upload_folder = Config.UPLOAD_FOLDER
         Config.SQLALCHEMY_DATABASE_URI = "sqlite:///" + str(Path(self.tempdir.name) / "test.db")
         Config.SQLALCHEMY_ENGINE_OPTIONS = {}
+        Config.UPLOAD_FOLDER = str(Path(self.tempdir.name) / "uploads")
         self.app = create_app()
         self.app.config.update(TESTING=True, AUTH_TEST_MODE=True)
         with self.app.app_context():
             db.create_all()
             user = User(username="tester", email="tester@example.com", password=generate_password_hash("old-password"))
             db.session.add(user)
+            db.session.flush()
+            user.school_name = "Test School"
+            db.session.add(UserSchool(
+                user_id=user.id,
+                school_name="Test School",
+                school_type="고등학교",
+                school_year="2020",
+                is_primary=True,
+            ))
             db.session.commit()
             self.user_id = user.id
         self.client = self.app.test_client()
@@ -41,7 +55,32 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
             db.engine.dispose()
         Config.SQLALCHEMY_DATABASE_URI = self.original_uri
         Config.SQLALCHEMY_ENGINE_OPTIONS = self.original_engine_options
+        Config.UPLOAD_FOLDER = self.original_upload_folder
         self.tempdir.cleanup()
+
+    def test_board_photo_is_saved_to_protected_media_route(self):
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+            session["active_board_school"] = "Test School"
+        response = self.client.post(
+            "/board/write",
+            data={
+                "title": "Photo post",
+                "content": "Photo upload test",
+                "file1": (io.BytesIO(b"\x89PNG\r\n\x1a\nrest"), "photo.png"),
+            },
+            headers={"X-CSRF-Token": self.csrf},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            attachment = BoardAttachment.query.one()
+            self.assertTrue(attachment.file_url.startswith("/media/board_"))
+            media_url = attachment.file_url
+        media_response = self.client.get(media_url)
+        self.assertEqual(media_response.status_code, 200)
+        self.assertTrue(media_response.data.startswith(b"\x89PNG"))
 
     def test_reset_code_is_hashed_server_side_and_absent_from_cookie(self):
         response = self.client.post(

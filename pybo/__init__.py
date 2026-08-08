@@ -1,5 +1,6 @@
 from flask import (
     Flask,
+    current_app,
     jsonify,
     render_template,
     request,
@@ -3793,10 +3794,7 @@ def create_app():
             db.session.add(
                 BoardAttachment(
                     post_id=post.id,
-                    file_url=url_for(
-                        "static",
-                        filename=f"uploads/{saved_name}",
-                    ),
+                    file_url=url_for("uploaded_media", filename=saved_name),
                     original_name=original_name,
                     media_type=media_type,
                 )
