@@ -133,3 +133,91 @@ img[data-photo-lightbox],
   background: rgba(255, 255, 255, 0.35);
 }
 
+/* App e-commerce legal footer. It stays in normal document flow so pages
+   with their own mobile scroll container can still reach it. */
+.app-footer {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+  z-index: 10;
+  padding: 20px 16px calc(35px + env(safe-area-inset-bottom, 0px));
+  overflow-wrap: break-word;
+  border-top: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.footer-link {
+  color: #475569;
+  text-decoration: none;
+}
+
+.footer-link.bold {
+  color: #1e293b;
+  font-weight: bold;
+}
+
+.footer-link:hover,
+.footer-link:focus-visible {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+.footer-divider,
+.biz-row .dot {
+  color: #cbd5e1;
+}
+
+.footer-biz-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.biz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.biz-row strong {
+  color: #334155;
+}
+
+.biz-row a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.escrow-badge {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed #cbd5e1;
+  color: #059669;
+}
+
+.footer-copyright {
+  margin-top: 4px;
+  color: #94a3b8;
+}
+
