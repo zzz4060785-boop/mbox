@@ -2867,6 +2867,15 @@ def create_app():
         current_user = db.session.get(User, session["user_id"])
         if not _classroom_friend_allowed(current_user.id, target_user.id):
             return jsonify(message="수락된 1촌만 교실에 초대할 수 있습니다."), 403
+        online_since = datetime.utcnow() - timedelta(seconds=90)
+        if (
+            target_user.last_active_at is None
+            or target_user.last_active_at < online_since
+        ):
+            return jsonify(
+                code="TARGET_OFFLINE",
+                message="현재 접속 중이 아닙니다.",
+            ), 409
         room = _get_or_create_owned_classroom(current_user.id)
         _, error = _invite_to_classroom(room, target_user)
         if error:

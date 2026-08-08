@@ -37,7 +37,9 @@ async function api(url, options = {}) {
     if (response.status === 413) {
       throw new Error("파일 크기가 너무 큽니다. 10MB 이하의 파일만 올릴 수 있습니다.");
     }
-    throw new Error(data.message || `요청을 처리하지 못했습니다. (${response.status})`);
+    const requestError = new Error(data.message || `요청을 처리하지 못했습니다. (${response.status})`);
+    requestError.code = data.code || "";
+    throw requestError;
   }
   return data;
 }
@@ -837,6 +839,25 @@ function closeConnectionChoice() {
   if (modal) modal.hidden = true;
 }
 
+function showSummonOfflineModal() {
+  const modal = document.getElementById("summonOfflineModal");
+  if (!modal) return;
+  modal.hidden = false;
+  document.body.classList.add("friendary-modal-open");
+  modal.querySelector("button")?.focus();
+}
+
+function closeSummonOfflineModal() {
+  const modal = document.getElementById("summonOfflineModal");
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove("friendary-modal-open");
+}
+
+document.querySelectorAll("[data-summon-close]").forEach((element) => {
+  element.addEventListener("click", closeSummonOfflineModal);
+});
+
 async function openConnectionMessage(userId) {
   closeConnectionChoice();
   const data = await api(`/api/social/users/${userId}`);
@@ -909,7 +930,11 @@ function confirmConnectionMove(userId, clickedElement) {
       });
       alert(data.message);
     } catch (error) {
-      alert(error.message);
+      if (error.code === "TARGET_OFFLINE") {
+        showSummonOfflineModal();
+      } else {
+        alert(error.message);
+      }
     }
   };
   messageButton.onclick = () => openConnectionMessage(userId);

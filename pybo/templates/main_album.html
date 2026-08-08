@@ -3,7 +3,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 %}main-album-container{% endblock %} {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album.css', v='20260808-bottom-restore-v9') }}"
+  href="{{ url_for('static', filename='css/main_album.css', v='20260808-summon-presence-v1') }}"
 />
 <link
   rel="stylesheet"
@@ -283,6 +283,16 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   </div>
 
   <!-- 전체 가입자를 찾고 이름을 눌러 인맥 프로필을 여는 화면입니다. -->
+  <div id="summonOfflineModal" class="summon-status-modal" hidden>
+    <div class="summon-status-backdrop" data-summon-close></div>
+    <section class="summon-status-box" role="dialog" aria-modal="true" aria-labelledby="summonOfflineTitle">
+      <div class="summon-status-icon" aria-hidden="true">🌙</div>
+      <h3 id="summonOfflineTitle">현재 접속 중이 아닙니다</h3>
+      <p>친구가 접속한 뒤 다시 소환해 주세요.</p>
+      <button type="button" data-summon-close>확인</button>
+    </section>
+  </div>
+
   <div id="peopleFinderModal" class="profile-popup">
     <div class="popup-box">
       <h3>👥 전혀 새로운 친구 찾기</h3>
@@ -465,7 +475,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 </div>
 {% endblock %} {% block script %}
 <script
-  src="{{ url_for('static', filename='js/main_album.js', v='20260808-scroll-v4') }}"
+  src="{{ url_for('static', filename='js/main_album.js', v='20260808-summon-presence-v1') }}"
   data-user-album-url="{{ url_for('user_album') }}"
   data-current-user-id="{{ current_user.id }}"
   data-current-username="{{ current_user.username }}"

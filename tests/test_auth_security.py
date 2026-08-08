@@ -205,6 +205,46 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         admin_html = self.client.get("/main-album").get_data(as_text=True)
         self.assertIn('id="adminQuickAccessButton"', admin_html)
 
+    def test_classroom_summon_requires_online_friend(self):
+        with self.app.app_context():
+            friend = User(
+                username="offline-friend",
+                email="offline-friend@example.com",
+                password=generate_password_hash("password"),
+            )
+            db.session.add(friend)
+            db.session.flush()
+            db.session.add(Friendship(
+                requester_id=self.user_id,
+                receiver_id=friend.id,
+                status="accepted",
+            ))
+            db.session.commit()
+            friend_id = friend.id
+
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+
+        offline = self.client.post(
+            "/api/social/classroom/invite",
+            json={"target_id": friend_id},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(offline.status_code, 409)
+        self.assertEqual(offline.get_json()["code"], "TARGET_OFFLINE")
+
+        with self.app.app_context():
+            db.session.get(User, friend_id).last_active_at = datetime.utcnow()
+            db.session.commit()
+
+        online = self.client.post(
+            "/api/social/classroom/invite",
+            json={"target_id": friend_id},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(online.status_code, 200)
+
     def test_monthly_sarangdal_is_added_once_to_existing_balance(self):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)
