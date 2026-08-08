@@ -1146,6 +1146,8 @@ def create_app():
             and (
                 user.is_executive
                 or user.id in app.config.get("EXECUTIVE_USER_IDS", [])
+                or user.email.lower()
+                == app.config["GMAIL_ADMIN_EMAIL"].lower()
             )
         )
 
