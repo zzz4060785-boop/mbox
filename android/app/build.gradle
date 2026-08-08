@@ -68,8 +68,8 @@ android {
         applicationId "com.junyoung.friendary"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 13
-        versionName "1.1.0"
+        versionCode 17
+        versionName "1.1.4"
 
         resValue "string", "appName", twaManifest.name
         resValue "string", "launcherName", twaManifest.launcherName
@@ -131,7 +131,8 @@ android {
     }
 
     lintOptions {
-        checkReleaseBuilds false
+        checkReleaseBuilds true
+        abortOnError true
     }
 }
 
@@ -179,4 +180,5 @@ repositories {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
+    implementation 'com.google.androidbrowserhelper:billing:1.1.0'
 }

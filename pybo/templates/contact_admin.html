@@ -25,9 +25,9 @@
     <p>문의 내용을 작성하면 기본 메일 앱으로 연결됩니다.</p>
   </header>
 
-  {% if not gmail_connected and can_connect_gmail %}
+  {% if can_connect_gmail %}
   <a class="gmail-connect-link" href="{{ url_for('gmail_connect') }}">
-    Google 관리자 Gmail 최초 연결
+    {% if gmail_connected %}Google 관리자 Gmail 다시 연결{% else %}Google 관리자 Gmail 최초 연결{% endif %}
   </a>
   {% elif not gmail_connected %}
   <p class="gmail-connect-warning">

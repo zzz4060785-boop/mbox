@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="{{ current_language }}">
-  <head>
+<head>
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta charset="UTF-8" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <title>{% block title %}Friendary{% endblock %}</title>
 
@@ -27,16 +28,21 @@
     <!-- 모든 페이지에 적용되는 모바일 공통 CSS -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/base.css', v='20260807-footer-fix100') }}"
+      href="{{ url_for('static', filename='css/base.css', v='20260808-footer-restore') }}"
     />
-
+    {% if session.get("user_id") and request.endpoint == "main_album" %}
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/notifications.css') }}"
+      href="{{ url_for('static', filename='css/notifications.css', v='20260808-main-album-only-v1') }}"
     />
+    {% endif %}
 
     <!-- 페이지별 CSS가 들어갈 자리 -->
     {% block stylesheet %}{% endblock %}
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/mobile_layout.css', v='20260808-2') }}"
+    />
   </head>
   <!--
     페이지별 body 클래스는 자식 템플릿의 body_class 블록에서 지정합니다.
@@ -47,7 +53,8 @@
       container_class 블록에서 지정합니다.
     -->
     <div class="mobile-wrap {% block container_class %}{% endblock %}">
-      {% if session.get("user_id") %} {% include "notifications.html" %}
+      {% block notification_center %}{% endblock %}
+      {% if session.get("user_id") %}
       <form class="logout-form" method="post" action="{{ url_for('logout') }}">
         <button class="logout-btn" type="submit">{{ tr('로그아웃') }}</button>
       </form>
@@ -66,20 +73,44 @@
       {% endblock %}
     </div>
 
-    {% if session.get("user_id") %}
-    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% if session.get("user_id") and request.endpoint == "main_album" %}
+    <script src="{{ url_for('static', filename='js/notifications.js', v='20260808-main-album-only-v1') }}"></script>
     {% endif %} {% block script %} {% endblock %}
-    <script>
+    <script nonce="{{ csp_nonce() }}">
+      // Apply CSRF protection centrally to all forms and same-origin fetch calls.
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      document.querySelectorAll('form').forEach((form) => {
+        if ((form.method || "get").toLowerCase() === "get" || form.querySelector('input[name="csrf_token"]')) return;
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "csrf_token";
+        input.value = csrfToken;
+        form.appendChild(input);
+      });
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = (input, options = {}) => {
+        const method = (options.method || "GET").toUpperCase();
+        const url = typeof input === "string" ? input : input.url;
+        if (!["GET", "HEAD", "OPTIONS"].includes(method) && new URL(url, location.href).origin === location.origin) {
+          const headers = new Headers(options.headers || (typeof input !== "string" ? input.headers : undefined));
+          headers.set("X-CSRF-Token", csrfToken);
+          options = {...options, headers};
+        }
+        return originalFetch(input, options);
+      };
+
       window.FRIENDARY_LANGUAGE = {{ current_language|tojson }};
       window.FRIENDARY_TRANSLATIONS = {{ translation_catalog|tojson }};
     </script>
     <script src="{{ url_for('static', filename='js/ui_i18n.js') }}"></script>
-    <script>
+    <script src="{{ url_for('static', filename='js/confirm_modal.js', v='20260808-1') }}"></script>
+    <script src="{{ url_for('static', filename='js/safe_inline_handlers.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}">
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (let registration of registrations) {
-            registration.unregister();
-          }
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register(
+            "{{ url_for('service_worker', v='20260808-6') }}",
+          );
         });
       }
     </script>

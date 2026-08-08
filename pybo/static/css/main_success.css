@@ -46,7 +46,7 @@ hr {
 
 .enter-btn {
   position: absolute;
-  bottom: 25px;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   width: 88%;
   max-width: 320px;

@@ -20,16 +20,9 @@
   text-decoration: none;
 }
 
-/* 공지사항 페이지에서는 공통 알림 종을 제목 옆에 배치합니다. */
+/* 공지사항 페이지에서는 제목에 포함된 종 이모지만 사용합니다. */
 .mobile-wrap:has(.notice-board-page) > .notification-center {
-  top: 72px;
-  left: 158px;
-  right: auto;
-}
-
-.mobile-wrap:has(.notice-board-page) > .notification-center .notification-panel {
-  right: auto;
-  left: -142px;
+  display: none;
 }
 
 .mobile-wrap:has(.notice-board-page) > .logout-form {

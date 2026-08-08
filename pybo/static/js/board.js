@@ -137,10 +137,12 @@ document.addEventListener("DOMContentLoaded", () => {
     tags.forEach((tag, index) => {
       const tagItem = document.createElement("div");
       tagItem.className = "tag-item";
-      tagItem.innerHTML = `
-        #${tag}
-        <span class="tag-delete" data-index="${index}">&times;</span>
-      `;
+      tagItem.append(document.createTextNode(`#${tag}`));
+      const deleteButton = document.createElement("span");
+      deleteButton.className = "tag-delete";
+      deleteButton.dataset.index = String(index);
+      deleteButton.textContent = "×";
+      tagItem.appendChild(deleteButton);
       tagContainer.insertBefore(tagItem, tagInput);
     });
 

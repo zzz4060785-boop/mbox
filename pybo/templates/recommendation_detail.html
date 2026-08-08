@@ -125,6 +125,7 @@ block stylesheet %}
       <form
         method="post"
         action="{{ url_for('recommendation_react', post_id=post.id, reaction='like') }}"
+        data-confirm-message="상대방에게 사랑달 1개를 지급할까요?"
       >
         <button class="{{ 'active' if current_reaction == 'like' else '' }}">
           💗 사랑달 {{ like_count }}

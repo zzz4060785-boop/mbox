@@ -1,0 +1,16 @@
+{% if can_view_admin_dashboard %}
+<aside class="admin-quick-access" aria-label="관리자 전용 메뉴">
+  <button
+    type="button"
+    id="adminQuickAccessButton"
+    data-url="{{ url_for('admin_online_users') }}"
+  >
+    <span class="admin-quick-access-icon" aria-hidden="true">🛡️</span>
+    <span>
+      <strong>관리자 현황판</strong>
+      <small>접속 · 전체 쪽지 · 답변</small>
+    </span>
+    <span class="admin-quick-access-arrow" aria-hidden="true">›</span>
+  </button>
+</aside>
+{% endif %}

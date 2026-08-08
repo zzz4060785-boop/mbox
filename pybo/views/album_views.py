@@ -12,6 +12,7 @@ from flask import (
     url_for,
 )
 from werkzeug.utils import secure_filename
+from pybo.uploads import is_safe_upload
 
 from pybo import db, login_required
 from pybo.models import AlbumComment, AlbumPhoto, User
@@ -107,6 +108,7 @@ def login_view():
 
 
 @bp.route("/api/faces/<int:album_id>")
+@login_required
 def get_faces(album_id):
     faces = FACES_DATA.get(album_id)
     if faces is None:
@@ -115,6 +117,7 @@ def get_faces(album_id):
 
 
 @bp.post("/api/executive/upload-photo")
+@login_required
 def upload_executive_photo():
     if not _is_user_executive(session.get("user_id")):
         return jsonify(status="error", message="임원 권한이 필요합니다."), 403
@@ -130,12 +133,14 @@ def upload_executive_photo():
     extension = Path(original_name).suffix.lower().lstrip(".")
     if extension not in allowed_extensions:
         return jsonify(status="error", message="지원하지 않는 이미지 형식입니다."), 400
+    if not is_safe_upload(image, extension, current_app.config):
+        return jsonify(status="error", message="이미지 파일 내용이 올바르지 않습니다."), 400
 
-    upload_directory = Path(current_app.static_folder) / "uploads"
+    upload_directory = Path(current_app.config["UPLOAD_FOLDER"])
     upload_directory.mkdir(parents=True, exist_ok=True)
     saved_name = f"album_{uuid4().hex}.{extension}"
     image.save(upload_directory / saved_name)
-    image_url = url_for("static", filename=f"uploads/{saved_name}")
+    image_url = url_for("uploaded_media", filename=saved_name)
 
     photo = AlbumPhoto.query.filter_by(slot_class=slot_class).first()
     if photo:
@@ -152,6 +157,7 @@ def upload_executive_photo():
 
 
 @bp.route("/api/comments/<int:room_id>", methods=["GET", "POST"])
+@login_required
 def comments_api(room_id):
     if room_id not in FACES_DATA:
         return jsonify(status="error", message="앨범을 찾을 수 없습니다."), 404
@@ -173,9 +179,6 @@ def comments_api(room_id):
                 for comment in comments
             ],
         )
-
-    if not session.get("user_id"):
-        return jsonify(status="error", message="로그인이 필요합니다."), 401
 
     data = request.get_json(silent=True) or {}
     text = str(data.get("text", "")).strip()

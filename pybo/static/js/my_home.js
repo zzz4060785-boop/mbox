@@ -1,6 +1,44 @@
 document.addEventListener("DOMContentLoaded", () => {
   const status = document.getElementById("myHomeStatus");
 
+  const pageScroller = document.querySelector(".my-home-container");
+  if (pageScroller && window.matchMedia("(max-width: 768px)").matches) {
+    const scrollTrack = document.createElement("div");
+    scrollTrack.className = "my-home-scroll-track";
+    scrollTrack.setAttribute("aria-hidden", "true");
+    const scrollThumb = document.createElement("div");
+    scrollThumb.className = "my-home-scroll-thumb";
+    scrollTrack.appendChild(scrollThumb);
+    document.body.appendChild(scrollTrack);
+
+    const updateScrollIndicator = () => {
+      const maximum = pageScroller.scrollHeight - pageScroller.clientHeight;
+      const trackHeight = scrollTrack.clientHeight;
+      scrollTrack.hidden = maximum <= 1;
+      if (maximum <= 1) return;
+
+      const thumbHeight = Math.max(
+        34,
+        Math.round(
+          trackHeight * pageScroller.clientHeight / pageScroller.scrollHeight,
+        ),
+      );
+      const travel = Math.max(0, trackHeight - thumbHeight);
+      scrollThumb.style.height = `${thumbHeight}px`;
+      scrollThumb.style.transform = `translateY(${Math.round(
+        travel * pageScroller.scrollTop / maximum,
+      )}px)`;
+    };
+
+    pageScroller.addEventListener("scroll", updateScrollIndicator, {
+      passive: true,
+    });
+    window.addEventListener("resize", updateScrollIndicator, { passive: true });
+    new ResizeObserver(updateScrollIndicator).observe(pageScroller);
+    requestAnimationFrame(updateScrollIndicator);
+    window.setTimeout(updateScrollIndicator, 300);
+  }
+
   /* =========================
      말풍선 (Speech Bubble) 관리
   ========================= */
@@ -165,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  initClassroomChat();
+  if (!window.FRIENDARY_SHARED_CLASSROOM) initClassroomChat();
 
   /* =========================
      1촌 교실 소환(초대) 모달
@@ -182,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (inviteModal) inviteModal.hidden = true;
   }
 
-  if (inviteModalBtn && inviteModal) {
+  if (!window.FRIENDARY_SHARED_CLASSROOM && inviteModalBtn && inviteModal) {
     inviteModalBtn.addEventListener("click", async () => {
       inviteModal.hidden = false;
       if (!inviteList) return;
@@ -197,15 +235,26 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        const escapeHtml = (value) => {
+          const node = document.createElement("div");
+          node.textContent = value ?? "";
+          return node.innerHTML;
+        };
         inviteList.innerHTML = data.friends
           .map(
             (friend) => `
           <div class="classroom-invite-item">
-            <span><strong>${friend.username}</strong></span>
-            <button type="button" onclick="sendClassroomInvite(${friend.user_id}, '${friend.username}')">📢 소환하기</button>
+            <span><strong>${escapeHtml(friend.username)}</strong></span>
+            <button type="button" class="classroom-invite-send" data-user-id="${Number(friend.user_id)}">📢 소환하기</button>
           </div>`
           )
           .join("");
+        inviteList.querySelectorAll(".classroom-invite-send").forEach((button) => {
+          button.addEventListener("click", () => {
+            const friend = data.friends.find((item) => Number(item.user_id) === Number(button.dataset.userId));
+            if (friend) window.sendClassroomInvite(friend.user_id, friend.username);
+          });
+        });
       } catch (e) {
         inviteList.innerHTML =
           "<p style='font-size:12px;color:red;'>1촌 목록을 불러오지 못했습니다.</p>";

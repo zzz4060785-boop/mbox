@@ -148,7 +148,6 @@ async function enterAlbum(
     window.location.href = result.redirect_url || albumUrl;
   } catch (error) {
     messageElement.textContent = error.message;
-    alert(`⚠️ ${error.message}`);
   }
 }
 
@@ -184,8 +183,6 @@ function closeSchoolModal() {
 }
 
 openSchoolModalButton.addEventListener("click", openSchoolModal);
-schoolInput?.addEventListener("click", openSchoolModal);
-graduateSchoolInput?.addEventListener("click", openSchoolModal);
 
 document.querySelectorAll("[data-close-school-modal]").forEach((button) => {
   button.addEventListener("click", closeSchoolModal);
