@@ -3,18 +3,49 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 %}main-album-container{% endblock %} {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album.css', v='20260807-top-fix35') }}"
+  href="{{ url_for('static', filename='css/main_album.css', v='20260809-school-title-transform-v3') }}"
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album_right.css', v='20260807-top-fix35') }}"
+  href="{{ url_for('static', filename='css/main_album_right.css', v='20260807-star-v12') }}"
 />
-
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-top-fix35') }}"
+  href="{{ url_for('static', filename='css/bottom_box.css', v='20260808-bottom-position-v1') }}"
 />
-
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/star.css', v='20260808-scoped-1') }}"
+/>
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/admin_quick_access.css', v='20260809-avatar-selector-v1') }}"
+/>
+{% endblock %} {% block notification_center %}
+<div class="notification-center" id="notificationCenter">
+  <button
+    class="notification-toggle"
+    id="notificationToggle"
+    type="button"
+    aria-label="{{ tr('알림 열기') }}"
+    aria-expanded="false"
+    aria-controls="notificationPanel"
+  >
+    <span aria-hidden="true">🔔</span>
+    <span class="notification-badge" id="notificationBadge" hidden>0</span>
+  </button>
+  <section class="notification-panel" id="notificationPanel" hidden>
+    <header class="notification-header">
+      <strong>{{ tr('알림') }}</strong>
+      <button id="notificationReadAll" type="button">
+        {{ tr('모두 읽음') }}
+      </button>
+    </header>
+    <div class="notification-list" id="notificationList" aria-live="polite">
+      <p class="notification-empty">{{ tr('알림을 불러오는 중입니다.') }}</p>
+    </div>
+  </section>
+</div>
 {% endblock %} {% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
@@ -82,7 +113,8 @@ block body_class %}main-album-body{% endblock %} {% block container_class
     </div>
   </section>
 
-  {% include "main_album_right.html" %} {% include "bottom_box.html" %}
+  {% include "admin_quick_access.html" %} {% include "main_album_right.html" %}
+  {% include "bottom_box.html" %}
 
   <div class="album-wrap" id="albumWrap" style="display: none">
     <div class="album-top">
@@ -265,16 +297,33 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   <div id="friendListModal" class="profile-popup">
     <div class="popup-box">
       <h3>✨ 나의 1촌 목록 ✨</h3>
-      <div id="friendListContainer" class="friend-list-container"></div>
-      <section class="friend-request-section" id="friendRequestSection" hidden>
-        <h4>받은 1촌 신청</h4>
-        <div id="friendRequestContainer" class="friend-list-container"></div>
-      </section>
+      <div class="friend-list-scroll-area">
+        <div id="friendListContainer" class="friend-list-container"></div>
+        <section class="friend-request-section" id="friendRequestSection" hidden>
+          <h4>받은 1촌 신청</h4>
+          <div id="friendRequestContainer" class="friend-list-container"></div>
+        </section>
+      </div>
       <button onclick="closeFriendList()" class="btn-close">닫기</button>
     </div>
   </div>
 
   <!-- 전체 가입자를 찾고 이름을 눌러 인맥 프로필을 여는 화면입니다. -->
+  <div id="summonOfflineModal" class="summon-status-modal" hidden>
+    <div class="summon-status-backdrop" data-summon-close></div>
+    <section
+      class="summon-status-box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="summonOfflineTitle"
+    >
+      <div class="summon-status-icon" aria-hidden="true">🌙</div>
+      <h3 id="summonOfflineTitle">현재 접속 중이 아닙니다</h3>
+      <p>친구가 접속한 뒤 다시 소환해 주세요.</p>
+      <button type="button" data-summon-close>확인</button>
+    </section>
+  </div>
+
   <div id="peopleFinderModal" class="profile-popup">
     <div class="popup-box">
       <h3>👥 전혀 새로운 친구 찾기</h3>
@@ -454,36 +503,16 @@ block body_class %}main-album-body{% endblock %} {% block container_class
       </button>
     </div>
   </div>
-
-  <!-- 학교 탈퇴 및 연관 앨범/데이터 삭제 커스텀 확인 모달 -->
-  <div class="profile-popup" id="schoolLeaveConfirmModal" style="display: none;">
-    <div class="popup-box school-manager-box" style="text-align: center;">
-      <h3 style="color: #e53e3e; margin-bottom: 12px; font-size: 18px;">⚠️ 학교 탈퇴 및 데이터 삭제</h3>
-      <p id="schoolLeaveConfirmText" style="font-size: 13px; color: #4a5568; line-height: 1.6; margin-bottom: 20px;">
-        이 학교에서 작성한 게시글, 댓글, 사랑별 글, 앨범 사진과 첨부파일이 모두 삭제되며 복구할 수 없습니다.
-      </p>
-      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-        <button type="button" onclick="closeSchoolLeaveConfirmModal()" class="btn-close" style="background: #edf2f7; color: #4a5568; margin: 0; width: 45%;">
-          취소
-        </button>
-        <button type="button" onclick="executeLeaveRegisteredSchool()" class="btn-close" style="background: #e53e3e; color: #ffffff; margin: 0; width: 45%;">
-          삭제 진행
-        </button>
-      </div>
-    </div>
-  </div>
-  {% include "footer.html" %}
 </div>
-{% endblock %}
-
-{% block footer %}{% endblock %}
- {% block script %}
+{% endblock %} {% block script %}
 <script
-  src="{{ url_for('static', filename='js/main_album.js', v='20260807-school-fix2') }}"
+  src="{{ url_for('static', filename='js/main_album.js', v='20260808-shared-room-v2') }}"
   data-user-album-url="{{ url_for('user_album') }}"
   data-current-user-id="{{ current_user.id }}"
   data-current-username="{{ current_user.username }}"
 ></script>
 <script src="{{ url_for('static', filename='js/main_album_right.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bottom_box.js') }}"></script>
+<script src="{{ url_for('static', filename='js/star.js', v='20260808-scoped-1') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_quick_access.js', v='20260809-avatar-selector-v1') }}"></script>
 {% endblock %}

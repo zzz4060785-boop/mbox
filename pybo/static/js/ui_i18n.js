@@ -1,7 +1,6 @@
 (function () {
   const language = window.FRIENDARY_LANGUAGE || "ko";
   const catalog = window.FRIENDARY_TRANSLATIONS || {};
-  if (language === "ko" || !Object.keys(catalog).length) return;
 
   const protectedSelector = [
     "[data-no-translate]",
@@ -35,6 +34,22 @@
       result = result.split(source).join(target);
     }
     return result;
+  }
+
+  // Dynamic dialogs created by page scripts must use the same language as
+  // server-rendered text. Korean stays unchanged because its catalog is empty.
+  window.friendaryTranslate = translated;
+  const nativeAlert = window.alert.bind(window);
+  const nativeConfirm = window.confirm.bind(window);
+  const nativePrompt = window.prompt.bind(window);
+  window.alert = (message) => nativeAlert(translated(String(message ?? "")));
+  window.confirm = (message) => nativeConfirm(translated(String(message ?? "")));
+  window.prompt = (message, defaultValue = "") =>
+    nativePrompt(translated(String(message ?? "")), translated(String(defaultValue ?? "")));
+
+  if (language === "ko" || !Object.keys(catalog).length) {
+    document.documentElement.lang = language;
+    return;
   }
 
   function translateText(node) {

@@ -20,15 +20,19 @@
     "path": "android\\friendary-upload-key.jks",
     "alias": "friendary"
   },
-  "appVersionName": "1.1.0",
-  "appVersionCode": 13,
+  "appVersionName": "1.1.4",
+  "appVersionCode": 17,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://zzz8247.mycafe24.com/static/manifest.webmanifest",
   "fallbackType": "webview",
-  "features": {},
+  "features": {
+    "playBilling": {
+      "enabled": true
+    }
+  },
   "alphaDependencies": {
-    "enabled": false
+    "enabled": true
   },
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
@@ -43,5 +47,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1.1.0"
+  "appVersion": "1.1.4"
 }

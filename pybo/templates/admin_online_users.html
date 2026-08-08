@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 현황판 | Friendary{% endblock %}
+{% block body_class %}admin-dashboard-body{% endblock %}
+{% block container_class %}admin-dashboard-shell{% endblock %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_online_users.css', v='20260808-scroll-1') }}" />
+{% endblock %}
+
+{% block content %}
+<main
+  class="admin-dashboard"
+  data-online-url="{{ url_for('api_admin_online_users') }}"
+  data-broadcast-url="{{ url_for('admin_message_broadcast') }}"
+  data-replies-url="{{ url_for('admin_message_replies') }}"
+  data-reply-url="{{ url_for('admin_message_reply') }}"
+>
+  <header class="admin-dashboard-header">
+    <div>
+      <p class="admin-eyebrow">FRIENDARY ADMIN</p>
+      <h1>실시간 운영 현황</h1>
+      <p>최근 5분 접속자와 전체 공지 쪽지, 회원 답변을 한곳에서 관리합니다.</p>
+    </div>
+    <button
+      type="button"
+      class="admin-back-link"
+      id="adminBackButton"
+      data-fallback-url="{{ url_for('main_album') }}"
+    >
+      ← 뒤로가기
+    </button>
+  </header>
+
+  <section class="admin-metrics" aria-label="접속 요약">
+    <article class="admin-metric admin-metric-live">
+      <span class="admin-metric-label"><i aria-hidden="true"></i> 현재 접속</span>
+      <strong id="onlineCount">-</strong>
+      <small>최근 5분</small>
+    </article>
+    <article class="admin-metric">
+      <span class="admin-metric-label">오늘 로그인</span>
+      <strong id="todayLoginCount">-</strong>
+      <small>오늘 00시 이후</small>
+    </article>
+    <article class="admin-metric">
+      <span class="admin-metric-label">전체 회원</span>
+      <strong id="totalUserCount">-</strong>
+      <small>가입 계정</small>
+    </article>
+  </section>
+
+  <nav class="admin-tabs" aria-label="관리자 기능">
+    <button type="button" class="is-active" data-tab="online">접속 회원</button>
+    <button type="button" data-tab="broadcast">전체 쪽지</button>
+    <button type="button" data-tab="replies">
+      답변함 <span id="replyBadge" hidden>0</span>
+    </button>
+  </nav>
+
+  <section class="admin-panel is-active" data-panel="online">
+    <div class="admin-panel-heading">
+      <div>
+        <h2>접속 회원</h2>
+        <p id="refreshStatus" aria-live="polite">데이터를 불러오는 중입니다.</p>
+      </div>
+      <button type="button" class="admin-secondary-button" id="refreshOnlineUsers">새로고침</button>
+    </div>
+    <div class="admin-table-wrap">
+      <table>
+        <thead><tr><th>회원</th><th>학교</th><th>마지막 활동</th><th>상태</th></tr></thead>
+        <tbody id="onlineUserRows"></tbody>
+      </table>
+      <p class="admin-empty" id="onlineEmpty" hidden>현재 접속 중인 회원이 없습니다.</p>
+    </div>
+  </section>
+
+  <section class="admin-panel" data-panel="broadcast" hidden>
+    <div class="admin-panel-heading">
+      <div>
+        <h2>전체 공지 쪽지</h2>
+        <p>관리자를 제외한 모든 가입 회원의 받은 쪽지함과 알림으로 전달됩니다.</p>
+      </div>
+    </div>
+    <form class="admin-compose" id="broadcastForm">
+      <label for="broadcastContent">보낼 내용</label>
+      <textarea id="broadcastContent" maxlength="1000" rows="8" placeholder="전체 회원에게 전달할 공지 내용을 입력하세요." required></textarea>
+      <div class="admin-compose-footer">
+        <span id="broadcastLength">0 / 1000</span>
+        <button type="submit" class="admin-primary-button">전체 회원에게 보내기</button>
+      </div>
+      <p class="admin-form-status" id="broadcastStatus" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="admin-panel" data-panel="replies" hidden>
+    <div class="admin-panel-heading">
+      <div>
+        <h2>회원 답변함</h2>
+        <p id="replyStatus" aria-live="polite">받은 답변을 불러오는 중입니다.</p>
+      </div>
+      <button type="button" class="admin-secondary-button" id="refreshReplies">새로고침</button>
+    </div>
+    <div class="admin-reply-list" id="adminReplyList"></div>
+    <p class="admin-empty" id="replyEmpty" hidden>아직 도착한 답변이 없습니다.</p>
+  </section>
+</main>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/admin_online_users.js') }}"></script>
+{% endblock %}

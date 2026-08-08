@@ -1,4 +1,5 @@
 .env
+secrets/*.json
 __pycache__/
 *.py[cod]
 *.db
@@ -8,8 +9,14 @@ __pycache__/
 android/signing-credentials.txt
 android/*.apk
 android/*.aab
+/Friendary-*.aab
+pybo/static/Friendary_app.apk
+pybo/static/uploads/
+instance/uploads/
 android/.gradle/
 android/build/
 android/app/build/
 android/local.properties
 db-backups/
+scripts/_japan_source/
+scripts/_us_source/

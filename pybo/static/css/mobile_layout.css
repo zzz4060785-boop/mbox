@@ -1,0 +1,191 @@
+/* Final mobile layout layer. Keep this file last in the cascade. */
+:root {
+  --friendary-safe-top: env(safe-area-inset-top, 0px);
+  --friendary-safe-right: env(safe-area-inset-right, 0px);
+  --friendary-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --friendary-safe-left: env(safe-area-inset-left, 0px);
+}
+
+html {
+  width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  background: #f3f4f6;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+.mobile-wrap {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin-inline: auto;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+  font: inherit;
+}
+
+.logout-form {
+  top: calc(12px + var(--friendary-safe-top));
+  right: calc(12px + var(--friendary-safe-right));
+}
+
+/* Keep the only notification bell and logout action on one stable header row.
+   The direct-child selector stops this rule when the bell moves into album view. */
+.mobile-wrap.main-album-container > .notification-center,
+.mobile-wrap.main-album-container > .logout-form {
+  top: calc(12px + var(--friendary-safe-top));
+}
+
+.mobile-wrap.main-album-container > .notification-center {
+  left: calc(12px + var(--friendary-safe-left));
+}
+
+.mobile-wrap.main-album-container > .logout-form .logout-btn {
+  min-height: 38px;
+  padding-block: 7px;
+}
+
+.photo-lightbox {
+  padding-top: max(16px, var(--friendary-safe-top));
+  padding-right: max(16px, var(--friendary-safe-right));
+  padding-bottom: max(16px, var(--friendary-safe-bottom));
+  padding-left: max(16px, var(--friendary-safe-left));
+}
+
+@media (max-width: 430px) {
+  .mobile-wrap {
+    max-width: none;
+    box-shadow: none;
+  }
+
+  body.main-album-body,
+  .mobile-wrap.main-album-container,
+  .album-page {
+    min-height: 100dvh;
+  }
+}
+
+/* Sarangdal status modal: stay inside Android/iOS system bars. */
+.star-detail-modal {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding-top: max(16px, var(--friendary-safe-top));
+  padding-right: max(16px, var(--friendary-safe-right));
+  padding-bottom: max(16px, var(--friendary-safe-bottom));
+  padding-left: max(16px, var(--friendary-safe-left));
+}
+
+.star-detail-modal .glass-card {
+  max-height: calc(100dvh - max(32px, var(--friendary-safe-top)) - max(32px, var(--friendary-safe-bottom)));
+}
+
+.sarangdal-policy-note {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #5d4037;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+}
+
+body.friendary-modal-open {
+  overflow: hidden !important;
+}
+
+.friendary-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  display: grid;
+  place-items: center;
+  padding-top: max(20px, var(--friendary-safe-top));
+  padding-right: max(18px, var(--friendary-safe-right));
+  padding-bottom: max(20px, var(--friendary-safe-bottom));
+  padding-left: max(18px, var(--friendary-safe-left));
+}
+
+.friendary-confirm-modal[hidden] {
+  display: none !important;
+}
+
+.friendary-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(5px);
+}
+
+.friendary-confirm-box {
+  position: relative;
+  width: min(100%, 340px);
+  padding: 24px 20px 18px;
+  border: 1px solid #fbcfe8;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(190, 24, 93, 0.22);
+  text-align: center;
+}
+
+.friendary-confirm-icon {
+  margin-bottom: 8px;
+  font-size: 2.2rem;
+}
+
+.friendary-confirm-box p {
+  margin: 0 0 20px;
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.friendary-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.friendary-confirm-actions button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.friendary-confirm-cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.friendary-confirm-accept {
+  background: linear-gradient(135deg, #ec4899, #f43f5e);
+  color: #fff;
+}
