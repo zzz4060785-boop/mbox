@@ -1,6 +1,44 @@
 document.addEventListener("DOMContentLoaded", () => {
   const status = document.getElementById("myHomeStatus");
 
+  const pageScroller = document.querySelector(".my-home-container");
+  if (pageScroller && window.matchMedia("(max-width: 768px)").matches) {
+    const scrollTrack = document.createElement("div");
+    scrollTrack.className = "my-home-scroll-track";
+    scrollTrack.setAttribute("aria-hidden", "true");
+    const scrollThumb = document.createElement("div");
+    scrollThumb.className = "my-home-scroll-thumb";
+    scrollTrack.appendChild(scrollThumb);
+    document.body.appendChild(scrollTrack);
+
+    const updateScrollIndicator = () => {
+      const maximum = pageScroller.scrollHeight - pageScroller.clientHeight;
+      const trackHeight = scrollTrack.clientHeight;
+      scrollTrack.hidden = maximum <= 1;
+      if (maximum <= 1) return;
+
+      const thumbHeight = Math.max(
+        34,
+        Math.round(
+          trackHeight * pageScroller.clientHeight / pageScroller.scrollHeight,
+        ),
+      );
+      const travel = Math.max(0, trackHeight - thumbHeight);
+      scrollThumb.style.height = `${thumbHeight}px`;
+      scrollThumb.style.transform = `translateY(${Math.round(
+        travel * pageScroller.scrollTop / maximum,
+      )}px)`;
+    };
+
+    pageScroller.addEventListener("scroll", updateScrollIndicator, {
+      passive: true,
+    });
+    window.addEventListener("resize", updateScrollIndicator, { passive: true });
+    new ResizeObserver(updateScrollIndicator).observe(pageScroller);
+    requestAnimationFrame(updateScrollIndicator);
+    window.setTimeout(updateScrollIndicator, 300);
+  }
+
   /* =========================
      말풍선 (Speech Bubble) 관리
   ========================= */

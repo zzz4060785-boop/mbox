@@ -6,7 +6,8 @@
 .my-home-page {
   width: 100%;
   min-height: 100vh;
-  padding: 58px 12px calc(72px + env(safe-area-inset-bottom, 0px));
+  padding: calc(80px + env(safe-area-inset-top, 0px)) 12px
+    calc(120px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(#faf9f7, #f2ece5);
 }
 
@@ -25,6 +26,8 @@ body.my-home-body {
   overscroll-behavior-y: contain;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+  scroll-padding-top: calc(80px + env(safe-area-inset-top, 0px));
+  scroll-padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
   scrollbar-color: rgba(47, 128, 237, 0.72) rgba(255, 255, 255, 0.28);
   scrollbar-width: thin;
 }
@@ -40,6 +43,30 @@ body.my-home-body {
 .mobile-wrap.my-home-container::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(47, 128, 237, 0.72);
+}
+
+.my-home-scroll-track {
+  position: fixed;
+  top: 76px;
+  right: max(3px, calc((100vw - 430px) / 2 + 3px));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  width: 6px;
+  z-index: 1100;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.my-home-scroll-track[hidden] {
+  display: none;
+}
+
+.my-home-scroll-thumb {
+  width: 100%;
+  min-height: 34px;
+  border-radius: inherit;
+  background: #2f80ed;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
 }
 
 /* -------------------------
