@@ -4,10 +4,13 @@
 나만의 교실
 {% endblock %}
 
+{% block body_class %}my-home-body{% endblock %}
+{% block container_class %}my-home-container{% endblock %}
+
 {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/my_home.css', v='3') }}"
+  href="{{ url_for('static', filename='css/my_home.css', v='20260808-scroll-v1') }}"
 />
 {% endblock %}
 

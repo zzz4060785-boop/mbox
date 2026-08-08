@@ -6,8 +6,40 @@
 .my-home-page {
   width: 100%;
   min-height: 100vh;
-  padding: 58px 12px 24px;
+  padding: 58px 12px calc(72px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(#faf9f7, #f2ece5);
+}
+
+body.my-home-body {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.mobile-wrap.my-home-container {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: rgba(47, 128, 237, 0.72) rgba(255, 255, 255, 0.28);
+  scrollbar-width: thin;
+}
+
+.mobile-wrap.my-home-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.mobile-wrap.my-home-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.mobile-wrap.my-home-container::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(47, 128, 237, 0.72);
 }
 
 /* -------------------------
