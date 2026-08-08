@@ -1151,6 +1151,186 @@ def create_app():
             )
         )
 
+    def is_site_admin(user):
+        """Return whether a user may access site-wide administration data."""
+        if not user:
+            return False
+        admin_email = app.config.get("GMAIL_ADMIN_EMAIL", "").strip().lower()
+        executive_ids = set(app.config.get("EXECUTIVE_USER_IDS", []))
+        return bool(
+            (admin_email and user.email.lower() == admin_email)
+            or user.id in executive_ids
+        )
+
+    def require_site_admin():
+        user_id = session.get("user_id")
+        if not user_id:
+            return None
+        user = db.session.get(User, user_id)
+        return user if is_site_admin(user) else None
+
+    @app.context_processor
+    def inject_site_admin_access():
+        return {"can_view_admin_dashboard": bool(require_site_admin())}
+
+    @app.get("/admin/online-users")
+    @login_required
+    def admin_online_users():
+        if not require_site_admin():
+            return "Forbidden", 403
+        return render_template("admin_online_users.html")
+
+    @app.get("/api/admin/online-users")
+    @login_required
+    def api_admin_online_users():
+        if not require_site_admin():
+            return jsonify(success=False, message="관리자만 확인할 수 있습니다."), 403
+
+        now = datetime.utcnow()
+        online_since = now - timedelta(minutes=5)
+        online_users = (
+            User.query.filter(User.last_active_at >= online_since)
+            .order_by(User.last_active_at.desc(), User.id.asc())
+            .all()
+        )
+        today_start = datetime(now.year, now.month, now.day)
+        return jsonify(
+            success=True,
+            generated_at=now.isoformat(timespec="seconds") + "Z",
+            online_count=len(online_users),
+            total_users=User.query.count(),
+            logged_in_today=User.query.filter(
+                User.last_login_at >= today_start
+            ).count(),
+            users=[
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "school_name": user.school_name or "미등록",
+                    "last_active_at": user.last_active_at.isoformat(
+                        timespec="seconds"
+                    )
+                    + "Z",
+                }
+                for user in online_users
+            ],
+        )
+
+    @app.post("/api/admin/messages/broadcast")
+    @login_required
+    @rate_limit(limit=5, window=3600, scope="admin-broadcast")
+    def admin_message_broadcast():
+        admin = require_site_admin()
+        if not admin:
+            return jsonify(success=False, message="관리자만 발송할 수 있습니다."), 403
+        data = request.get_json(silent=True) or {}
+        content = str(data.get("content", "")).strip()
+        if not content:
+            return jsonify(success=False, message="보낼 내용을 입력해 주세요."), 400
+        if len(content) > 1000:
+            return jsonify(success=False, message="쪽지는 1000자 이하로 입력해 주세요."), 400
+
+        recipients = User.query.filter(User.id != admin.id).all()
+        for recipient in recipients:
+            message = DirectMessage(
+                sender_id=admin.id,
+                receiver_id=recipient.id,
+                content=content,
+            )
+            db.session.add(message)
+            db.session.flush()
+            add_notification(
+                recipient.id,
+                "admin_broadcast",
+                "관리자 공지 쪽지",
+                f"{admin.username} 관리자가 전체 쪽지를 보냈습니다.",
+                url_for("main_album", open="messages", message=message.id),
+                admin.id,
+            )
+        db.session.commit()
+        audit_event(
+            "admin_message_broadcast",
+            {"recipient_count": len(recipients)},
+            user_id=admin.id,
+        )
+        return jsonify(
+            success=True,
+            sent_count=len(recipients),
+            message=f"전체 회원 {len(recipients)}명에게 쪽지를 보냈습니다.",
+        ), 201
+
+    @app.get("/api/admin/messages/replies")
+    @login_required
+    def admin_message_replies():
+        admin = require_site_admin()
+        if not admin:
+            return jsonify(success=False, message="관리자만 확인할 수 있습니다."), 403
+        messages = (
+            DirectMessage.query.filter(
+                DirectMessage.receiver_id == admin.id,
+                DirectMessage.sender_id != admin.id,
+            )
+            .order_by(DirectMessage.create_date.desc())
+            .limit(100)
+            .all()
+        )
+        unread_count = sum(not message.is_read for message in messages)
+        return jsonify(
+            success=True,
+            unread_count=unread_count,
+            messages=[
+                {
+                    "id": message.id,
+                    "sender_id": message.sender_id,
+                    "sender": message.sender.username,
+                    "sender_email": message.sender.email,
+                    "content": message.content,
+                    "is_read": message.is_read,
+                    "created_at": message.create_date.isoformat(
+                        timespec="seconds"
+                    )
+                    + "Z",
+                }
+                for message in messages
+            ],
+        )
+
+    @app.post("/api/admin/messages/reply")
+    @login_required
+    @rate_limit(limit=30, window=3600, scope="admin-reply")
+    def admin_message_reply():
+        admin = require_site_admin()
+        if not admin:
+            return jsonify(success=False, message="관리자만 답장할 수 있습니다."), 403
+        data = request.get_json(silent=True) or {}
+        receiver = db.session.get(User, data.get("receiver_id"))
+        content = str(data.get("content", "")).strip()
+        if not receiver or receiver.id == admin.id:
+            return jsonify(success=False, message="답장할 회원을 확인해 주세요."), 400
+        if not content:
+            return jsonify(success=False, message="답장 내용을 입력해 주세요."), 400
+        if len(content) > 1000:
+            return jsonify(success=False, message="쪽지는 1000자 이하로 입력해 주세요."), 400
+
+        message = DirectMessage(
+            sender_id=admin.id,
+            receiver_id=receiver.id,
+            content=content,
+        )
+        db.session.add(message)
+        db.session.flush()
+        add_notification(
+            receiver.id,
+            "admin_reply",
+            "관리자 답장",
+            f"{admin.username} 관리자가 답장을 보냈습니다.",
+            url_for("main_album", open="messages", message=message.id),
+            admin.id,
+        )
+        db.session.commit()
+        return jsonify(success=True, message="답장을 보냈습니다."), 201
+
     @app.get("/contact-admin")
     @login_required
     def contact_admin():
@@ -2868,11 +3048,20 @@ def create_app():
         ):
             user.is_executive = False
             user.executive_elected_at = None
+        should_commit = False
+        if user and (
+            user.last_active_at is None
+            or user.last_active_at < now - timedelta(seconds=30)
+        ):
+            user.last_active_at = now
+            should_commit = True
         if user and (
             user.last_login_at is None
             or user.last_login_at < now - timedelta(hours=12)
         ):
             user.last_login_at = now
+            should_commit = True
+        if should_commit:
             db.session.commit()
 
     @app.route("/board")

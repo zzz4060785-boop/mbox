@@ -2,6 +2,7 @@ import io
 import re
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 from werkzeug.security import generate_password_hash
@@ -11,6 +12,7 @@ from pybo import create_app, db
 from pybo.models import (
     BoardAttachment,
     ClassroomParticipant,
+    DirectMessage,
     Friendship,
     Notification,
     User,
@@ -189,6 +191,20 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         response = self.client.get("/api/my-schools")
         self.assertEqual(response.status_code, 401)
 
+    def test_admin_quick_access_is_not_rendered_for_regular_users(self):
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+
+        self.app.config["EXECUTIVE_USER_IDS"] = []
+        self.app.config["GMAIL_ADMIN_EMAIL"] = "admin@example.invalid"
+        regular_html = self.client.get("/main-album").get_data(as_text=True)
+        self.assertNotIn('id="adminQuickAccessButton"', regular_html)
+
+        self.app.config["EXECUTIVE_USER_IDS"] = [self.user_id]
+        admin_html = self.client.get("/main-album").get_data(as_text=True)
+        self.assertIn('id="adminQuickAccessButton"', admin_html)
+
     def test_monthly_sarangdal_is_added_once_to_existing_balance(self):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)
@@ -314,6 +330,71 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         received = self.client.get(f"/api/social/classroom/{room_id}/messages")
         self.assertEqual(received.status_code, 200)
         self.assertEqual(received.get_json()["messages"][0]["content"], "안녕하세요")
+
+    def test_admin_dashboard_broadcast_and_reply_flow(self):
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+
+        self.assertEqual(self.client.get("/admin/online-users").status_code, 403)
+        self.app.config["GMAIL_ADMIN_EMAIL"] = "tester@example.com"
+
+        with self.app.app_context():
+            recipient = User(
+                username="recipient",
+                email="recipient@example.com",
+                password=generate_password_hash("password"),
+                last_active_at=datetime.utcnow(),
+                last_login_at=datetime.utcnow(),
+            )
+            db.session.add(recipient)
+            db.session.commit()
+            recipient_id = recipient.id
+
+        self.assertEqual(self.client.get("/admin/online-users").status_code, 200)
+        online = self.client.get("/api/admin/online-users").get_json()
+        self.assertTrue(online["success"])
+        self.assertIn(
+            "recipient@example.com",
+            [user["email"] for user in online["users"]],
+        )
+
+        broadcast = self.client.post(
+            "/api/admin/messages/broadcast",
+            json={"content": "전체 공지 테스트"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(broadcast.status_code, 201)
+        self.assertEqual(broadcast.get_json()["sent_count"], 1)
+        with self.app.app_context():
+            sent = DirectMessage.query.filter_by(
+                sender_id=self.user_id,
+                receiver_id=recipient_id,
+            ).one()
+            self.assertEqual(sent.content, "전체 공지 테스트")
+            db.session.add(DirectMessage(
+                sender_id=recipient_id,
+                receiver_id=self.user_id,
+                content="관리자님께 답변드립니다.",
+            ))
+            db.session.commit()
+
+        replies = self.client.get("/api/admin/messages/replies").get_json()
+        self.assertEqual(replies["messages"][0]["sender_id"], recipient_id)
+        self.assertEqual(replies["unread_count"], 1)
+
+        reply = self.client.post(
+            "/api/admin/messages/reply",
+            json={"receiver_id": recipient_id, "content": "답변 확인했습니다."},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(reply.status_code, 201)
+        with self.app.app_context():
+            self.assertIsNotNone(DirectMessage.query.filter_by(
+                sender_id=self.user_id,
+                receiver_id=recipient_id,
+                content="답변 확인했습니다.",
+            ).first())
 
     def test_verification_challenge_locks_after_five_failures(self):
         self.client.post(

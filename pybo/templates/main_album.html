@@ -17,6 +17,10 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   rel="stylesheet"
   href="{{ url_for('static', filename='css/star.css', v='20260808-scoped-1') }}"
 />
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/admin_quick_access.css') }}"
+/>
 {% endblock %} {% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
@@ -83,6 +87,8 @@ block body_class %}main-album-body{% endblock %} {% block container_class
       <p class="online-friends-empty">접속 중인 1촌이 없습니다.</p>
     </div>
   </section>
+
+  {% include "admin_quick_access.html" %}
 
   {% include "main_album_right.html" %} {% include "bottom_box.html" %}
 
@@ -467,4 +473,5 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 <script src="{{ url_for('static', filename='js/main_album_right.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bottom_box.js') }}"></script>
 <script src="{{ url_for('static', filename='js/star.js', v='20260808-scoped-1') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_quick_access.js') }}"></script>
 {% endblock %}
