@@ -71,19 +71,20 @@ body.main-album-body {
 
   .album-page > h1 {
     margin-top: calc(15px + var(--main-album-mobile-top-offset));
+    position: relative;
+    z-index: 15;
+    transform: translateY(95px);
+    pointer-events: none;
   }
 
   .side-nav,
   .nav-right {
-    top: calc(70px + var(--main-album-mobile-top-offset));
+    top: calc(150px + var(--main-album-mobile-top-offset));
   }
 
-  .online-friends-panel {
-    top: calc(495px + var(--main-album-mobile-top-offset));
-  }
-
+  .online-friends-panel,
   .star-sidebar-box {
-    top: calc(532px + var(--main-album-mobile-top-offset)) !important;
+    top: calc(600px + var(--main-album-mobile-top-offset)) !important;
   }
 
   .mobile-wrap.main-album-container::-webkit-scrollbar {
@@ -126,7 +127,7 @@ body.main-album-body {
   /* The album uses absolute-positioned panels and a synthetic content
      height. Pull the shared legal footer up to meet the bottom menu. */
   .mobile-wrap.main-album-container > .app-footer {
-    margin-top: -36px;
+    margin-top: -50px;
   }
 }
 
@@ -148,7 +149,7 @@ body.main-album-body {
 .side-nav,
 .nav-right {
   position: absolute;
-  top: 70px;
+  top: 150px;
   width: min(180px, calc((100% - 30px) / 2));
   min-height: 380px;
   padding-top: 15px;
@@ -171,7 +172,7 @@ body.main-album-body {
   width: min(180px, calc((100% - 30px) / 2));
   min-height: 138px;
   position: absolute;
-  top: 495px;
+  top: 600px;
   left: 12px;
   z-index: 10;
   padding: 12px;
@@ -185,7 +186,7 @@ body.main-album-body {
   width: min(180px, calc((100% - 30px) / 2));
   min-height: 138px;
   position: absolute;
-  top: 532px;
+  top: 600px;
   right: 12px;
   z-index: 10;
   padding: 8px 4px;
@@ -331,9 +332,45 @@ body.main-album-body {
   font-weight: bold;
 }
 
+.friend-list-scroll-area {
+  max-height: 220px;
+  margin: 8px 0 14px;
+  padding-right: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #cfb8e8 #f7f2fb;
+  scrollbar-width: thin;
+}
+
+.friend-list-scroll-area::-webkit-scrollbar {
+  width: 5px;
+}
+
+.friend-list-scroll-area::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: #f7f2fb;
+}
+
+.friend-list-scroll-area::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cfb8e8;
+}
+
+#friendListModal .friend-list-container {
+  max-height: none;
+  overflow: visible;
+}
+
 #profilePopup .popup-box {
-  max-height: calc(100vh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-  max-height: calc(100dvh - 52px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  max-height: calc(
+    100vh - 52px - env(safe-area-inset-top, 0px) -
+      env(safe-area-inset-bottom, 0px)
+  );
+  max-height: calc(
+    100dvh - 52px - env(safe-area-inset-top, 0px) -
+      env(safe-area-inset-bottom, 0px)
+  );
   margin-top: calc(32px + env(safe-area-inset-top, 0px));
   overflow-y: auto;
 }
@@ -1344,7 +1381,9 @@ body.photo-lightbox-open {
   padding: 22px;
 }
 
-.summon-status-modal[hidden] { display: none; }
+.summon-status-modal[hidden] {
+  display: none;
+}
 
 .summon-status-backdrop {
   position: absolute;
@@ -1363,9 +1402,19 @@ body.photo-lightbox-open {
   text-align: center;
 }
 
-.summon-status-icon { font-size: 42px; }
-.summon-status-box h3 { margin-top: 13px; color: #172033; font-size: 21px; }
-.summon-status-box p { margin-top: 9px; color: #7b8495; font-size: 13px; }
+.summon-status-icon {
+  font-size: 42px;
+}
+.summon-status-box h3 {
+  margin-top: 13px;
+  color: #172033;
+  font-size: 21px;
+}
+.summon-status-box p {
+  margin-top: 9px;
+  color: #7b8495;
+  font-size: 13px;
+}
 .summon-status-box button {
   width: 100%;
   margin-top: 22px;

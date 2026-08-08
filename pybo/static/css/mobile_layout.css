@@ -52,6 +52,22 @@ button {
   right: calc(12px + var(--friendary-safe-right));
 }
 
+/* Keep the only notification bell and logout action on one stable header row.
+   The direct-child selector stops this rule when the bell moves into album view. */
+.mobile-wrap.main-album-container > .notification-center,
+.mobile-wrap.main-album-container > .logout-form {
+  top: calc(12px + var(--friendary-safe-top));
+}
+
+.mobile-wrap.main-album-container > .notification-center {
+  left: calc(12px + var(--friendary-safe-left));
+}
+
+.mobile-wrap.main-album-container > .logout-form .logout-btn {
+  min-height: 38px;
+  padding-block: 7px;
+}
+
 .photo-lightbox {
   padding-top: max(16px, var(--friendary-safe-top));
   padding-right: max(16px, var(--friendary-safe-right));

@@ -68,6 +68,7 @@
 
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
   .album-page > .bottom-box {
-    margin-top: 682px;
+    margin-top: 780px;
+    margin-bottom: 62px;
   }
 }

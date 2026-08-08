@@ -200,10 +200,39 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         self.app.config["GMAIL_ADMIN_EMAIL"] = "admin@example.invalid"
         regular_html = self.client.get("/main-album").get_data(as_text=True)
         self.assertNotIn('id="adminQuickAccessButton"', regular_html)
+        self.assertIn('id="avatarQuickAccessButton"', regular_html)
+        self.assertIn('id="avatarSelectorModal"', regular_html)
 
         self.app.config["EXECUTIVE_USER_IDS"] = [self.user_id]
         admin_html = self.client.get("/main-album").get_data(as_text=True)
         self.assertIn('id="adminQuickAccessButton"', admin_html)
+        self.assertNotIn('id="avatarQuickAccessButton"', admin_html)
+
+    def test_regular_user_can_select_only_an_allowed_default_avatar(self):
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+
+        selected = self.client.post(
+            "/api/social/avatar",
+            json={"avatar": "female"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(selected.status_code, 200)
+        self.assertEqual(selected.get_json()["avatar"], "female")
+        with self.app.app_context():
+            self.assertTrue(
+                db.session.get(User, self.user_id).profile_image_url.startswith(
+                    "/static/images/avatar_female.png"
+                )
+            )
+
+        rejected = self.client.post(
+            "/api/social/avatar",
+            json={"avatar": "../../forbidden"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(rejected.status_code, 400)
 
     def test_classroom_summon_requires_online_friend(self):
         with self.app.app_context():

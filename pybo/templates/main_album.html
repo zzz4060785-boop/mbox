@@ -3,7 +3,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 %}main-album-container{% endblock %} {% block stylesheet %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/main_album.css', v='20260808-summon-presence-v1') }}"
+  href="{{ url_for('static', filename='css/main_album.css', v='20260809-school-title-transform-v3') }}"
 />
 <link
   rel="stylesheet"
@@ -11,7 +11,7 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/bottom_box.css', v='20260807-star-v12') }}"
+  href="{{ url_for('static', filename='css/bottom_box.css', v='20260808-bottom-position-v1') }}"
 />
 <link
   rel="stylesheet"
@@ -19,10 +19,9 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 />
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/admin_quick_access.css') }}"
+  href="{{ url_for('static', filename='css/admin_quick_access.css', v='20260809-avatar-selector-v1') }}"
 />
-{% endblock %}
-{% block notification_center %}
+{% endblock %} {% block notification_center %}
 <div class="notification-center" id="notificationCenter">
   <button
     class="notification-toggle"
@@ -38,15 +37,16 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   <section class="notification-panel" id="notificationPanel" hidden>
     <header class="notification-header">
       <strong>{{ tr('알림') }}</strong>
-      <button id="notificationReadAll" type="button">{{ tr('모두 읽음') }}</button>
+      <button id="notificationReadAll" type="button">
+        {{ tr('모두 읽음') }}
+      </button>
     </header>
     <div class="notification-list" id="notificationList" aria-live="polite">
       <p class="notification-empty">{{ tr('알림을 불러오는 중입니다.') }}</p>
     </div>
   </section>
 </div>
-{% endblock %}
-{% block content %}
+{% endblock %} {% block content %}
 <div class="album-page">
   <h1 id="school-name">강남고등학교</h1>
   <!-- 공지사항 팝업 시작 -->
@@ -113,9 +113,8 @@ block body_class %}main-album-body{% endblock %} {% block container_class
     </div>
   </section>
 
-  {% include "admin_quick_access.html" %}
-
-  {% include "main_album_right.html" %} {% include "bottom_box.html" %}
+  {% include "admin_quick_access.html" %} {% include "main_album_right.html" %}
+  {% include "bottom_box.html" %}
 
   <div class="album-wrap" id="albumWrap" style="display: none">
     <div class="album-top">
@@ -298,11 +297,13 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   <div id="friendListModal" class="profile-popup">
     <div class="popup-box">
       <h3>✨ 나의 1촌 목록 ✨</h3>
-      <div id="friendListContainer" class="friend-list-container"></div>
-      <section class="friend-request-section" id="friendRequestSection" hidden>
-        <h4>받은 1촌 신청</h4>
-        <div id="friendRequestContainer" class="friend-list-container"></div>
-      </section>
+      <div class="friend-list-scroll-area">
+        <div id="friendListContainer" class="friend-list-container"></div>
+        <section class="friend-request-section" id="friendRequestSection" hidden>
+          <h4>받은 1촌 신청</h4>
+          <div id="friendRequestContainer" class="friend-list-container"></div>
+        </section>
+      </div>
       <button onclick="closeFriendList()" class="btn-close">닫기</button>
     </div>
   </div>
@@ -310,7 +311,12 @@ block body_class %}main-album-body{% endblock %} {% block container_class
   <!-- 전체 가입자를 찾고 이름을 눌러 인맥 프로필을 여는 화면입니다. -->
   <div id="summonOfflineModal" class="summon-status-modal" hidden>
     <div class="summon-status-backdrop" data-summon-close></div>
-    <section class="summon-status-box" role="dialog" aria-modal="true" aria-labelledby="summonOfflineTitle">
+    <section
+      class="summon-status-box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="summonOfflineTitle"
+    >
       <div class="summon-status-icon" aria-hidden="true">🌙</div>
       <h3 id="summonOfflineTitle">현재 접속 중이 아닙니다</h3>
       <p>친구가 접속한 뒤 다시 소환해 주세요.</p>
@@ -508,5 +514,5 @@ block body_class %}main-album-body{% endblock %} {% block container_class
 <script src="{{ url_for('static', filename='js/main_album_right.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bottom_box.js') }}"></script>
 <script src="{{ url_for('static', filename='js/star.js', v='20260808-scoped-1') }}"></script>
-<script src="{{ url_for('static', filename='js/admin_quick_access.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_quick_access.js', v='20260809-avatar-selector-v1') }}"></script>
 {% endblock %}

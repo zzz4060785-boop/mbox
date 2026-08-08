@@ -2272,6 +2272,41 @@ def create_app():
             profile_image_url=user.profile_image_url,
         )
 
+    @app.post("/api/social/avatar")
+    @login_required
+    def social_avatar_select():
+        """로그인한 사용자가 서비스에서 제공하는 기본 아바타를 선택합니다."""
+        payload = request.get_json(silent=True) or {}
+        avatar_key = str(payload.get("avatar") or "").strip().lower()
+        avatar_files = {
+            "male": "images/avatar_male.png",
+            "female": "images/avatar_female.png",
+        }
+        avatar_file = avatar_files.get(avatar_key)
+        if not avatar_file:
+            return jsonify(message="선택할 수 없는 아바타입니다."), 400
+
+        user = db.session.get(User, session["user_id"])
+        previous_url = user.profile_image_url
+        user.profile_image_url = url_for("static", filename=avatar_file)
+        db.session.commit()
+
+        # 직접 올렸던 대표사진을 기본 아바타로 교체한 경우에만 기존 파일을 정리합니다.
+        if previous_url:
+            upload_directory = Path(app.config["UPLOAD_FOLDER"])
+            previous_path = (upload_directory / Path(previous_url).name).resolve()
+            if (
+                previous_path.parent == upload_directory.resolve()
+                and previous_path.name.startswith(f"profile_{user.id}_")
+            ):
+                previous_path.unlink(missing_ok=True)
+
+        return jsonify(
+            message="아바타가 저장되었습니다.",
+            avatar=avatar_key,
+            profile_image_url=user.profile_image_url,
+        )
+
     @app.get("/api/social/users/<int:user_id>/connections")
     @login_required
     def social_user_connections(user_id):

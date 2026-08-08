@@ -187,7 +187,7 @@ echo "Cafe24 service is active. Backup: $BACKUP_DIR/friendary-$STAMP.tar.gz"
     )
 
     Write-Host "[4/5] Checking the public site..." -ForegroundColor Cyan
-    $Response = Invoke-WebRequest -Uri $SiteUrl -Method Head -TimeoutSec 20
+    $Response = Invoke-WebRequest -Uri $SiteUrl -Method Head -TimeoutSec 10
     if ($Response.StatusCode -ne 200) {
         throw "Site returned HTTP $($Response.StatusCode)."
     }
