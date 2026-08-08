@@ -26,7 +26,7 @@
 
   <section class="item-grid">
 
-    <div class="item-card" onclick="selectItem(this, 1000, 5, '사랑달 5개 충전')">
+    <div class="item-card" data-play-product="sarangdal_5" onclick="selectItem(this, 1000, 5, '사랑달 5개 충전', 'sarangdal_5')">
       <div class="item-badge">인기</div>
       <div class="item-icon">💖</div>
       <h3>사랑달 5개</h3>
@@ -34,24 +34,24 @@
       <div class="item-price">1,000원</div>
     </div>
 
-    <div class="item-card active" onclick="selectItem(this, 5000, 30, '사랑달 30개 충전')">
-      <div class="item-badge best">BEST 20% 혜택</div>
+    <div class="item-card active" data-play-product="sarangdal_30" onclick="selectItem(this, 6000, 30, '사랑달 30개 충전', 'sarangdal_30')">
+      <div class="item-badge best">추천</div>
       <div class="item-icon">💖💖</div>
       <h3>사랑달 30개</h3>
       <p class="item-desc">가성비 추천 패키지</p>
-      <div class="item-price">5,000원</div>
+      <div class="item-price">6,000원</div>
     </div>
 
-    <div class="item-card" onclick="selectItem(this, 10000, 70, '사랑달 70개 충전')">
-      <div class="item-badge special">대용량 40% 혜택</div>
+    <div class="item-card" data-play-product="sarangdal_70" onclick="selectItem(this, 14000, 70, '사랑달 70개 충전', 'sarangdal_70')">
+      <div class="item-badge special">대용량</div>
       <div class="item-icon">💖💖💖</div>
       <h3>사랑달 70개</h3>
       <p class="item-desc">대용량 특별 패키지</p>
-      <div class="item-price">10,000원</div>
+      <div class="item-price">14,000원</div>
     </div>
   </section>
 
-  <section class="pay-method-section">
+  <section class="pay-method-section" id="webPaymentMethods">
     <h3>결제 수단 선택</h3>
     <div class="method-options">
       <label class="method-radio">
@@ -72,7 +72,7 @@
   <div class="checkout-bar">
     <div class="total-info">
       <span>결제할 상품: <strong id="selectedItemName">사랑달 30개 충전</strong></span>
-      <span>결제 금액: <strong id="selectedItemPrice" class="price-highlight">5,000원</strong></span>
+      <span>결제 금액: <strong id="selectedItemPrice" class="price-highlight">6,000원</strong></span>
     </div>
     <button type="button" id="payButton" class="pay-btn" onclick="handlePayment()">
       🔒 안전 결제하기
@@ -84,26 +84,100 @@
 <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
 <script nonce="{{ csp_nonce() }}">
-  let currentPrice = 5000;
+  let currentPrice = 6000;
   let currentCount = 30;
   let currentItemName = "사랑달 30개 충전";
+  let currentPlayProduct = "sarangdal_30";
+  let playBillingService = null;
   const STORE_ID = "{{ store_id }}";
   const CHANNEL_KEY = "{{ channel_key }}";
+  const GOOGLE_PLAY_ENABLED = {{ 'true' if google_play_enabled else 'false' }};
+  const PORTONE_ENABLED = {{ 'true' if portone_enabled else 'false' }};
 
   // 포트원 테스트 가맹점 식별코드 초기화
   if (window.IMP) {
     window.IMP.init("imp19424728");
   }
 
-  function selectItem(element, price, count, name) {
+  function selectItem(element, price, count, name, playProduct) {
     document.querySelectorAll('.item-card').forEach(card => card.classList.remove('active'));
     element.classList.add('active');
     currentPrice = price;
     currentCount = count;
     currentItemName = name;
+    currentPlayProduct = playProduct;
     document.getElementById('selectedItemName').innerText = name;
     document.getElementById('selectedItemPrice').innerText = price.toLocaleString() + "원";
   }
+
+  async function initializePlayBilling() {
+    if (!GOOGLE_PLAY_ENABLED || !('getDigitalGoodsService' in window)) return;
+    try {
+      playBillingService = await window.getDigitalGoodsService('https://play.google.com/billing');
+      document.getElementById('webPaymentMethods').hidden = true;
+      const details = await playBillingService.getDetails([
+        'sarangdal_5', 'sarangdal_30', 'sarangdal_70'
+      ]);
+      details.forEach((detail) => {
+        const card = document.querySelector(`[data-play-product="${detail.itemId}"]`);
+        if (!card) return;
+        const price = new Intl.NumberFormat(navigator.language, {
+          style: 'currency', currency: detail.price.currency
+        }).format(detail.price.value);
+        card.querySelector('.item-price').textContent = price;
+        if (card.classList.contains('active')) {
+          document.getElementById('selectedItemPrice').textContent = price;
+        }
+      });
+      // Recover a purchase if the browser closed after Play approved it but
+      // before Friendary credited the points.
+      const existing = await playBillingService.listPurchases();
+      for (const purchase of existing) {
+        if (!['sarangdal_5', 'sarangdal_30', 'sarangdal_70'].includes(purchase.itemId)) continue;
+        const credited = await verifyGooglePlayPurchase(purchase.itemId, purchase.purchaseToken);
+        if (credited) await playBillingService.consume(purchase.purchaseToken);
+      }
+    } catch (error) {
+      console.warn('Google Play Billing is unavailable:', error);
+      playBillingService = null;
+    }
+  }
+
+  async function verifyGooglePlayPurchase(productId, purchaseToken) {
+    const response = await fetch('/payment/google-play/complete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({product_id: productId, purchase_token: purchaseToken})
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message || 'Google Play 결제 검증 실패');
+    if (result.sarangdal_balance != null) {
+      document.getElementById('sarangdalBalance').innerText = `💖 ${result.sarangdal_balance}개`;
+    }
+    return true;
+  }
+
+  async function handleGooglePlayPayment() {
+    const request = new PaymentRequest([{
+      supportedMethods: 'https://play.google.com/billing',
+      data: {sku: currentPlayProduct}
+    }], {
+      total: {label: currentItemName, amount: {currency: 'KRW', value: '0'}}
+    });
+    const paymentResponse = await request.show();
+    try {
+      const purchaseToken = paymentResponse.details.purchaseToken;
+      await verifyGooglePlayPurchase(currentPlayProduct, purchaseToken);
+      await playBillingService.consume(purchaseToken);
+      await paymentResponse.complete('success');
+      alert('🎉 Google Play 결제가 완료되고 사랑달이 충전되었습니다.');
+    } catch (error) {
+      await paymentResponse.complete('fail');
+      throw error;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initializePlayBilling);
 
   async function handlePayment() {
     const payBtn = document.getElementById('payButton');
@@ -111,6 +185,14 @@
     payBtn.innerText = "결제 준비 중...";
 
     try {
+      if (playBillingService) {
+        payBtn.innerText = "Google Play 결제 진행 중...";
+        await handleGooglePlayPayment();
+        return;
+      }
+      if (!PORTONE_ENABLED) {
+        throw new Error("Google Play에서 설치한 앱에서만 사랑달을 구매할 수 있습니다.");
+      }
       // 1단계: 백엔드 서버에 사전 주문 등록 (READY)
       const prepRes = await fetch("/payment/prepare", {
         method: "POST",

@@ -133,6 +133,20 @@ class Config:
     PORTONE_API_SECRET = os.getenv("PORTONE_API_SECRET", "")
     PORTONE_CHANNEL_KEY = os.getenv("PORTONE_CHANNEL_KEY", "")
     PAYMENT_ENABLED = os.getenv("PAYMENT_ENABLED", "").lower() in {"1", "true", "yes"}
+    _GOOGLE_PLAY_SERVICE_ACCOUNT_DEFAULT = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "secrets",
+        "google-play-service-account.json",
+    )
+    GOOGLE_PLAY_BILLING_ENABLED = (
+        os.getenv("GOOGLE_PLAY_BILLING_ENABLED", "").lower() in {"1", "true", "yes"}
+        or os.path.isfile(_GOOGLE_PLAY_SERVICE_ACCOUNT_DEFAULT)
+    )
+    GOOGLE_PLAY_PACKAGE_NAME = os.getenv("GOOGLE_PLAY_PACKAGE_NAME", "com.junyoung.friendary")
+    GOOGLE_PLAY_SERVICE_ACCOUNT_FILE = os.getenv(
+        "GOOGLE_PLAY_SERVICE_ACCOUNT_FILE",
+        _GOOGLE_PLAY_SERVICE_ACCOUNT_DEFAULT,
+    )
     SMTP_HOST = os.getenv("SMTP_HOST", "")
     SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")

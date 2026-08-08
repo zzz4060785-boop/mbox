@@ -855,3 +855,19 @@ class PaymentOrder(db.Model):
 
     user = db.relationship("User")
 
+
+class GooglePlayPurchase(db.Model):
+    __tablename__ = "google_play_purchase"
+
+    id = db.Column(db.Integer, primary_key=True)
+    purchase_token = db.Column(db.String(1024), unique=True, nullable=False, index=True)
+    product_id = db.Column(db.String(100), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_id = db.Column(db.String(200), nullable=True, index=True)
+    sarangdal_count = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="VERIFIED", index=True)
+    purchase_time_ms = db.Column(db.BigInteger, nullable=True)
+    create_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    user = db.relationship("User")
+
