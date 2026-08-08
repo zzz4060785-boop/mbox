@@ -246,6 +246,7 @@
         display: flex;
         justify-content: space-between;
         margin-top: 16px;
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
       }
       .btn-base {
         padding: 10px 20px;
