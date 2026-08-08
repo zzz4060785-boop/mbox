@@ -34,23 +34,27 @@ body.main-album-body {
  */
 @media (max-width: 768px), (hover: none) and (pointer: coarse) {
   html {
-    height: auto;
-    min-height: 100%;
+    height: 100%;
   }
 
   body.main-album-body {
-    height: auto;
-    min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .mobile-wrap.main-album-container {
-    height: auto;
-    min-height: calc(100vh + 350px);
-    min-height: calc(100dvh + 350px);
-    overflow: visible;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-color: rgba(47, 128, 237, 0.72) rgba(255, 255, 255, 0.28);
+    scrollbar-width: thin;
   }
 
   .album-page {
@@ -63,6 +67,19 @@ body.main-album-body {
 
   .star-sidebar-box {
     top: 532px !important;
+  }
+
+  .mobile-wrap.main-album-container::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .mobile-wrap.main-album-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .mobile-wrap.main-album-container::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(47, 128, 237, 0.72);
   }
 }
 
