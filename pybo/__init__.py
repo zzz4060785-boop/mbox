@@ -2394,12 +2394,13 @@ def create_app():
             content=content,
         )
         db.session.add(message)
+        db.session.flush()
         add_notification(
             receiver.id,
             "direct_message",
             "새 쪽지",
             f"{sender.username}님이 새 쪽지를 보냈습니다.",
-            url_for("main_album", open="messages"),
+            url_for("main_album", open="messages", message=message.id),
             sender.id,
         )
         db.session.commit()
@@ -3989,6 +3990,77 @@ def create_app():
     @login_required
     def notifications_list():
         user_id = session["user_id"]
+        user = db.session.get(User, user_id)
+        registered_schools = {
+            row.school_name
+            for row in UserSchool.query.filter_by(user_id=user_id).all()
+            if row.school_name
+        }
+        if user and user.school_name:
+            registered_schools.add(user.school_name)
+
+        # Reconcile recent DB activity so notifications created before the
+        # notification worker was deployed are also visible. Exact post URLs
+        # and message timestamps prevent repeated polling from duplicating rows.
+        added_from_database = False
+        if registered_schools:
+            recent_posts = (
+                BoardPost.query.filter(
+                    BoardPost.school_name.in_(registered_schools),
+                    BoardPost.user_id != user_id,
+                )
+                .order_by(BoardPost.create_date.desc(), BoardPost.id.desc())
+                .limit(20)
+                .all()
+            )
+            for post in recent_posts:
+                target_url = url_for("board_view", post_id=post.id)
+                exists = Notification.query.filter_by(
+                    user_id=user_id,
+                    kind="new_post",
+                    target_url=target_url,
+                ).first()
+                if exists:
+                    continue
+                add_notification(
+                    user_id,
+                    "new_post",
+                    "새 학교 게시글",
+                    f"{post.author}님이 '{post.title}' 글을 올렸습니다.",
+                    target_url,
+                    post.user_id,
+                )
+                added_from_database = True
+
+        unread_messages = (
+            DirectMessage.query.filter_by(receiver_id=user_id, is_read=False)
+            .order_by(DirectMessage.create_date.desc(), DirectMessage.id.desc())
+            .limit(20)
+            .all()
+        )
+        for message in unread_messages:
+            exists = Notification.query.filter(
+                Notification.user_id == user_id,
+                Notification.kind == "direct_message",
+                Notification.actor_id == message.sender_id,
+                Notification.create_date >= message.create_date,
+            ).first()
+            if exists:
+                continue
+            sender_name = message.sender.display_name if message.sender else "1촌 친구"
+            add_notification(
+                user_id,
+                "direct_message",
+                "새 쪽지",
+                f"{sender_name}님이 새 쪽지를 보냈습니다.",
+                url_for("main_album", open="messages", message=message.id),
+                message.sender_id,
+            )
+            added_from_database = True
+
+        if added_from_database:
+            db.session.commit()
+
         notifications = (
             Notification.query.filter_by(user_id=user_id)
             .order_by(Notification.create_date.desc(), Notification.id.desc())
@@ -3999,7 +4071,7 @@ def create_app():
             user_id=user_id,
             is_read=False,
         ).count()
-        return jsonify(
+        response = jsonify(
             unread_count=unread_count,
             notifications=[
                 {
@@ -4014,6 +4086,8 @@ def create_app():
                 for item in notifications
             ],
         )
+        response.headers["Cache-Control"] = "private, no-store, max-age=0"
+        return response
 
     @app.post("/api/notifications/<int:notification_id>/read")
     @login_required

@@ -6,6 +6,7 @@ const notificationState = {
 async function notificationRequest(url, options = {}) {
   const response = await fetch(url, {
     credentials: "same-origin",
+    cache: "no-store",
     ...options,
   });
   if (!response.ok) {

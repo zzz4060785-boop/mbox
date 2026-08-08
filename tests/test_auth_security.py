@@ -12,6 +12,7 @@ from pybo.models import (
     BoardAttachment,
     ClassroomParticipant,
     Friendship,
+    Notification,
     User,
     UserSchool,
     VerificationChallenge,
@@ -81,6 +82,71 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         media_response = self.client.get(media_url)
         self.assertEqual(media_response.status_code, 200)
         self.assertTrue(media_response.data.startswith(b"\x89PNG"))
+
+    def test_school_posts_and_direct_messages_create_database_notifications(self):
+        with self.app.app_context():
+            recipient = User(
+                username="recipient",
+                email="recipient@example.com",
+                password=generate_password_hash("password"),
+            )
+            recipient.school_name = "Test School"
+            db.session.add(recipient)
+            db.session.flush()
+            db.session.add(UserSchool(
+                user_id=recipient.id,
+                school_name="Test School",
+                school_type="high",
+                school_year="2020",
+                is_primary=True,
+            ))
+            db.session.add(Friendship(
+                requester_id=self.user_id,
+                receiver_id=recipient.id,
+                status="accepted",
+            ))
+            db.session.commit()
+            recipient_id = recipient.id
+
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+            session["active_board_school"] = "Test School"
+
+        board_response = self.client.post(
+            "/board/write",
+            data={"title": "School update", "content": "New school post"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        message_response = self.client.post(
+            "/api/social/messages",
+            json={"receiver_id": recipient_id, "content": "Hello friend"},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(board_response.status_code, 302)
+        self.assertEqual(message_response.status_code, 201)
+
+        with self.app.app_context():
+            kinds = {
+                item.kind
+                for item in Notification.query.filter_by(user_id=recipient_id).all()
+            }
+        self.assertIn("new_post", kinds)
+        self.assertIn("direct_message", kinds)
+
+        # Simulate activity written before notification rows existed. The
+        # polling endpoint must rebuild both sources directly from the DB.
+        with self.app.app_context():
+            Notification.query.filter_by(user_id=recipient_id).delete()
+            db.session.commit()
+
+        with self.client.session_transaction() as session:
+            session["user_id"] = recipient_id
+            session["session_version"] = 1
+        notifications_response = self.client.get("/api/notifications")
+        self.assertEqual(notifications_response.status_code, 200)
+        self.assertIn("no-store", notifications_response.headers["Cache-Control"])
+        self.assertEqual(notifications_response.get_json()["unread_count"], 2)
 
     def test_reset_code_is_hashed_server_side_and_absent_from_cookie(self):
         response = self.client.post(
