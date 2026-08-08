@@ -121,35 +121,6 @@ function initializeMainAlbumScroller() {
     thumb.style.transform = `translateY(${Math.round(travel * scroller.scrollTop / maximum)}px)`;
   };
 
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let scrollStart = 0;
-  let handleTouch = false;
-
-  scroller.addEventListener("touchstart", (event) => {
-    const touch = event.touches[0];
-    handleTouch = Boolean(touch) && !event.target.closest(
-      ".profile-popup, .album-wrap, .photo-lightbox",
-    );
-    if (!handleTouch) return;
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    scrollStart = scroller.scrollTop;
-  }, { passive: true, capture: true });
-
-  scroller.addEventListener("touchmove", (event) => {
-    if (!handleTouch || event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = touch.clientY - touchStartY;
-    if (Math.abs(deltaY) < 5 || Math.abs(deltaY) <= Math.abs(deltaX)) return;
-    event.preventDefault();
-    scroller.scrollTop = scrollStart - deltaY;
-    updateIndicator();
-  }, { passive: false, capture: true });
-
-  scroller.addEventListener("touchend", () => { handleTouch = false; }, { passive: true });
-  scroller.addEventListener("touchcancel", () => { handleTouch = false; }, { passive: true });
   scroller.addEventListener("scroll", updateIndicator, { passive: true });
   window.addEventListener("resize", updateIndicator, { passive: true });
   new ResizeObserver(updateIndicator).observe(scroller);

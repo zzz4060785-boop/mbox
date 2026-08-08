@@ -49,10 +49,11 @@ body.main-album-body {
     height: 100dvh;
     min-height: 0;
     overflow-x: hidden;
-    overflow-y: scroll;
-    overscroll-behavior-y: contain;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
     scrollbar-color: rgba(47, 128, 237, 0.72) rgba(255, 255, 255, 0.28);
     scrollbar-width: thin;
   }
