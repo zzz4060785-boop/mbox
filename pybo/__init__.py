@@ -1177,6 +1177,11 @@ def create_app():
         if client is None:
             flash("Gmail OAuth 환경변수를 확인해 주세요.")
             return redirect(url_for("contact_admin"))
+        # Drop abandoned OAuth attempts before starting a fresh consent flow.
+        for key in list(session):
+            if key.startswith("_state_gmail_sender_"):
+                session.pop(key, None)
+        session.permanent = True
         return client.authorize_redirect(
             app.config["GMAIL_REDIRECT_URI"],
             access_type="offline",
