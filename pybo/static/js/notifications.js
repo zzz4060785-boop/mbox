@@ -1,6 +1,7 @@
 const notificationState = {
   items: [],
   unreadCount: 0,
+  selectedIds: new Set(),
 };
 
 async function notificationRequest(url, options = {}) {
@@ -35,6 +36,19 @@ function renderNotifications() {
   }
 
   notificationState.items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = `notification-row${item.is_read ? "" : " unread"}`;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "notification-checkbox";
+    checkbox.checked = notificationState.selectedIds.has(item.id);
+    checkbox.setAttribute("aria-label", `${item.title} 삭제 선택`);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) notificationState.selectedIds.add(item.id);
+      else notificationState.selectedIds.delete(item.id);
+    });
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = `notification-item${item.is_read ? "" : " unread"}`;
@@ -49,7 +63,8 @@ function renderNotifications() {
     time.textContent = item.created_at.replace("T", " ");
 
     button.append(title, message, time);
-    list.appendChild(button);
+    row.append(checkbox, button);
+    list.appendChild(row);
   });
 }
 
@@ -107,6 +122,10 @@ async function loadNotifications() {
   try {
     const data = await notificationRequest("/api/notifications");
     notificationState.items = data.notifications;
+    const availableIds = new Set(data.notifications.map((item) => item.id));
+    notificationState.selectedIds = new Set(
+      [...notificationState.selectedIds].filter((id) => availableIds.has(id)),
+    );
     notificationState.unreadCount = data.unread_count;
     updateNotificationBadge();
     renderNotifications();
@@ -128,17 +147,68 @@ async function openNotification(item) {
   }
 }
 
-async function markAllNotificationsRead() {
+function closeNotificationDeleteModal() {
+  const modal = document.getElementById("notificationDeleteModal");
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove("friendary-modal-open");
+}
+
+function showNotificationDeleteModal() {
+  let modal = document.getElementById("notificationDeleteModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "notificationDeleteModal";
+    modal.className = "notification-delete-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="notification-delete-backdrop" data-notification-delete-close></div>
+      <section class="notification-delete-box" role="dialog" aria-modal="true" aria-labelledby="notificationDeleteTitle">
+        <div class="notification-delete-icon" aria-hidden="true">🗑️</div>
+        <h2 id="notificationDeleteTitle">메시지를 삭제할까요?</h2>
+        <p class="notification-delete-message"></p>
+        <small>삭제하지 않은 메시지도 90일이 지나면 자동으로 삭제됩니다.</small>
+        <div class="notification-delete-actions">
+          <button type="button" class="notification-delete-cancel" data-notification-delete-close>취소</button>
+          <button type="button" class="notification-delete-confirm">삭제</button>
+        </div>
+      </section>`;
+    modal.querySelectorAll("[data-notification-delete-close]").forEach((element) => {
+      element.addEventListener("click", closeNotificationDeleteModal);
+    });
+    document.body.appendChild(modal);
+  }
+
+  const count = notificationState.selectedIds.size;
+  const confirmButton = modal.querySelector(".notification-delete-confirm");
+  modal.querySelector(".notification-delete-message").textContent = count
+    ? `체크한 메시지 ${count}개가 전부 삭제돼요. 체크하지 않은 메시지는 삭제되지 않아요.`
+    : "삭제할 메시지를 먼저 체크해 주세요. 체크하지 않은 메시지는 삭제되지 않아요.";
+  confirmButton.disabled = count === 0;
+  confirmButton.onclick = deleteSelectedNotifications;
+  modal.hidden = false;
+  document.body.classList.add("friendary-modal-open");
+  (count ? confirmButton : modal.querySelector(".notification-delete-cancel")).focus();
+}
+
+async function deleteSelectedNotifications() {
+  const ids = [...notificationState.selectedIds];
+  if (!ids.length) return;
   try {
-    await notificationRequest("/api/notifications/read-all", {
-      method: "POST",
+    const data = await notificationRequest("/api/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
     });
-    notificationState.unreadCount = 0;
-    notificationState.items.forEach((item) => {
-      item.is_read = true;
-    });
+    const deletedIds = new Set(ids);
+    notificationState.items = notificationState.items.filter(
+      (item) => !deletedIds.has(item.id),
+    );
+    notificationState.selectedIds.clear();
+    notificationState.unreadCount = data.unread_count;
     updateNotificationBadge();
     renderNotifications();
+    closeNotificationDeleteModal();
   } catch (_) {
     // 다음 자동 조회 때 서버 상태를 다시 반영합니다.
   }
@@ -160,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toggle.setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) loadNotifications();
   });
-  readAll.addEventListener("click", markAllNotificationsRead);
+  readAll.addEventListener("click", showNotificationDeleteModal);
   document.addEventListener("click", (event) => {
     if (!event.target.closest("#notificationCenter")) {
       panel.hidden = true;

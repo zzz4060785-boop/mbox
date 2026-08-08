@@ -4274,6 +4274,11 @@ def create_app():
     @login_required
     def notifications_list():
         user_id = session["user_id"]
+        retention_cutoff = datetime.utcnow() - timedelta(days=90)
+        expired_deleted = Notification.query.filter(
+            Notification.user_id == user_id,
+            Notification.create_date < retention_cutoff,
+        ).delete(synchronize_session=False)
         user = db.session.get(User, user_id)
         registered_schools = {
             row.school_name
@@ -4292,6 +4297,7 @@ def create_app():
                 BoardPost.query.filter(
                     BoardPost.school_name.in_(registered_schools),
                     BoardPost.user_id != user_id,
+                    BoardPost.create_date >= retention_cutoff,
                 )
                 .order_by(BoardPost.create_date.desc(), BoardPost.id.desc())
                 .limit(20)
@@ -4317,7 +4323,11 @@ def create_app():
                 added_from_database = True
 
         unread_messages = (
-            DirectMessage.query.filter_by(receiver_id=user_id, is_read=False)
+            DirectMessage.query.filter(
+                DirectMessage.receiver_id == user_id,
+                DirectMessage.is_read.is_(False),
+                DirectMessage.create_date >= retention_cutoff,
+            )
             .order_by(DirectMessage.create_date.desc(), DirectMessage.id.desc())
             .limit(20)
             .all()
@@ -4342,18 +4352,22 @@ def create_app():
             )
             added_from_database = True
 
-        if added_from_database:
+        if added_from_database or expired_deleted:
             db.session.commit()
 
         notifications = (
-            Notification.query.filter_by(user_id=user_id)
+            Notification.query.filter(
+                Notification.user_id == user_id,
+                Notification.deleted_at.is_(None),
+            )
             .order_by(Notification.create_date.desc(), Notification.id.desc())
             .limit(100)
             .all()
         )
-        unread_count = Notification.query.filter_by(
-            user_id=user_id,
-            is_read=False,
+        unread_count = Notification.query.filter(
+            Notification.user_id == user_id,
+            Notification.is_read.is_(False),
+            Notification.deleted_at.is_(None),
         ).count()
         response = jsonify(
             unread_count=unread_count,
@@ -4379,6 +4393,7 @@ def create_app():
         notification = Notification.query.filter_by(
             id=notification_id,
             user_id=session["user_id"],
+            deleted_at=None,
         ).first_or_404()
         notification.is_read = True
         db.session.commit()
@@ -4390,12 +4405,51 @@ def create_app():
     @app.post("/api/notifications/read-all")
     @login_required
     def notifications_read_all():
-        Notification.query.filter_by(
-            user_id=session["user_id"],
-            is_read=False,
+        Notification.query.filter(
+            Notification.user_id == session["user_id"],
+            Notification.is_read.is_(False),
+            Notification.deleted_at.is_(None),
         ).update({"is_read": True}, synchronize_session=False)
         db.session.commit()
         return jsonify(ok=True, unread_count=0)
+
+    @app.delete("/api/notifications")
+    @login_required
+    def notifications_delete_selected():
+        payload = request.get_json(silent=True) or {}
+        raw_ids = payload.get("ids")
+        if not isinstance(raw_ids, list):
+            return jsonify(message="삭제할 메시지를 체크해 주세요."), 400
+
+        try:
+            notification_ids = sorted({int(item) for item in raw_ids if int(item) > 0})
+        except (TypeError, ValueError):
+            return jsonify(message="삭제할 메시지 정보가 올바르지 않습니다."), 400
+        if not notification_ids:
+            return jsonify(message="삭제할 메시지를 체크해 주세요."), 400
+        if len(notification_ids) > 100:
+            return jsonify(message="한 번에 최대 100개까지 삭제할 수 있습니다."), 400
+
+        selected = Notification.query.filter(
+            Notification.user_id == session["user_id"],
+            Notification.id.in_(notification_ids),
+            Notification.deleted_at.is_(None),
+        ).all()
+        deleted_at = datetime.utcnow()
+        for item in selected:
+            item.deleted_at = deleted_at
+        db.session.commit()
+
+        unread_count = Notification.query.filter(
+            Notification.user_id == session["user_id"],
+            Notification.is_read.is_(False),
+            Notification.deleted_at.is_(None),
+        ).count()
+        return jsonify(
+            ok=True,
+            deleted_count=len(selected),
+            unread_count=unread_count,
+        )
 
     @app.route("/notices")
     @login_required

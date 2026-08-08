@@ -33,7 +33,7 @@
     {% if session.get("user_id") and request.endpoint == "main_album" %}
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/notifications.css', v='20260808-main-album-only-v1') }}"
+      href="{{ url_for('static', filename='css/notifications.css', v='20260809-selection-v1') }}"
     />
     {% endif %}
 
@@ -74,7 +74,7 @@
     </div>
 
     {% if session.get("user_id") and request.endpoint == "main_album" %}
-    <script src="{{ url_for('static', filename='js/notifications.js', v='20260808-main-album-only-v1') }}"></script>
+    <script src="{{ url_for('static', filename='js/notifications.js', v='20260809-selection-v1') }}"></script>
     {% endif %} {% block script %} {% endblock %}
     <script nonce="{{ csp_nonce() }}">
       // Apply CSRF protection centrally to all forms and same-origin fetch calls.

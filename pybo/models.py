@@ -117,6 +117,7 @@ class Notification(db.Model):
     message = db.Column(db.String(300), nullable=False)
     target_url = db.Column(db.String(500), nullable=False)
     is_read = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)
     create_date = db.Column(
         db.DateTime,
         nullable=False,

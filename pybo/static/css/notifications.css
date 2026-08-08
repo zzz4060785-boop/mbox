@@ -104,7 +104,7 @@
   display: block;
   padding: 12px 14px;
   border: 0;
-  border-bottom: 1px solid #f1f1f1;
+  border-bottom: 0;
   background: #ffffff;
   color: #333333;
   text-align: left;
@@ -149,6 +149,29 @@
   text-align: center;
 }
 
+.notification-row {
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: stretch;
+  border-bottom: 1px solid #f1f1f1;
+  background: #ffffff;
+}
+
+.notification-checkbox {
+  width: 19px;
+  height: 19px;
+  align-self: start;
+  justify-self: center;
+  margin-top: 16px;
+  accent-color: #2f80ed;
+  cursor: pointer;
+}
+
+.notification-row.unread {
+  background: #eef5ff;
+}
+
 .classroom-summon-modal {
   position: fixed;
   inset: 0;
@@ -190,3 +213,91 @@
 }
 .classroom-summon-later { border: 1px solid #dce2ec; background: #fff; color: #667085; }
 .classroom-summon-enter { border: 0; background: #27ae60; color: #fff; }
+
+.notification-delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 33000;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top, 0px)) 20px
+    max(20px, env(safe-area-inset-bottom, 0px));
+}
+
+.notification-delete-modal[hidden] {
+  display: none;
+}
+
+.notification-delete-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.68);
+  backdrop-filter: blur(4px);
+}
+
+.notification-delete-box {
+  width: min(350px, 100%);
+  position: relative;
+  padding: 28px 22px 21px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+  text-align: center;
+}
+
+.notification-delete-icon {
+  font-size: 42px;
+}
+
+.notification-delete-box h2 {
+  margin-top: 10px;
+  color: #172033;
+  font-size: 21px;
+}
+
+.notification-delete-box p {
+  margin-top: 10px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.notification-delete-box small {
+  display: block;
+  margin-top: 9px;
+  color: #8a94a5;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.notification-delete-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.notification-delete-actions button {
+  min-height: 45px;
+  border-radius: 13px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notification-delete-cancel {
+  border: 1px solid #dce2ec;
+  background: #ffffff;
+  color: #667085;
+}
+
+.notification-delete-confirm {
+  border: 0;
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.notification-delete-confirm:disabled {
+  background: #d6d9df;
+  cursor: not-allowed;
+}

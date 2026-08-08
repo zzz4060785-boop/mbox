@@ -2,7 +2,7 @@ import io
 import re
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from werkzeug.security import generate_password_hash
@@ -149,6 +149,73 @@ class AuthSecurityIntegrationTests(unittest.TestCase):
         self.assertEqual(notifications_response.status_code, 200)
         self.assertIn("no-store", notifications_response.headers["Cache-Control"])
         self.assertEqual(notifications_response.get_json()["unread_count"], 2)
+
+    def test_selected_notifications_are_hidden_and_expire_after_90_days(self):
+        with self.app.app_context():
+            other = User(
+                username="notification-owner",
+                email="notification-owner@example.com",
+                password=generate_password_hash("password"),
+            )
+            db.session.add(other)
+            db.session.flush()
+            selected = Notification(
+                user_id=self.user_id,
+                kind="test",
+                title="selected",
+                message="selected message",
+                target_url="/main-album",
+            )
+            kept = Notification(
+                user_id=self.user_id,
+                kind="test",
+                title="kept",
+                message="kept message",
+                target_url="/main-album",
+            )
+            expired = Notification(
+                user_id=self.user_id,
+                kind="test",
+                title="expired",
+                message="expired message",
+                target_url="/main-album",
+                create_date=datetime.utcnow() - timedelta(days=91),
+            )
+            other_notification = Notification(
+                user_id=other.id,
+                kind="test",
+                title="other",
+                message="other user's message",
+                target_url="/main-album",
+            )
+            db.session.add_all([selected, kept, expired, other_notification])
+            db.session.commit()
+            selected_id = selected.id
+            kept_id = kept.id
+            expired_id = expired.id
+            other_id = other_notification.id
+
+        with self.client.session_transaction() as session:
+            session["user_id"] = self.user_id
+            session["session_version"] = 1
+
+        deleted = self.client.delete(
+            "/api/notifications",
+            json={"ids": [selected_id, other_id]},
+            headers={"X-CSRF-Token": self.csrf},
+        )
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(deleted.get_json()["deleted_count"], 1)
+
+        listed = self.client.get("/api/notifications")
+        self.assertEqual(listed.status_code, 200)
+        listed_ids = {item["id"] for item in listed.get_json()["notifications"]}
+        self.assertEqual(listed_ids, {kept_id})
+        with self.app.app_context():
+            self.assertIsNotNone(db.session.get(Notification, selected_id).deleted_at)
+            self.assertIsNone(db.session.get(Notification, kept_id).deleted_at)
+            self.assertIsNone(db.session.get(Notification, other_id).deleted_at)
+            self.assertIsNone(db.session.get(Notification, expired_id))
 
     def test_reset_code_is_hashed_server_side_and_absent_from_cookie(self):
         response = self.client.post(
